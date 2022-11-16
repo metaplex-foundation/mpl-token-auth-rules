@@ -4,7 +4,7 @@ const path = require('path');
 const accountProviders = require('./packages/sdk/dist/generated/accounts');
 
 const localDeployDir = path.join(__dirname, 'program', 'target', 'deploy');
-const MY_PROGRAM_ID = require("./packages/sdk/idl/my_program_name.json").metadata.address;
+const MY_PROGRAM_ID = require("./packages/sdk/idl/authenticatooor.json").metadata.address;
 
 function localDeployPath(programName) {
     return path.join(localDeployDir, `${programName}.so`);
@@ -12,9 +12,9 @@ function localDeployPath(programName) {
 
 const programs = [
     {
-        label: 'my_program_name',
+        label: 'authenticatooor',
         programId: MY_PROGRAM_ID,
-        deployPath: localDeployPath('my_program_name')
+        deployPath: localDeployPath('authenticatooor')
     },
 ];
 

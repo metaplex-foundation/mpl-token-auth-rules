@@ -67,7 +67,7 @@ export const instructionThingInstructionDiscriminator = 0;
 export function createInstructionThingInstruction(
   accounts: InstructionThingInstructionAccounts,
   args: InstructionThingInstructionArgs,
-  programId = new web3.PublicKey('MyProgram1111111111111111111111111111111111'),
+  programId = new web3.PublicKey('auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'),
 ) {
   const [data] = InstructionThingStruct.serialize({
     instructionDiscriminator: instructionThingInstructionDiscriminator,

@@ -1,5 +1,5 @@
 {
-  "entryPoints": ["src/my-program-name.ts"],
+  "entryPoints": ["src/authenticatooor.ts"],
   "excludeInternal": true,
   "excludePrivate": true,
   "categorizeByGroup": false,
@@ -17,5 +17,5 @@
   ],
   "readme": "none",
   "emit": "both",
-  "out": "./docs/my-program-name"
+  "out": "./docs/authenticatooor"
 }

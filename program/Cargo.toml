@@ -1,12 +1,12 @@
 [package]
-name = "my-program-name"
+name = "authenticatooor"
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
 publish = false
 
 [dependencies]
-solana-program = "=1.10.29"
+solana-program = "=1.13.5"
 shank = "0.0.2"
 borsh = "0.9.3"
 thiserror = "~1.0"
@@ -19,10 +19,11 @@ test-bpf = []
 
 [dev-dependencies]
 assert_matches = "1.5.0"
-solana-program-test = "=1.10.29"
-solana-sdk = "=1.10.29"
-solana-validator = "=1.10.29"
-solana-logger = "=1.10.29"
+solana-program-test = "=1.13.5"
+solana-sdk = "=1.13.5"
+solana-validator = "=1.13.5"
+solana-logger = "=1.13.5"
+spl-token = "3.5.0"
 
 [lib]
 crate-type = ["cdylib", "lib"]

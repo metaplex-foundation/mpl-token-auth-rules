@@ -52,8 +52,9 @@ export class AccountThingy implements AccountThingyArgs {
   static async fromAccountAddress(
     connection: web3.Connection,
     address: web3.PublicKey,
+    commitmentOrConfig?: web3.Commitment | web3.GetAccountInfoConfig,
   ): Promise<AccountThingy> {
-    const accountInfo = await connection.getAccountInfo(address);
+    const accountInfo = await connection.getAccountInfo(address, commitmentOrConfig);
     if (accountInfo == null) {
       throw new Error(`Unable to find AccountThingy account at ${address}`);
     }
@@ -67,7 +68,7 @@ export class AccountThingy implements AccountThingyArgs {
    * @param programId - the program that owns the accounts we are filtering
    */
   static gpaBuilder(
-    programId: web3.PublicKey = new web3.PublicKey('MyProgram1111111111111111111111111111111111'),
+    programId: web3.PublicKey = new web3.PublicKey('auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'),
   ) {
     return beetSolana.GpaBuilder.fromStruct(programId, accountThingyBeet);
   }
