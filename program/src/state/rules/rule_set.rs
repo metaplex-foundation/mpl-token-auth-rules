@@ -1,26 +1,26 @@
 use std::collections::HashMap;
 
-use borsh::{BorshDeserialize, BorshSerialize};
+use serde::{Deserialize, Serialize};
 
-use crate::state::{Operation, Validation};
+use crate::state::{primitives::Validation, Operation};
 
-#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
-pub struct RuleSet<'a> {
-    operations: HashMap<Operation, Box<dyn Validation + 'a>>,
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+pub struct RuleSet {
+    operations: HashMap<Operation, Validation>,
 }
 
-impl<'a> RuleSet<'a> {
+impl<'a> RuleSet {
     pub fn new() -> Self {
         Self {
             operations: HashMap::new(),
         }
     }
 
-    pub fn add(&mut self, operation: Operation, validations: Box<dyn Validation + 'a>) {
+    pub fn add(&mut self, operation: Operation, validations: Validation) {
         self.operations.insert(operation, validations);
     }
 
-    pub fn get(&self, operation: Operation) -> Option<&dyn Validation> {
-        self.operations.get(&operation).map(|v| &**v)
+    pub fn get(&self, operation: Operation) -> Option<&Validation> {
+        self.operations.get(&operation).map(|v| &*v)
     }
 }
