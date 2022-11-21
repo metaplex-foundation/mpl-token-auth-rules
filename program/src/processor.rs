@@ -7,6 +7,7 @@ use crate::{
     state::{primitives::Validation, rules::rule_set::RuleSet, Operation},
     utils::{assert_derivation, create_or_allocate_account_raw},
 };
+use bincode::serialize;
 use borsh::BorshDeserialize;
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -89,6 +90,11 @@ impl Processor {
                 operations
                     .serialize(&mut Serializer::new(&mut serialized_data))
                     .unwrap();
+
+                // bincode
+                //let serialized_data: Vec<u8> = bincode::serialize(&operations).unwrap();
+
+                msg!("serialized data len {}", serialized_data.len());
 
                 // create_or_allocate_account_raw(
                 //     *program_id,
