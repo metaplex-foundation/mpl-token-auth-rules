@@ -1,17 +1,22 @@
+use std::collections::HashMap;
+
 use crate::{
     error::RuleSetError,
     instruction::RuleSetInstruction,
     pda::PREFIX,
-    state::{primitives::Validation, rules::rule_set::RuleSet},
+    state::{primitives::Validation, rules::rule_set::RuleSet, Operation},
     utils::{assert_derivation, create_or_allocate_account_raw},
 };
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::BorshDeserialize;
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
     msg,
     pubkey::Pubkey,
 };
+
+use rmp_serde::{Deserializer, Serializer};
+use serde::{Deserialize, Serialize};
 
 pub struct Processor;
 impl Processor {
@@ -28,6 +33,12 @@ impl Processor {
                 let payer_info = next_account_info(account_info_iter)?;
                 let ruleset_info = next_account_info(account_info_iter)?;
                 let system_program_info = next_account_info(account_info_iter)?;
+
+                let accounts_map = HashMap::from([
+                    (*payer_info.key, payer_info),
+                    (*ruleset_info.key, ruleset_info),
+                    (*system_program_info.key, system_program_info),
+                ]);
 
                 let bump = assert_derivation(
                     program_id,
@@ -56,33 +67,50 @@ impl Processor {
                     account: *payer_info.key,
                 };
 
-                // let accounts_map =
-                //     HashMap::from([(*acc1.key, &acc1), (*acc2.key, &acc2), (*acc3.key, &acc3)]);
+                let first_rule = Validation::All {
+                    validations: vec![adtl_signer, adtl_signer2],
+                };
 
-                let first_rule =
-                    Validation::All(vec![Box::new(adtl_signer), Box::new(adtl_signer2)]);
-
-                let overall_rule =
-                    Validation::Any(vec![Box::new(first_rule), Box::new(adtl_signer3)]);
+                let overall_rule = Validation::Any {
+                    validations: vec![first_rule, adtl_signer3],
+                };
 
                 let mut operations = RuleSet::new();
+                operations.add(Operation::Transfer, overall_rule);
 
-                // let serialized_data = operations
-                //     .try_to_vec()
-                //     .map_err(|_| RuleSetError::ErrorName)?;
                 msg!("{:#?}", operations);
 
-                let serialized_data =
-                    serde_json::to_vec(&operations).map_err(|_| RuleSetError::ErrorName)?;
+                // Serde
+                //let serialized_data =
+                //    serde_json::to_vec(&operations).map_err(|_| RuleSetError::ErrorName)?;
 
-                create_or_allocate_account_raw(
-                    *program_id,
-                    ruleset_info,
-                    system_program_info,
-                    payer_info,
-                    serialized_data.len(),
-                    ruleset_seeds,
-                )?;
+                // RMP serde
+                let mut serialized_data = Vec::new();
+                operations
+                    .serialize(&mut Serializer::new(&mut serialized_data))
+                    .unwrap();
+
+                // create_or_allocate_account_raw(
+                //     *program_id,
+                //     ruleset_info,
+                //     system_program_info,
+                //     payer_info,
+                //     serialized_data.len(),
+                //     ruleset_seeds,
+                // )?;
+
+                let unserialized_data: RuleSet =
+                    rmp_serde::from_slice(&serialized_data).map_err(|_| RuleSetError::ErrorName)?;
+
+                msg!("{:#?}", unserialized_data);
+
+                let validation = operations.get(Operation::Transfer).unwrap();
+
+                msg!(
+                    "Rule validation result: {}",
+                    validation.validate(&accounts_map)
+                );
+
                 Ok(())
             }
         }
