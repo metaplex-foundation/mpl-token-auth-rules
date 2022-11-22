@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-pub mod primitives;
-pub mod rules;
+mod rule_set;
+mod rules;
+
+pub use rule_set::*;
+pub use rules::*;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Hash, PartialOrd)]
 pub enum Operation {

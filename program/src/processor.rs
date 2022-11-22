@@ -4,19 +4,18 @@ use crate::{
     data::{AccountTag, Payload},
     instruction::RuleSetInstruction,
     pda::PREFIX,
-    state::{primitives::Validation, rules::rule_set::RuleSet, Operation},
+    state::{Operation, Rule, RuleSet},
     utils::{assert_derivation, create_or_allocate_account_raw},
 };
 use borsh::BorshDeserialize;
+use rmp_serde::{Deserializer, Serializer};
+use serde::{Deserialize, Serialize};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
     msg,
     pubkey::Pubkey,
 };
-
-use rmp_serde::{Deserializer, Serializer};
-use serde::{Deserialize, Serialize};
 
 pub struct Processor;
 impl Processor {
@@ -59,22 +58,22 @@ impl Processor {
                     &[bump],
                 ];
 
-                let adtl_signer = Validation::AdditionalSigner {
+                let adtl_signer = Rule::AdditionalSigner {
                     account: *payer_info.key,
                 };
-                let adtl_signer2 = Validation::AdditionalSigner {
+                let adtl_signer2 = Rule::AdditionalSigner {
                     account: *payer_info.key,
                 };
-                let amount_check = Validation::Amount { amount: 1 };
+                let amount_check = Rule::Amount { amount: 1 };
                 let payloads_map =
                     HashMap::from([(amount_check.to_u8(), Payload::Amount { amount: 2 })]);
 
-                let first_rule = Validation::All {
-                    validations: vec![adtl_signer, adtl_signer2],
+                let first_rule = Rule::All {
+                    rules: vec![adtl_signer, adtl_signer2],
                 };
 
-                let overall_rule = Validation::All {
-                    validations: vec![first_rule, amount_check],
+                let overall_rule = Rule::All {
+                    rules: vec![first_rule, amount_check],
                 };
 
                 let mut operations = RuleSet::new();
@@ -108,11 +107,11 @@ impl Processor {
 
                 //msg!("{:#?}", unserialized_data);
 
-                let validation = operations.get(Operation::Transfer).unwrap();
+                let rule = operations.get(Operation::Transfer).unwrap();
 
                 msg!(
                     "Rule validation result: {}",
-                    validation.validate(&accounts_map, &tags_map, &payloads_map)
+                    rule.validate(&accounts_map, &tags_map, &payloads_map)
                 );
 
                 Ok(())
