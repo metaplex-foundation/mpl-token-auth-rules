@@ -1,1 +1,1 @@
-export * from './InstructionThingArgs';
+export * from './CreateArgs';

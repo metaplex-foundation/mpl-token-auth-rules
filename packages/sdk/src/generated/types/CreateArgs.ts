@@ -6,15 +6,15 @@
  */
 
 import * as beet from '@metaplex-foundation/beet';
-export type InstructionThingArgs = {
-  value: beet.bignum;
+export type CreateArgs = {
+  name: string;
 };
 
 /**
  * @category userTypes
  * @category generated
  */
-export const instructionThingArgsBeet = new beet.BeetArgsStruct<InstructionThingArgs>(
-  [['value', beet.u64]],
-  'InstructionThingArgs',
+export const createArgsBeet = new beet.FixableBeetArgsStruct<CreateArgs>(
+  [['name', beet.utf8String]],
+  'CreateArgs',
 );

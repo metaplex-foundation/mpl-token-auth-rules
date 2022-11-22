@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
+    data::AccountTag,
     error::RuleSetError,
     instruction::RuleSetInstruction,
     pda::PREFIX,
@@ -40,6 +41,8 @@ impl Processor {
                     (*system_program_info.key, system_program_info),
                 ]);
 
+                let tags_map = HashMap::from([(AccountTag::Destination, *payer_info.key)]);
+
                 let bump = assert_derivation(
                     program_id,
                     ruleset_info,
@@ -78,7 +81,7 @@ impl Processor {
                 let mut operations = RuleSet::new();
                 operations.add(Operation::Transfer, overall_rule);
 
-                msg!("{:#?}", operations);
+                //msg!("{:#?}", operations);
 
                 // Serde
                 //let serialized_data =
@@ -90,25 +93,27 @@ impl Processor {
                     .serialize(&mut Serializer::new(&mut serialized_data))
                     .unwrap();
 
-                // create_or_allocate_account_raw(
-                //     *program_id,
-                //     ruleset_info,
-                //     system_program_info,
-                //     payer_info,
-                //     serialized_data.len(),
-                //     ruleset_seeds,
-                // )?;
+                msg!("{:#?}", serialized_data);
 
-                let unserialized_data: RuleSet =
-                    rmp_serde::from_slice(&serialized_data).map_err(|_| RuleSetError::ErrorName)?;
+                create_or_allocate_account_raw(
+                    *program_id,
+                    ruleset_info,
+                    system_program_info,
+                    payer_info,
+                    serialized_data.len(),
+                    ruleset_seeds,
+                )?;
 
-                msg!("{:#?}", unserialized_data);
+                // let unserialized_data: RuleSet =
+                //     rmp_serde::from_slice(&serialized_data).map_err(|_| RuleSetError::ErrorName)?;
+
+                //msg!("{:#?}", unserialized_data);
 
                 let validation = operations.get(Operation::Transfer).unwrap();
 
                 msg!(
                     "Rule validation result: {}",
-                    validation.validate(&accounts_map)
+                    validation.validate(&accounts_map, &tags_map)
                 );
 
                 Ok(())
