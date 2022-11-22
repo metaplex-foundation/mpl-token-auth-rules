@@ -1,14 +1,12 @@
-use std::collections::HashMap;
-
+use crate::data::{AccountTag, Payload};
 use serde::{Deserialize, Serialize};
 use solana_program::{account_info::AccountInfo, msg, pubkey::Pubkey};
-
-use crate::data::{AccountTag, Payload};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
-pub enum Validation {
-    All { validations: Vec<Validation> },
-    Any { validations: Vec<Validation> },
+pub enum Rule {
+    All { rules: Vec<Rule> },
+    Any { rules: Vec<Rule> },
     AdditionalSigner { account: Pubkey },
     PubkeyMatch { account: Pubkey },
     DerivedKeyMatch { account: Pubkey },
@@ -19,7 +17,7 @@ pub enum Validation {
     PubkeyTreeMatch { root: [u8; 32] },
 }
 
-impl Validation {
+impl Rule {
     pub fn validate(
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
@@ -27,20 +25,18 @@ impl Validation {
         payloads: &HashMap<u8, Payload>,
     ) -> bool {
         match self {
-            Validation::All { validations } => {
+            Rule::All { rules } => {
                 msg!("Validating All");
-                validations
-                    .iter()
-                    .all(|v| v.validate(accounts, tags, payloads))
+                rules.iter().all(|v| v.validate(accounts, tags, payloads))
             }
-            Validation::Any { validations } => {
+            Rule::Any { rules } => {
                 msg!("Validating Any");
-                validations.iter().any(|v| {
+                rules.iter().any(|v| {
                     msg!("{:#?}", v);
                     v.validate(accounts, tags, payloads)
                 })
             }
-            Validation::AdditionalSigner { account } => {
+            Rule::AdditionalSigner { account } => {
                 msg!("Validating AdditionalSigner");
                 if let Some(account) = accounts.get(account) {
                     account.is_signer
@@ -48,12 +44,12 @@ impl Validation {
                     false
                 }
             }
-            Validation::PubkeyMatch { account } => {
+            Rule::PubkeyMatch { account } => {
                 msg!("Validating PubkeyMatch");
                 tags.get(&AccountTag::Destination).unwrap() == account
             }
-            Validation::DerivedKeyMatch { account } => todo!(),
-            Validation::ProgramOwned { program } => {
+            Rule::DerivedKeyMatch { account } => todo!(),
+            Rule::ProgramOwned { program } => {
                 msg!("Validating ProgramOwned");
                 if let Some(account) = accounts.get(program) {
                     account.owner == program
@@ -61,8 +57,8 @@ impl Validation {
                     false
                 }
             }
-            Validation::IdentityAssociated { account } => todo!(),
-            Validation::Amount { amount } => {
+            Rule::IdentityAssociated { account } => todo!(),
+            Rule::Amount { amount } => {
                 msg!("Validating Amount");
                 if let Some(Payload::Amount { amount: a }) = payloads.get(&self.to_u8()) {
                     amount == a
@@ -70,13 +66,13 @@ impl Validation {
                     false
                 }
             }
-            Validation::Frequency { freq_account } => {
+            Rule::Frequency { freq_account } => {
                 todo!()
                 // Deserialize the frequency account
                 // Grab the current time
                 // Compare  last time + period to current time
             }
-            Validation::PubkeyTreeMatch { root } => {
+            Rule::PubkeyTreeMatch { root } => {
                 msg!("Validating PubkeyTreeMatch");
                 if let Some(Payload::PubkeyTreeMatch { proof, leaf }) = payloads.get(&self.to_u8())
                 {
@@ -111,16 +107,16 @@ impl Validation {
 
     pub fn to_u8(&self) -> u8 {
         match self {
-            Validation::All { .. } => 0,
-            Validation::Any { .. } => 1,
-            Validation::AdditionalSigner { .. } => 2,
-            Validation::PubkeyMatch { .. } => 3,
-            Validation::DerivedKeyMatch { .. } => 4,
-            Validation::ProgramOwned { .. } => 5,
-            Validation::IdentityAssociated { .. } => 6,
-            Validation::Amount { .. } => 7,
-            Validation::Frequency { .. } => 8,
-            Validation::PubkeyTreeMatch { .. } => 9,
+            Rule::All { .. } => 0,
+            Rule::Any { .. } => 1,
+            Rule::AdditionalSigner { .. } => 2,
+            Rule::PubkeyMatch { .. } => 3,
+            Rule::DerivedKeyMatch { .. } => 4,
+            Rule::ProgramOwned { .. } => 5,
+            Rule::IdentityAssociated { .. } => 6,
+            Rule::Amount { .. } => 7,
+            Rule::Frequency { .. } => 8,
+            Rule::PubkeyTreeMatch { .. } => 9,
         }
     }
 }
