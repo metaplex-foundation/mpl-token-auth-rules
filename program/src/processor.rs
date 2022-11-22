@@ -1,14 +1,12 @@
 use std::collections::HashMap;
 
 use crate::{
-    data::AccountTag,
-    error::RuleSetError,
+    data::{AccountTag, Payload},
     instruction::RuleSetInstruction,
     pda::PREFIX,
     state::{primitives::Validation, rules::rule_set::RuleSet, Operation},
     utils::{assert_derivation, create_or_allocate_account_raw},
 };
-use bincode::serialize;
 use borsh::BorshDeserialize;
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -67,16 +65,16 @@ impl Processor {
                 let adtl_signer2 = Validation::AdditionalSigner {
                     account: *payer_info.key,
                 };
-                let adtl_signer3 = Validation::AdditionalSigner {
-                    account: *payer_info.key,
-                };
+                let amount_check = Validation::Amount { amount: 1 };
+                let payloads_map =
+                    HashMap::from([(amount_check.to_u8(), Payload::Amount { amount: 2 })]);
 
                 let first_rule = Validation::All {
                     validations: vec![adtl_signer, adtl_signer2],
                 };
 
-                let overall_rule = Validation::Any {
-                    validations: vec![first_rule, adtl_signer3],
+                let overall_rule = Validation::All {
+                    validations: vec![first_rule, amount_check],
                 };
 
                 let mut operations = RuleSet::new();
@@ -114,7 +112,7 @@ impl Processor {
 
                 msg!(
                     "Rule validation result: {}",
-                    validation.validate(&accounts_map, &tags_map)
+                    validation.validate(&accounts_map, &tags_map, &payloads_map)
                 );
 
                 Ok(())
