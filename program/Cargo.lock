@@ -250,6 +250,7 @@ name = "authenticatooor"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
+ "bincode",
  "borsh",
  "num-derive",
  "num-traits",
