@@ -2,7 +2,7 @@
 name = "authenticatooor"
 version = "0.1.0"
 edition = "2021"
-license = "Apache-2.0"
+license = "../LICENSE"
 publish = false
 
 [dependencies]
@@ -30,3 +30,6 @@ spl-token = "3.5.0"
 
 [lib]
 crate-type = ["cdylib", "lib"]
+
+[profile.release]
+overflow-checks = true
