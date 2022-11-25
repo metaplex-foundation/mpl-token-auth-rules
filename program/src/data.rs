@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use solana_program::clock::UnixTimestamp;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Hash)]
 pub enum AccountTag {
@@ -14,10 +13,9 @@ pub enum Payload<'a> {
     AdditionalSigner,
     PubkeyMatch,
     DerivedKeyMatch {
-        keys: &'a Vec<&'a [u8]>,
+        seeds: &'a Vec<&'a [u8]>,
     },
     ProgramOwned,
-    IdentityAssociated,
     Amount {
         amount: u64,
     },

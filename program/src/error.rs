@@ -8,9 +8,21 @@ use thiserror::Error;
 
 #[derive(Error, Clone, Debug, Eq, PartialEq, FromPrimitive)]
 pub enum RuleSetError {
-    /// Error description
+    /// 2 - Error description
     #[error("Error message")]
     ErrorName,
+
+    /// 1 - Numerical Overflow
+    #[error("Numerical Overflow")]
+    NumericalOverflow,
+
+    /// 2 - Data type mismatch
+    #[error("Data type mismatch")]
+    DataTypeMismatch,
+
+    /// 3 - Incorrect account owner
+    #[error("Incorrect account owner")]
+    IncorrectOwner,
 }
 
 impl PrintProgramError for RuleSetError {

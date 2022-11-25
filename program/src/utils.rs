@@ -71,3 +71,11 @@ pub fn assert_derivation(
     }
     Ok(bump)
 }
+
+pub fn assert_owned_by(account: &AccountInfo, owner: &Pubkey) -> ProgramResult {
+    if account.owner != owner {
+        Err(RuleSetError::IncorrectOwner.into())
+    } else {
+        Ok(())
+    }
+}

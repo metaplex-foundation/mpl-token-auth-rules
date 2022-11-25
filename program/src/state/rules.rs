@@ -1,7 +1,15 @@
-use crate::data::{AccountTag, Payload};
+use crate::{
+    data::{AccountTag, Payload},
+    error::RuleSetError,
+    utils::assert_derivation,
+};
 use serde::{Deserialize, Serialize};
-use solana_program::{account_info::AccountInfo, msg, pubkey::Pubkey};
+use solana_program::{
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey, sysvar::Sysvar,
+};
 use std::collections::HashMap;
+
+use super::{FrequencyAccount, SolanaAccount};
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub enum Rule {
@@ -11,7 +19,6 @@ pub enum Rule {
     PubkeyMatch { account: Pubkey },
     DerivedKeyMatch { account: Pubkey },
     ProgramOwned { program: Pubkey },
-    IdentityAssociated { account: Pubkey },
     Amount { amount: u64 },
     Frequency { freq_account: Pubkey },
     PubkeyTreeMatch { root: [u8; 32] },
@@ -23,52 +30,108 @@ impl Rule {
         accounts: &HashMap<Pubkey, &AccountInfo>,
         tags: &HashMap<AccountTag, Pubkey>,
         payloads: &HashMap<u8, Payload>,
-    ) -> bool {
+    ) -> ProgramResult {
         match self {
             Rule::All { rules } => {
                 msg!("Validating All");
-                rules.iter().all(|v| v.validate(accounts, tags, payloads))
+                for rule in rules {
+                    rule.validate(accounts, tags, payloads)?;
+                }
+                Ok(())
             }
             Rule::Any { rules } => {
                 msg!("Validating Any");
-                rules.iter().any(|v| {
-                    msg!("{:#?}", v);
-                    v.validate(accounts, tags, payloads)
-                })
+                let mut error: Option<ProgramResult> = None;
+                for rule in rules {
+                    match rule.validate(accounts, tags, payloads) {
+                        Ok(_) => return Ok(()),
+                        Err(e) => error = Some(Err(e)),
+                    }
+                }
+                error.unwrap_or_else(|| Err(RuleSetError::ErrorName.into()))
             }
             Rule::AdditionalSigner { account } => {
                 msg!("Validating AdditionalSigner");
                 if let Some(account) = accounts.get(account) {
-                    account.is_signer
+                    if account.is_signer {
+                        Ok(())
+                    } else {
+                        Err(RuleSetError::ErrorName.into())
+                    }
                 } else {
-                    false
+                    Err(RuleSetError::ErrorName.into())
                 }
             }
             Rule::PubkeyMatch { account } => {
                 msg!("Validating PubkeyMatch");
-                tags.get(&AccountTag::Destination).unwrap() == account
+                if let Some(dest) = tags.get(&AccountTag::Destination) {
+                    if dest == account {
+                        Ok(())
+                    } else {
+                        Err(RuleSetError::ErrorName.into())
+                    }
+                } else {
+                    Err(RuleSetError::ErrorName.into())
+                }
             }
-            Rule::DerivedKeyMatch { account } => todo!(),
+            Rule::DerivedKeyMatch { account } => {
+                if let Some(Payload::DerivedKeyMatch { seeds }) = payloads.get(&self.to_u8()) {
+                    if let Some(account) = accounts.get(account) {
+                        let _bump = assert_derivation(&crate::id(), account, seeds)?;
+                        Ok(())
+                    } else {
+                        Err(RuleSetError::ErrorName.into())
+                    }
+                } else {
+                    Err(RuleSetError::ErrorName.into())
+                }
+            }
             Rule::ProgramOwned { program } => {
                 msg!("Validating ProgramOwned");
                 if let Some(account) = accounts.get(program) {
-                    account.owner == program
+                    if account.owner == program {
+                        Ok(())
+                    } else {
+                        Err(RuleSetError::ErrorName.into())
+                    }
                 } else {
-                    false
+                    Err(RuleSetError::ErrorName.into())
                 }
             }
-            Rule::IdentityAssociated { account } => todo!(),
             Rule::Amount { amount } => {
                 msg!("Validating Amount");
                 if let Some(Payload::Amount { amount: a }) = payloads.get(&self.to_u8()) {
-                    amount == a
+                    if amount == a {
+                        Ok(())
+                    } else {
+                        Err(RuleSetError::ErrorName.into())
+                    }
                 } else {
-                    false
+                    Err(RuleSetError::ErrorName.into())
                 }
             }
             Rule::Frequency { freq_account } => {
-                todo!()
                 // Deserialize the frequency account
+                if let Some(account) = accounts.get(freq_account) {
+                    let current_time = solana_program::clock::Clock::get()?.unix_timestamp;
+                    let freq_account = FrequencyAccount::from_account_info(account);
+                    if let Ok(freq_account) = freq_account {
+                        if freq_account
+                            .last_update
+                            .checked_add(freq_account.period)
+                            .unwrap()
+                            <= current_time
+                        {
+                            Ok(())
+                        } else {
+                            Err(RuleSetError::ErrorName.into())
+                        }
+                    } else {
+                        Err(RuleSetError::ErrorName.into())
+                    }
+                } else {
+                    Err(RuleSetError::ErrorName.into())
+                }
                 // Grab the current time
                 // Compare  last time + period to current time
             }
@@ -77,7 +140,7 @@ impl Rule {
                 if let Some(Payload::PubkeyTreeMatch { proof, leaf }) = payloads.get(&self.to_u8())
                 {
                     let mut computed_hash = *leaf;
-                    for proof_element in proof.into_iter() {
+                    for proof_element in proof.iter() {
                         if computed_hash <= *proof_element {
                             // Hash(current computed hash + current element of the proof)
                             computed_hash = solana_program::keccak::hashv(&[
@@ -97,9 +160,13 @@ impl Rule {
                         }
                     }
                     // Check if the computed hash (root) is equal to the provided root
-                    computed_hash == *root
+                    if computed_hash == *root {
+                        Ok(())
+                    } else {
+                        Err(RuleSetError::ErrorName.into())
+                    }
                 } else {
-                    false
+                    Err(RuleSetError::ErrorName.into())
                 }
             }
         }
@@ -113,10 +180,9 @@ impl Rule {
             Rule::PubkeyMatch { .. } => 3,
             Rule::DerivedKeyMatch { .. } => 4,
             Rule::ProgramOwned { .. } => 5,
-            Rule::IdentityAssociated { .. } => 6,
-            Rule::Amount { .. } => 7,
-            Rule::Frequency { .. } => 8,
-            Rule::PubkeyTreeMatch { .. } => 9,
+            Rule::Amount { .. } => 6,
+            Rule::Frequency { .. } => 7,
+            Rule::PubkeyTreeMatch { .. } => 8,
         }
     }
 }
