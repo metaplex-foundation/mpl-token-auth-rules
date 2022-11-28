@@ -68,7 +68,6 @@ impl Processor {
 
                 Ok(())
             }
-
             RuleSetInstruction::Validate(args) => {
                 let account_info_iter = &mut accounts.iter();
                 let payer_info = next_account_info(account_info_iter)?;

@@ -53,8 +53,6 @@ async fn test_validator_transaction() {
         .serialize(&mut Serializer::new(&mut serialized_data))
         .unwrap();
 
-    println!("{:#?}", serialized_data);
-
     // Create a `create` instruction.
     let create_ix = authenticatooor::instruction::create(
         authenticatooor::id(),
