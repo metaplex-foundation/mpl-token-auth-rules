@@ -27,17 +27,6 @@ This repo is still WIP.
 
 ---
 
-### Replace default values
-```
-$ yarn rename -n cool_program_name -i NewProgramKeypair111111111111111111111111111
-```
-
-Values that will be replaced:
-- `my_program_name` (and `my-program-name`)
-- `MyProgram1111111111111111111111111111111111`
-
----
-
 ### Build the rust program alone
 ```
 $ yarn build:rust

@@ -1,5 +1,5 @@
 [package]
-name = "authenticatooor"
+name = "token-authorization-rules"
 version = "0.1.0"
 edition = "2021"
 license = "../LICENSE"

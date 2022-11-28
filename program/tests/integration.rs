@@ -2,15 +2,15 @@
 
 pub mod utils;
 
-use authenticatooor::{
-    state::{Operation, Rule, RuleSet},
-    Payload,
-};
 use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, transaction::Transaction};
 use std::collections::HashMap;
+use token_authorization_rules::{
+    state::{Operation, Rule, RuleSet},
+    Payload,
+};
 use utils::program_test;
 
 #[tokio::test]
@@ -18,8 +18,10 @@ async fn test_validator_transaction() {
     let mut context = program_test().start_with_context().await;
 
     // Find RuleSet PDA.
-    let (ruleset_addr, _ruleset_bump) =
-        authenticatooor::pda::find_ruleset_address(context.payer.pubkey(), "da rulez".to_string());
+    let (ruleset_addr, _ruleset_bump) = token_authorization_rules::pda::find_ruleset_address(
+        context.payer.pubkey(),
+        "da rulez".to_string(),
+    );
 
     // Create some rules.
     let adtl_signer = Rule::AdditionalSigner {
@@ -54,8 +56,8 @@ async fn test_validator_transaction() {
         .unwrap();
 
     // Create a `create` instruction.
-    let create_ix = authenticatooor::instruction::create(
-        authenticatooor::id(),
+    let create_ix = token_authorization_rules::instruction::create(
+        token_authorization_rules::id(),
         context.payer.pubkey(),
         ruleset_addr,
         "da rulez".to_string(),
@@ -78,8 +80,8 @@ async fn test_validator_transaction() {
         .expect("creation should succeed");
 
     // Create a `validate` instruction.
-    let validate_ix = authenticatooor::instruction::validate(
-        authenticatooor::id(),
+    let validate_ix = token_authorization_rules::instruction::validate(
+        token_authorization_rules::id(),
         context.payer.pubkey(),
         ruleset_addr,
         "da rulez".to_string(),
