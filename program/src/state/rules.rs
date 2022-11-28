@@ -1,8 +1,4 @@
-use crate::{
-    data::{AccountTag, Payload},
-    error::RuleSetError,
-    utils::assert_derivation,
-};
+use crate::{error::RuleSetError, payload::Payload, utils::assert_derivation};
 use serde::{Deserialize, Serialize};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey, sysvar::Sysvar,
@@ -28,14 +24,13 @@ impl Rule {
     pub fn validate(
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
-        tags: &HashMap<AccountTag, Pubkey>,
         payloads: &HashMap<u8, Payload>,
     ) -> ProgramResult {
         match self {
             Rule::All { rules } => {
                 msg!("Validating All");
                 for rule in rules {
-                    rule.validate(accounts, tags, payloads)?;
+                    rule.validate(accounts, payloads)?;
                 }
                 Ok(())
             }
@@ -43,7 +38,7 @@ impl Rule {
                 msg!("Validating Any");
                 let mut error: Option<ProgramResult> = None;
                 for rule in rules {
-                    match rule.validate(accounts, tags, payloads) {
+                    match rule.validate(accounts, payloads) {
                         Ok(_) => return Ok(()),
                         Err(e) => error = Some(Err(e)),
                     }
@@ -64,8 +59,8 @@ impl Rule {
             }
             Rule::PubkeyMatch { account } => {
                 msg!("Validating PubkeyMatch");
-                if let Some(dest) = tags.get(&AccountTag::Destination) {
-                    if dest == account {
+                if let Some(Payload::PubkeyMatch { destination: d }) = payloads.get(&self.to_u8()) {
+                    if d == account {
                         Ok(())
                     } else {
                         Err(RuleSetError::ErrorName.into())
@@ -77,6 +72,8 @@ impl Rule {
             Rule::DerivedKeyMatch { account } => {
                 if let Some(Payload::DerivedKeyMatch { seeds }) = payloads.get(&self.to_u8()) {
                     if let Some(account) = accounts.get(account) {
+                        let vec_of_slices = seeds.iter().map(Vec::as_slice).collect::<Vec<&[u8]>>();
+                        let seeds = &vec_of_slices[..];
                         let _bump = assert_derivation(&crate::id(), account, seeds)?;
                         Ok(())
                     } else {
@@ -119,7 +116,7 @@ impl Rule {
                         if freq_account
                             .last_update
                             .checked_add(freq_account.period)
-                            .unwrap()
+                            .ok_or(RuleSetError::NumericalOverflow)?
                             <= current_time
                         {
                             Ok(())
