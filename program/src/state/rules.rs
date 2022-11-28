@@ -116,7 +116,7 @@ impl Rule {
                         if freq_account
                             .last_update
                             .checked_add(freq_account.period)
-                            .unwrap()
+                            .ok_or(RuleSetError::NumericalOverflow)?
                             <= current_time
                         {
                             Ok(())
