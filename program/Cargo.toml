@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 solana-program = "=1.13.5"
-shank = "0.0.2"
+shank = "0.0.11"
 borsh = "0.9.3"
 thiserror = "~1.0"
 num-derive = "0.3.3"

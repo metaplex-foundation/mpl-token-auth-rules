@@ -8,6 +8,7 @@
 import * as beet from '@metaplex-foundation/beet';
 export type CreateArgs = {
   name: string;
+  serializedRuleSet: Uint8Array;
 };
 
 /**
@@ -15,6 +16,9 @@ export type CreateArgs = {
  * @category generated
  */
 export const createArgsBeet = new beet.FixableBeetArgsStruct<CreateArgs>(
-  [['name', beet.utf8String]],
+  [
+    ['name', beet.utf8String],
+    ['serializedRuleSet', beet.bytes],
+  ],
   'CreateArgs',
 );
