@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    data::{AccountTag, Payload},
     instruction::RuleSetInstruction,
+    payload::Payload,
     pda::PREFIX,
     state::{Operation, Rule, RuleSet},
     utils::{assert_derivation, create_or_allocate_account_raw},
@@ -40,9 +40,6 @@ impl Processor {
                     (*ruleset_info.key, ruleset_info),
                     (*system_program_info.key, system_program_info),
                 ]);
-
-                // Tag accounts used across all rules with their use-case, such as destination, source, etc.
-                let tags_map = HashMap::from([(AccountTag::Destination, *payer_info.key)]);
 
                 let bump = assert_derivation(
                     program_id,
@@ -114,7 +111,7 @@ impl Processor {
 
                 let rule = operations.get(Operation::Transfer).unwrap();
 
-                if let Ok(result) = rule.validate(&accounts_map, &tags_map, &payloads_map) {
+                if let Ok(result) = rule.validate(&accounts_map, &payloads_map) {
                     msg!("{:#?}", result);
                 } else {
                     msg!("Failed to validate");

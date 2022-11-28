@@ -1,7 +1,7 @@
-pub mod data;
 pub mod entrypoint;
 pub mod error;
 pub mod instruction;
+pub mod payload;
 pub mod pda;
 pub mod processor;
 pub mod state;

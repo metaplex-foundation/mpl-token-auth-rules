@@ -1,17 +1,14 @@
 use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Hash)]
-pub enum AccountTag {
-    Source,
-    Destination,
-}
+use solana_program::pubkey::Pubkey;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Payload<'a> {
     All,
     Any,
     AdditionalSigner,
-    PubkeyMatch,
+    PubkeyMatch {
+        destination: Pubkey,
+    },
     DerivedKeyMatch {
         seeds: &'a Vec<&'a [u8]>,
     },
