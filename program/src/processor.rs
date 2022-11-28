@@ -112,10 +112,9 @@ impl Processor {
                     .ok_or(RuleSetError::ErrorName)?;
 
                 // Validate the Rule.
-                if let Ok(result) = rule.validate(&accounts_map, &args.payload_map) {
-                    msg!("{:#?}", result);
-                } else {
-                    msg!("Failed to validate");
+                if let Err(err) = rule.validate(&accounts_map, &args.payload_map) {
+                    msg!("Failed to validate: {}", err);
+                    return Err(err);
                 }
 
                 Ok(())
