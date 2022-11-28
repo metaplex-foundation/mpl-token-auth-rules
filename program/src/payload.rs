@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
+use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::pubkey::Pubkey;
 
-#[derive(PartialEq, Eq, Debug, Clone)]
-pub enum Payload<'a> {
+#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+pub enum Payload {
     All,
     Any,
     AdditionalSigner,
@@ -10,7 +10,7 @@ pub enum Payload<'a> {
         destination: Pubkey,
     },
     DerivedKeyMatch {
-        seeds: &'a Vec<&'a [u8]>,
+        seeds: Vec<Vec<u8>>,
     },
     ProgramOwned,
     Amount {

@@ -72,6 +72,8 @@ impl Rule {
             Rule::DerivedKeyMatch { account } => {
                 if let Some(Payload::DerivedKeyMatch { seeds }) = payloads.get(&self.to_u8()) {
                     if let Some(account) = accounts.get(account) {
+                        let vec_of_slices = seeds.iter().map(Vec::as_slice).collect::<Vec<&[u8]>>();
+                        let seeds = &vec_of_slices[..];
                         let _bump = assert_derivation(&crate::id(), account, seeds)?;
                         Ok(())
                     } else {

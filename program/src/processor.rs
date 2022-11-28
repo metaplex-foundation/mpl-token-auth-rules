@@ -1,19 +1,18 @@
 use std::collections::HashMap;
 
 use crate::{
+    error::RuleSetError,
     instruction::RuleSetInstruction,
-    payload::Payload,
     pda::PREFIX,
-    state::{Operation, Rule, RuleSet},
+    state::RuleSet,
     utils::{assert_derivation, create_or_allocate_account_raw},
 };
 use borsh::BorshDeserialize;
-use rmp_serde::{Deserializer, Serializer};
-use serde::{Deserialize, Serialize};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
     msg,
+    program_memory::sol_memcpy,
     pubkey::Pubkey,
 };
 
@@ -27,23 +26,15 @@ impl Processor {
         let instruction = RuleSetInstruction::try_from_slice(instruction_data)?;
         match instruction {
             RuleSetInstruction::Create(args) => {
-                // Convert the accounts into a map of Pubkeys to the corresponding account infos.
-                // This makes it easy to pass the account infos into validation functions since they store the Pubkeys.
                 let account_info_iter = &mut accounts.iter();
-
                 let payer_info = next_account_info(account_info_iter)?;
-                let ruleset_info = next_account_info(account_info_iter)?;
+                let ruleset_pda_info = next_account_info(account_info_iter)?;
                 let system_program_info = next_account_info(account_info_iter)?;
 
-                let accounts_map = HashMap::from([
-                    (*payer_info.key, payer_info),
-                    (*ruleset_info.key, ruleset_info),
-                    (*system_program_info.key, system_program_info),
-                ]);
-
+                // Check RuleSet account info derivation.
                 let bump = assert_derivation(
                     program_id,
-                    ruleset_info,
+                    ruleset_pda_info,
                     &[
                         PREFIX.as_bytes(),
                         payer_info.key.as_ref(),
@@ -58,60 +49,70 @@ impl Processor {
                     &[bump],
                 ];
 
-                let adtl_signer = Rule::AdditionalSigner {
-                    account: *payer_info.key,
-                };
-                let adtl_signer2 = Rule::AdditionalSigner {
-                    account: *payer_info.key,
-                };
-                let amount_check = Rule::Amount { amount: 1 };
-
-                // Store the payloads that represent rule-specific data.
-                let payloads_map =
-                    HashMap::from([(amount_check.to_u8(), Payload::Amount { amount: 2 })]);
-
-                let first_rule = Rule::All {
-                    rules: vec![adtl_signer, adtl_signer2],
-                };
-
-                let overall_rule = Rule::All {
-                    rules: vec![first_rule, amount_check],
-                };
-
-                let mut operations = RuleSet::new();
-                operations.add(Operation::Transfer, overall_rule);
-
-                //msg!("{:#?}", operations);
-
-                // Serde
-                //let serialized_data =
-                //    serde_json::to_vec(&operations).map_err(|_| RuleSetError::ErrorName)?;
-
-                // RMP serde
-                let mut serialized_data = Vec::new();
-                operations
-                    .serialize(&mut Serializer::new(&mut serialized_data))
-                    .unwrap();
-
-                msg!("{:#?}", serialized_data);
-
+                // Create or allocate RuleSet PDA account.
                 create_or_allocate_account_raw(
                     *program_id,
-                    ruleset_info,
+                    ruleset_pda_info,
                     system_program_info,
                     payer_info,
-                    serialized_data.len(),
+                    args.serialized_rule_set.len(),
                     ruleset_seeds,
                 )?;
 
-                // let unserialized_data: RuleSet =
-                //     rmp_serde::from_slice(&serialized_data).map_err(|_| RuleSetError::ErrorName)?;
+                // Copy user-pre-serialized RuleSet to PDA account.
+                sol_memcpy(
+                    &mut **ruleset_pda_info.try_borrow_mut_data().unwrap(),
+                    &args.serialized_rule_set,
+                    args.serialized_rule_set.len(),
+                );
 
-                //msg!("{:#?}", unserialized_data);
+                Ok(())
+            }
 
-                let rule = operations.get(Operation::Transfer).unwrap();
+            RuleSetInstruction::Validate(args) => {
+                let account_info_iter = &mut accounts.iter();
+                let payer_info = next_account_info(account_info_iter)?;
+                let ruleset_pda_info = next_account_info(account_info_iter)?;
+                let _system_program_info = next_account_info(account_info_iter)?;
 
-                if let Ok(result) = rule.validate(&accounts_map, &payloads_map) {
+                // Check RuleSet account info derivation.
+                let _bump = assert_derivation(
+                    program_id,
+                    ruleset_pda_info,
+                    &[
+                        PREFIX.as_bytes(),
+                        payer_info.key.as_ref(),
+                        args.name.as_bytes(),
+                    ],
+                )?;
+
+                // Convert the accounts into a map of Pubkeys to the corresponding account infos.
+                // This makes it easy to pass the account infos into validation functions since they store the Pubkeys.
+                let accounts_map = accounts
+                    .iter()
+                    .map(|account| (*account.key, account))
+                    .collect::<HashMap<Pubkey, &AccountInfo>>();
+
+                // Borrow the RuleSet PDA data.
+                let data = ruleset_pda_info
+                    .data
+                    .try_borrow()
+                    .map_err(|_| RuleSetError::ErrorName)?;
+
+                // Deserialize RuleSet.
+                let rule_set: RuleSet =
+                    rmp_serde::from_slice(&data).map_err(|_| RuleSetError::ErrorName)?;
+
+                // Debug.
+                msg!("{:#?}", rule_set);
+
+                // Get the Rule from the RuleSet based on the caller-specified Operation.
+                let rule = rule_set
+                    .get(args.operation)
+                    .ok_or(RuleSetError::ErrorName)?;
+
+                // Validate the Rule.
+                if let Ok(result) = rule.validate(&accounts_map, &args.payload_map) {
                     msg!("{:#?}", result);
                 } else {
                     msg!("Failed to validate");

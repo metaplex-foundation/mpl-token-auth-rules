@@ -16,7 +16,18 @@ pub use rules::*;
 
 use crate::{error::RuleSetError, utils::assert_owned_by};
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Hash, PartialOrd)]
+#[derive(
+    BorshSerialize,
+    BorshDeserialize,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Hash,
+    PartialOrd,
+)]
 pub enum Operation {
     Transfer,
     Delegate,
