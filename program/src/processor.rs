@@ -27,6 +27,8 @@ impl Processor {
         let instruction = RuleSetInstruction::try_from_slice(instruction_data)?;
         match instruction {
             RuleSetInstruction::Create(args) => {
+                // Convert the accounts into a map of Pubkeys to the corresponding account infos.
+                // This makes it easy to pass the account infos into validation functions since they store the Pubkeys.
                 let account_info_iter = &mut accounts.iter();
 
                 let payer_info = next_account_info(account_info_iter)?;
@@ -39,6 +41,7 @@ impl Processor {
                     (*system_program_info.key, system_program_info),
                 ]);
 
+                // Tag accounts used across all rules with their use-case, such as destination, source, etc.
                 let tags_map = HashMap::from([(AccountTag::Destination, *payer_info.key)]);
 
                 let bump = assert_derivation(
@@ -65,6 +68,8 @@ impl Processor {
                     account: *payer_info.key,
                 };
                 let amount_check = Rule::Amount { amount: 1 };
+
+                // Store the payloads that represent rule-specific data.
                 let payloads_map =
                     HashMap::from([(amount_check.to_u8(), Payload::Amount { amount: 2 })]);
 
@@ -109,10 +114,11 @@ impl Processor {
 
                 let rule = operations.get(Operation::Transfer).unwrap();
 
-                msg!(
-                    "Rule validation result: {}",
-                    rule.validate(&accounts_map, &tags_map, &payloads_map)
-                );
+                if let Ok(result) = rule.validate(&accounts_map, &tags_map, &payloads_map) {
+                    msg!("{:#?}", result);
+                } else {
+                    msg!("Failed to validate");
+                }
 
                 Ok(())
             }
