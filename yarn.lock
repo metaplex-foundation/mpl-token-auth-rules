@@ -813,39 +813,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"authenticatooor-workspace@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "authenticatooor-workspace@workspace:."
-  dependencies:
-    "@metaplex-foundation/amman": ^0.12.1
-    "@metaplex-foundation/solita": ^0.19.0
-    "@typescript-eslint/eslint-plugin": ^5.43.0
-    "@typescript-eslint/parser": ^5.43.0
-    esbuild-runner: ^2.2.2
-    eslint: ^8.27.0
-    eslint-config-prettier: ^8.5.0
-    eslint-plugin-prettier: ^4.2.1
-    prettier: ^2.7.1
-  languageName: unknown
-  linkType: soft
-
-"authenticatooor@workspace:packages/sdk":
-  version: 0.0.0-use.local
-  resolution: "authenticatooor@workspace:packages/sdk"
-  dependencies:
-    "@metaplex-foundation/beet": ^0.7.1
-    "@metaplex-foundation/beet-solana": ^0.4.0
-    "@metaplex-foundation/cusper": ^0.0.2
-    "@solana/spl-token": ^0.3.6
-    "@solana/web3.js": ^1.66.2
-    eslint: ^8.27.0
-    rimraf: ^3.0.2
-    supports-color: ^9.2.3
-    typedoc: ^0.23.21
-    typescript: ^4.9.3
-  languageName: unknown
-  linkType: soft
-
 "axios@npm:^0.21.1":
   version: 0.21.4
   resolution: "axios@npm:0.21.4"
@@ -3383,6 +3350,39 @@ __metadata:
   checksum: f76fa01b3d5be85db6a2a143e24df9f60dd047d151062d0ba3df62953f2f697b16fe5dad9b0ac6191c7efc7b1d9dcaa4b768174b7b29da89d4428e64bc0a20ed
   languageName: node
   linkType: hard
+
+"token-authorization-rules-workspace@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "token-authorization-rules-workspace@workspace:."
+  dependencies:
+    "@metaplex-foundation/amman": ^0.12.1
+    "@metaplex-foundation/solita": ^0.19.0
+    "@typescript-eslint/eslint-plugin": ^5.43.0
+    "@typescript-eslint/parser": ^5.43.0
+    esbuild-runner: ^2.2.2
+    eslint: ^8.27.0
+    eslint-config-prettier: ^8.5.0
+    eslint-plugin-prettier: ^4.2.1
+    prettier: ^2.7.1
+  languageName: unknown
+  linkType: soft
+
+"token-authorization-rules@workspace:packages/sdk":
+  version: 0.0.0-use.local
+  resolution: "token-authorization-rules@workspace:packages/sdk"
+  dependencies:
+    "@metaplex-foundation/beet": ^0.7.1
+    "@metaplex-foundation/beet-solana": ^0.4.0
+    "@metaplex-foundation/cusper": ^0.0.2
+    "@solana/spl-token": ^0.3.6
+    "@solana/web3.js": ^1.66.2
+    eslint: ^8.27.0
+    rimraf: ^3.0.2
+    supports-color: ^9.2.3
+    typedoc: ^0.23.21
+    typescript: ^4.9.3
+  languageName: unknown
+  linkType: soft
 
 "tokenize-whitespace@npm:0.0.1":
   version: 0.0.1

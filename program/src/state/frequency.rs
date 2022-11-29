@@ -1,13 +1,12 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::clock::UnixTimestamp;
 
 use super::{Key, SolanaAccount};
 
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 pub struct FrequencyAccount {
     pub key: Key,
-    pub last_update: UnixTimestamp,
-    pub period: UnixTimestamp,
+    pub last_update: i64,
+    pub period: i64,
 }
 
 impl SolanaAccount for FrequencyAccount {

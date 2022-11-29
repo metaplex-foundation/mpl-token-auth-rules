@@ -37,14 +37,14 @@ export const CreateStruct = new beet.FixableBeetArgsStruct<
  * Accounts required by the _Create_ instruction
  *
  * @property [_writable_, **signer**] payer Payer and creator of the rule set
- * @property [_writable_] ruleset The PDA account where the ruleset is stored
+ * @property [_writable_] rulesetPda The PDA account where the ruleset is stored
  * @category Instructions
  * @category Create
  * @category generated
  */
 export type CreateInstructionAccounts = {
   payer: web3.PublicKey;
-  ruleset: web3.PublicKey;
+  rulesetPda: web3.PublicKey;
   systemProgram?: web3.PublicKey;
 };
 
@@ -76,7 +76,7 @@ export function createCreateInstruction(
       isSigner: true,
     },
     {
-      pubkey: accounts.ruleset,
+      pubkey: accounts.rulesetPda,
       isWritable: true,
       isSigner: false,
     },
