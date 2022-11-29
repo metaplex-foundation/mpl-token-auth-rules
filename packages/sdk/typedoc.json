@@ -1,5 +1,5 @@
 {
-  "entryPoints": ["src/authenticatooor.ts"],
+  "entryPoints": ["src/token-authorization-rules.ts"],
   "excludeInternal": true,
   "excludePrivate": true,
   "categorizeByGroup": false,
@@ -17,5 +17,5 @@
   ],
   "readme": "none",
   "emit": "both",
-  "out": "./docs/authenticatooor"
+  "out": "./docs/token-authorization-rules"
 }

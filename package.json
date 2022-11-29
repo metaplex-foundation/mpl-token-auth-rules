@@ -1,21 +1,21 @@
 {
-  "name": "authenticatooor-workspace",
+  "name": "token-authorization-rules-workspace",
   "packageManager": "yarn@3.2.0-rc.12",
   "version": "0.0.0",
   "description": "",
-  "author": "Sammy Harris <sammy@stegabob.com>",
+  "homepage": "https://metaplex.com",
+  "repository": "https://github.com/metaplex-foundation/token-authorization-rules.git",
+  "author": "Metaplex Maintainers <contact@metaplex.com>",
   "license": "Apache-2.0",
-  "private": true,
   "scripts": {
     "build:rust": "(cd program; cargo build-bpf)",
-    "build:sdk": "yarn workspace authenticatooor build",
-    "build:docs": "yarn workspace authenticatooor build:docs",
+    "build:sdk": "yarn workspace token-authorization-rules build",
+    "build:docs": "yarn workspace token-authorization-rules build:docs",
     "build": "yarn build:rust && yarn solita && yarn fix:format && yarn build:sdk && yarn build:docs",
     "update-sol-deps": "./scripts/update-solana-dependencies.sh",
-    "rename": "./scripts/rename.sh",
     "amman": "./scripts/amman.sh",
-    "fix:format": "(cd program; cargo fmt) && yarn workspace authenticatooor fix:prettier",
-    "lint": "(cd program; cargo clippy) && yarn workspace authenticatooor lint"
+    "fix:format": "(cd program; cargo fmt) && yarn workspace token-authorization-rules fix:prettier",
+    "lint": "(cd program; cargo clippy) && yarn workspace token-authorization-rules lint"
   },
   "workspaces": [
     "packages/*",

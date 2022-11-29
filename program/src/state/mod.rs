@@ -16,7 +16,18 @@ pub use rules::*;
 
 use crate::{error::RuleSetError, utils::assert_owned_by};
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Hash, PartialOrd)]
+#[derive(
+    BorshSerialize,
+    BorshDeserialize,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Hash,
+    PartialOrd,
+)]
 pub enum Operation {
     Transfer,
     Delegate,
@@ -67,7 +78,7 @@ where {
         let ua = Self::safe_deserialize(&a.data.borrow_mut())
             .map_err(|_| RuleSetError::DataTypeMismatch)?;
 
-        // Check that this is a `token-metadata` owned account.
+        // Check that this account is owned by this program.
         assert_owned_by(a, &crate::id())?;
 
         Ok(ua)
