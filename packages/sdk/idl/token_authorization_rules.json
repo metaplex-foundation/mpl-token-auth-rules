@@ -176,14 +176,25 @@
             }
           },
           {
-            "name": "payloadMap",
+            "name": "payloads",
             "type": {
-              "hashMap": [
-                "u8",
-                {
-                  "defined": "Payload"
-                }
-              ]
+              "defined": "PayloadVec"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PayloadVec",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "payloads",
+            "type": {
+              "vec": {
+                "defined": "Payload"
+              }
             }
           }
         ]
@@ -343,6 +354,11 @@
       "code": 3,
       "name": "IncorrectOwner",
       "msg": "Incorrect account owner"
+    },
+    {
+      "code": 4,
+      "name": "PayloadVecIndexError",
+      "msg": "Could not index into PayloadVec"
     }
   ],
   "metadata": {

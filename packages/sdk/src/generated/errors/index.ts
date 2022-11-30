@@ -92,6 +92,26 @@ createErrorFromCodeLookup.set(0x3, () => new IncorrectOwnerError());
 createErrorFromNameLookup.set('IncorrectOwner', () => new IncorrectOwnerError());
 
 /**
+ * PayloadVecIndexError: 'Could not index into PayloadVec'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class PayloadVecIndexErrorError extends Error {
+  readonly code: number = 0x4;
+  readonly name: string = 'PayloadVecIndexError';
+  constructor() {
+    super('Could not index into PayloadVec');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, PayloadVecIndexErrorError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x4, () => new PayloadVecIndexErrorError());
+createErrorFromNameLookup.set('PayloadVecIndexError', () => new PayloadVecIndexErrorError());
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated
