@@ -43,7 +43,7 @@ impl Rule {
                         Err(e) => error = Some(Err(e)),
                     }
                 }
-                error.unwrap_or_else(|| Err(RuleSetError::ErrorName.into()))
+                error.unwrap_or_else(|| Err(RuleSetError::DataTypeMismatch.into()))
             }
             Rule::AdditionalSigner { account } => {
                 msg!("Validating AdditionalSigner");
@@ -51,10 +51,10 @@ impl Rule {
                     if account.is_signer {
                         Ok(())
                     } else {
-                        Err(RuleSetError::ErrorName.into())
+                        Err(RuleSetError::AdditionalSignerCheckFailed.into())
                     }
                 } else {
-                    Err(RuleSetError::ErrorName.into())
+                    Err(RuleSetError::AdditionalSignerCheckFailed.into())
                 }
             }
             Rule::PubkeyMatch { account } => {
@@ -63,13 +63,14 @@ impl Rule {
                     if d == account {
                         Ok(())
                     } else {
-                        Err(RuleSetError::ErrorName.into())
+                        Err(RuleSetError::PubkeyMatchCheckFailed.into())
                     }
                 } else {
-                    Err(RuleSetError::ErrorName.into())
+                    Err(RuleSetError::PubkeyMatchCheckFailed.into())
                 }
             }
             Rule::DerivedKeyMatch { account } => {
+                msg!("Validating DerivedKeyMatch");
                 if let Some(Payload::DerivedKeyMatch { seeds }) = payloads.get(self) {
                     if let Some(account) = accounts.get(account) {
                         let vec_of_slices = seeds.iter().map(Vec::as_slice).collect::<Vec<&[u8]>>();
@@ -77,10 +78,10 @@ impl Rule {
                         let _bump = assert_derivation(&crate::id(), account, seeds)?;
                         Ok(())
                     } else {
-                        Err(RuleSetError::ErrorName.into())
+                        Err(RuleSetError::DerivedKeyMatchCheckFailed.into())
                     }
                 } else {
-                    Err(RuleSetError::ErrorName.into())
+                    Err(RuleSetError::DerivedKeyMatchCheckFailed.into())
                 }
             }
             Rule::ProgramOwned { program } => {
@@ -89,10 +90,10 @@ impl Rule {
                     if account.owner == program {
                         Ok(())
                     } else {
-                        Err(RuleSetError::ErrorName.into())
+                        Err(RuleSetError::ProgramOwnedCheckFailed.into())
                     }
                 } else {
-                    Err(RuleSetError::ErrorName.into())
+                    Err(RuleSetError::ProgramOwnedCheckFailed.into())
                 }
             }
             Rule::Amount { amount } => {
@@ -101,13 +102,14 @@ impl Rule {
                     if amount == a {
                         Ok(())
                     } else {
-                        Err(RuleSetError::ErrorName.into())
+                        Err(RuleSetError::AmountCheckFailed.into())
                     }
                 } else {
-                    Err(RuleSetError::ErrorName.into())
+                    Err(RuleSetError::AmountCheckFailed.into())
                 }
             }
             Rule::Frequency { freq_account } => {
+                msg!("Validating Frequency");
                 // Deserialize the frequency account
                 if let Some(account) = accounts.get(freq_account) {
                     let current_time = solana_program::clock::Clock::get()?.unix_timestamp;
@@ -121,13 +123,13 @@ impl Rule {
                         {
                             Ok(())
                         } else {
-                            Err(RuleSetError::ErrorName.into())
+                            Err(RuleSetError::FrequencyCheckFailed.into())
                         }
                     } else {
-                        Err(RuleSetError::ErrorName.into())
+                        Err(RuleSetError::FrequencyCheckFailed.into())
                     }
                 } else {
-                    Err(RuleSetError::ErrorName.into())
+                    Err(RuleSetError::FrequencyCheckFailed.into())
                 }
                 // Grab the current time
                 // Compare  last time + period to current time
@@ -159,10 +161,10 @@ impl Rule {
                     if computed_hash == *root {
                         Ok(())
                     } else {
-                        Err(RuleSetError::ErrorName.into())
+                        Err(RuleSetError::PubkeyTreeMatchCheckFailed.into())
                     }
                 } else {
-                    Err(RuleSetError::ErrorName.into())
+                    Err(RuleSetError::PubkeyTreeMatchCheckFailed.into())
                 }
             }
         }
