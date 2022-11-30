@@ -60,12 +60,6 @@ fn main() {
     };
     let amount_check = Rule::Amount { amount: 2 };
 
-    // Store the payloads that represent rule-specific data.
-    let mut payloads = PayloadVec::new();
-    payloads
-        .add(&amount_check, Payload::Amount { amount: 2 })
-        .unwrap();
-
     let first_rule = Rule::All {
         rules: vec![adtl_signer, adtl_signer2],
     };
@@ -108,6 +102,16 @@ fn main() {
     let signature = rpc_client.send_and_confirm_transaction(&create_tx).unwrap();
 
     println!("Create tx signature: {}", signature);
+
+    // Store the payloads that represent rule-specific data that will be used for validation.
+    let mut payloads = PayloadVec::new();
+    let unused = 0;
+    payloads
+        .add(
+            &Rule::Amount { amount: unused },
+            Payload::Amount { amount: 2 },
+        )
+        .unwrap();
 
     // Create a `validate` instruction.
     let validate_ix = token_authorization_rules::instruction::validate(
