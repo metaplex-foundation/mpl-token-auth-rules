@@ -7,11 +7,11 @@
 
 import * as beet from '@metaplex-foundation/beet';
 import { Operation, operationBeet } from './Operation';
-import { Payload, payloadBeet } from './Payload';
+import { PayloadVec, payloadVecBeet } from './PayloadVec';
 export type ValidateArgs = {
   name: string;
   operation: Operation;
-  payloadMap: Map<number, Payload>;
+  payloads: PayloadVec;
 };
 
 /**
@@ -22,7 +22,7 @@ export const validateArgsBeet = new beet.FixableBeetArgsStruct<ValidateArgs>(
   [
     ['name', beet.utf8String],
     ['operation', operationBeet],
-    ['payloadMap', beet.map(beet.u8, payloadBeet)],
+    ['payloads', payloadVecBeet],
   ],
   'ValidateArgs',
 );

@@ -1,11 +1,10 @@
-use crate::{payload::Payload, state::Operation};
+use crate::{state::Operation, PayloadVec};
 use borsh::{BorshDeserialize, BorshSerialize};
 use shank::ShankInstruction;
 use solana_program::{
     instruction::{AccountMeta, Instruction},
     pubkey::Pubkey,
 };
-use std::collections::HashMap;
 
 #[repr(C)]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
@@ -24,8 +23,8 @@ pub struct ValidateArgs {
     pub name: String,
     /// `Operation` to validate.
     pub operation: Operation,
-    /// Map of `Payload` values for rule validation.
-    pub payload_map: HashMap<u8, Payload>,
+    /// Vec of `Payload` values for rule validation.
+    pub payloads: PayloadVec,
 }
 
 #[derive(Debug, Clone, ShankInstruction, BorshSerialize, BorshDeserialize)]
@@ -89,7 +88,7 @@ pub fn validate(
     ruleset_pda: Pubkey,
     name: String,
     operation: Operation,
-    payload_map: HashMap<u8, Payload>,
+    payloads: PayloadVec,
     rule_signer_accounts: Vec<Pubkey>,
     rule_nonsigner_accounts: Vec<Pubkey>,
 ) -> Instruction {
@@ -125,7 +124,7 @@ pub fn validate(
         data: RuleSetInstruction::Validate(ValidateArgs {
             name,
             operation,
-            payload_map,
+            payloads,
         })
         .try_to_vec()
         .unwrap(),
