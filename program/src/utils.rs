@@ -67,7 +67,7 @@ pub fn assert_derivation(
 ) -> Result<u8, ProgramError> {
     let (key, bump) = Pubkey::find_program_address(path, program_id);
     if key != *account.key {
-        return Err(RuleSetError::ErrorName.into());
+        return Err(RuleSetError::DerivedKeyInvalid.into());
     }
     Ok(bump)
 }

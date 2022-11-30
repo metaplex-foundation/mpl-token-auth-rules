@@ -96,11 +96,11 @@ impl Processor {
                 let data = ruleset_pda_info
                     .data
                     .try_borrow()
-                    .map_err(|_| RuleSetError::ErrorName)?;
+                    .map_err(|_| RuleSetError::DataTypeMismatch)?;
 
                 // Deserialize RuleSet.
                 let rule_set: RuleSet =
-                    rmp_serde::from_slice(&data).map_err(|_| RuleSetError::ErrorName)?;
+                    rmp_serde::from_slice(&data).map_err(|_| RuleSetError::DataTypeMismatch)?;
 
                 // Debug.
                 msg!("{:#?}", rule_set);
@@ -108,7 +108,7 @@ impl Processor {
                 // Get the Rule from the RuleSet based on the caller-specified Operation.
                 let rule = rule_set
                     .get(args.operation)
-                    .ok_or(RuleSetError::ErrorName)?;
+                    .ok_or(RuleSetError::DataTypeMismatch)?;
 
                 // Validate the Rule.
                 if let Err(err) = rule.validate(&accounts_map, &args.payloads) {

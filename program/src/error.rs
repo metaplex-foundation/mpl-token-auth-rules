@@ -8,25 +8,53 @@ use thiserror::Error;
 
 #[derive(Error, Clone, Debug, Eq, PartialEq, FromPrimitive)]
 pub enum RuleSetError {
-    /// 2 - Error description
-    #[error("Error message")]
-    ErrorName,
-
-    /// 1 - Numerical Overflow
+    /// 0 - Numerical Overflow
     #[error("Numerical Overflow")]
     NumericalOverflow,
 
-    /// 2 - Data type mismatch
+    /// 1 - Data type mismatch
     #[error("Data type mismatch")]
     DataTypeMismatch,
 
-    /// 3 - Incorrect account owner
+    /// 2 - Incorrect account owner
     #[error("Incorrect account owner")]
     IncorrectOwner,
 
-    /// 4 - PayloadVec Index error.
+    /// 3 - PayloadVec Index error.
     #[error("Could not index into PayloadVec")]
     PayloadVecIndexError,
+
+    /// 4 - Derived key invalid
+    #[error("Derived key invalid")]
+    DerivedKeyInvalid,
+
+    /// 5 - Additional Signer check failed
+    #[error("Additional Signer check failed")]
+    AdditionalSignerCheckFailed,
+
+    /// 6 - Pubkey Match check failed
+    #[error("Pubkey Match check failed")]
+    PubkeyMatchCheckFailed,
+
+    /// 7 - Derived Key Match check failed
+    #[error("Derived Key Match check failed")]
+    DerivedKeyMatchCheckFailed,
+
+    /// 8 - Program Owned check failed
+    #[error("Program Owned check failed")]
+    ProgramOwnedCheckFailed,
+
+    /// 9 - Amount checked failed
+    #[error("Amount checked failed")]
+    AmountCheckFailed,
+
+    /// 10 - Frequency check failed
+    #[error("Frequency check failed")]
+    FrequencyCheckFailed,
+
+    /// 11 - Pubkey Tree Match check failed
+    #[error("Pubkey Tree Match check failed")]
+    PubkeyTreeMatchCheckFailed,
 }
 
 impl PrintProgramError for RuleSetError {
