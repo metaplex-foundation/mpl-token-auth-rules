@@ -6,10 +6,9 @@ use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, transaction::Transaction};
-use std::collections::HashMap;
 use token_authorization_rules::{
     state::{Operation, Rule, RuleSet},
-    Payload,
+    Payload, PayloadVec,
 };
 use utils::program_test;
 
@@ -33,7 +32,10 @@ async fn test_validator_transaction() {
     let amount_check = Rule::Amount { amount: 2 };
 
     // Store the payloads that represent rule-specific data.
-    let payloads_map = HashMap::from([(amount_check.to_u8(), Payload::Amount { amount: 2 })]);
+    let mut payloads = PayloadVec::new();
+    payloads
+        .add(&amount_check, Payload::Amount { amount: 2 })
+        .unwrap();
 
     let first_rule = Rule::All {
         rules: vec![adtl_signer, adtl_signer2],
@@ -86,7 +88,7 @@ async fn test_validator_transaction() {
         ruleset_addr,
         "da rulez".to_string(),
         Operation::Transfer,
-        payloads_map,
+        payloads,
         vec![],
         vec![],
     );
