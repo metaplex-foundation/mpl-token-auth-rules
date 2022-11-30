@@ -23,6 +23,10 @@ pub enum RuleSetError {
     /// 3 - Incorrect account owner
     #[error("Incorrect account owner")]
     IncorrectOwner,
+
+    /// 4 - PayloadVec Index error.
+    #[error("Could not index into PayloadVec")]
+    PayloadVecIndexError,
 }
 
 impl PrintProgramError for RuleSetError {

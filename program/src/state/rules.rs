@@ -1,4 +1,4 @@
-use crate::{error::RuleSetError, payload::Payload, utils::assert_derivation};
+use crate::{error::RuleSetError, utils::assert_derivation, Payload, PayloadVec};
 use serde::{Deserialize, Serialize};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey, sysvar::Sysvar,
@@ -24,7 +24,7 @@ impl Rule {
     pub fn validate(
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
-        payloads: &HashMap<u8, Payload>,
+        payloads: &PayloadVec,
     ) -> ProgramResult {
         match self {
             Rule::All { rules } => {
@@ -59,7 +59,7 @@ impl Rule {
             }
             Rule::PubkeyMatch { account } => {
                 msg!("Validating PubkeyMatch");
-                if let Some(Payload::PubkeyMatch { destination: d }) = payloads.get(&self.to_u8()) {
+                if let Some(Payload::PubkeyMatch { destination: d }) = payloads.get(self) {
                     if d == account {
                         Ok(())
                     } else {
@@ -70,7 +70,7 @@ impl Rule {
                 }
             }
             Rule::DerivedKeyMatch { account } => {
-                if let Some(Payload::DerivedKeyMatch { seeds }) = payloads.get(&self.to_u8()) {
+                if let Some(Payload::DerivedKeyMatch { seeds }) = payloads.get(self) {
                     if let Some(account) = accounts.get(account) {
                         let vec_of_slices = seeds.iter().map(Vec::as_slice).collect::<Vec<&[u8]>>();
                         let seeds = &vec_of_slices[..];
@@ -97,7 +97,7 @@ impl Rule {
             }
             Rule::Amount { amount } => {
                 msg!("Validating Amount");
-                if let Some(Payload::Amount { amount: a }) = payloads.get(&self.to_u8()) {
+                if let Some(Payload::Amount { amount: a }) = payloads.get(self) {
                     if amount == a {
                         Ok(())
                     } else {
@@ -134,8 +134,7 @@ impl Rule {
             }
             Rule::PubkeyTreeMatch { root } => {
                 msg!("Validating PubkeyTreeMatch");
-                if let Some(Payload::PubkeyTreeMatch { proof, leaf }) = payloads.get(&self.to_u8())
-                {
+                if let Some(Payload::PubkeyTreeMatch { proof, leaf }) = payloads.get(self) {
                     let mut computed_hash = *leaf;
                     for proof_element in proof.iter() {
                         if computed_hash <= *proof_element {
@@ -169,7 +168,7 @@ impl Rule {
         }
     }
 
-    pub fn to_u8(&self) -> u8 {
+    pub fn to_usize(&self) -> usize {
         match self {
             Rule::All { .. } => 0,
             Rule::Any { .. } => 1,
