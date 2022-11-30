@@ -22,6 +22,13 @@
           "isMut": false,
           "isSigner": false,
           "desc": "System program"
+        },
+        {
+          "name": "frequency",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "Optional frequency account",
+          "optional": true
         }
       ],
       "args": [
@@ -143,6 +150,30 @@
       }
     }
   ],
+  "accounts": [
+    {
+      "name": "FrequencyAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "key",
+            "type": {
+              "defined": "Key"
+            }
+          },
+          {
+            "name": "lastUpdate",
+            "type": "i64"
+          },
+          {
+            "name": "period",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ],
   "types": [
     {
       "name": "CreateArgs",
@@ -196,28 +227,6 @@
                 "defined": "Payload"
               }
             }
-          }
-        ]
-      }
-    },
-    {
-      "name": "FrequencyAccount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "key",
-            "type": {
-              "defined": "Key"
-            }
-          },
-          {
-            "name": "lastUpdate",
-            "type": "i64"
-          },
-          {
-            "name": "period",
-            "type": "i64"
           }
         ]
       }

@@ -4,14 +4,15 @@
     "main": "auth-cli.ts",
     "repository": "git@github.com:metaplex-foundation/token-authorization-rules.git",
     "scripts": {
-        "start": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
-        "start:windows": "nodemon --watch 'src/**/*.ts' --exec \"npx ts-node\" src/index.ts",
+        "start": "ts-node src/auth.ts",
+        "start:windows": "nodemon --watch 'src/**/*.ts' --exec \"npx ts-node\" src/auth.ts",
         "create": "yarn build && yarn test",
         "build": "tsc -p .",
         "refresh": "rm -rf ./node_modules ./package-lock.json && yarn"
     },
     "dependencies": {
         "@metaplex-foundation/js": "^0.15.0",
+        "@msgpack/msgpack": "^2.8.0",
         "@solana/spl-token": "^0.3.4",
         "@solana/web3.js": "^1.56.2",
         "@types/node": "^18.7.14",

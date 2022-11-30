@@ -790,6 +790,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@msgpack/msgpack@npm:^2.8.0":
+  version: 2.8.0
+  resolution: "@msgpack/msgpack@npm:2.8.0"
+  checksum: bead9393f57239007a2fe455df5277cbc03b125f14f310162a652b81471dcf3ab6780eaa24b36e20aa742998910a6840147d08b7267063b8e2de5d40c624360e
+  languageName: node
+  linkType: hard
+
 "@noble/ed25519@npm:^1.6.1, @noble/ed25519@npm:^1.7.0":
   version: 1.7.1
   resolution: "@noble/ed25519@npm:1.7.1"
@@ -1587,7 +1594,100 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^0.21.1":
+"arweave-stream-tx@npm:^1.1.0":
+  version: 1.2.2
+  resolution: "arweave-stream-tx@npm:1.2.2"
+  dependencies:
+    exponential-backoff: ^3.1.0
+  peerDependencies:
+    arweave: ^1.10.0
+  checksum: 7db2ef3078f28d25e9be096b7680da08b6d9a3b8f44216770a2c08be90ae192569ab948fc9904b930b61f8e0fef8a4e7f77165c2e18b68f3d586274034540c5c
+  languageName: node
+  linkType: hard
+
+"arweave@npm:^1.10.13, arweave@npm:^1.11.4":
+  version: 1.11.7
+  resolution: "arweave@npm:1.11.7"
+  dependencies:
+    arconnect: ^0.4.2
+    asn1.js: ^5.4.1
+    axios: ^0.27.2
+    base64-js: ^1.5.1
+    bignumber.js: ^9.0.2
+    util: ^0.12.4
+  checksum: 0a34babb0a8f5aed077225c9d0cb6321dea85f9de7935a6cd572ac65f00426ed6a71785d40275aabd4be0e61e2344ca0810781968337823bada4e48b5407bdd6
+  languageName: node
+  linkType: hard
+
+"asn1.js@npm:^5.4.1":
+  version: 5.4.1
+  resolution: "asn1.js@npm:5.4.1"
+  dependencies:
+    bn.js: ^4.0.0
+    inherits: ^2.0.1
+    minimalistic-assert: ^1.0.0
+    safer-buffer: ^2.1.0
+  checksum: 3786a101ac6f304bd4e9a7df79549a7561950a13d4bcaec0c7790d44c80d147c1a94ba3d4e663673406064642a40b23fcd6c82a9952468e386c1a1376d747f9a
+  languageName: node
+  linkType: hard
+
+"async-retry@npm:^1.3.3":
+  version: 1.3.3
+  resolution: "async-retry@npm:1.3.3"
+  dependencies:
+    retry: 0.13.1
+  checksum: 38a7152ff7265a9321ea214b9c69e8224ab1febbdec98efbbde6e562f17ff68405569b796b1c5271f354aef8783665d29953f051f68c1fc45306e61aec82fdc4
+  languageName: node
+  linkType: hard
+
+"asynckit@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "asynckit@npm:0.4.0"
+  checksum: 7b78c451df768adba04e2d02e63e2d0bf3b07adcd6e42b4cf665cb7ce899bedd344c69a1dcbce355b5f972d597b25aaa1c1742b52cffd9caccb22f348114f6be
+  languageName: node
+  linkType: hard
+
+"auth-cli@workspace:cli":
+  version: 0.0.0-use.local
+  resolution: "auth-cli@workspace:cli"
+  dependencies:
+    "@metaplex-foundation/js": ^0.15.0
+    "@msgpack/msgpack": ^2.8.0
+    "@solana/spl-token": ^0.3.4
+    "@solana/web3.js": ^1.56.2
+    "@types/clear": ^0.1.2
+    "@types/figlet": ^1.5.5
+    "@types/node": ^18.7.14
+    chalk: 4.1.2
+    clear: ^0.1.0
+    commander: ^9.4.0
+    figlet: ^1.5.2
+    fs: ^0.0.1-security
+    log-level: ^1.1.0
+    loglevel: ^1.8.0
+    nodemon: ^2.0.19
+    path: ^0.12.7
+    ts-node: ^10.9.1
+    typescript: ^4.8.2
+    yaml: ^2.1.3
+  languageName: unknown
+  linkType: soft
+
+"available-typed-arrays@npm:^1.0.5":
+  version: 1.0.5
+  resolution: "available-typed-arrays@npm:1.0.5"
+  checksum: 20eb47b3cefd7db027b9bbb993c658abd36d4edd3fe1060e83699a03ee275b0c9b216cc076ff3f2db29073225fb70e7613987af14269ac1fe2a19803ccc97f1a
+  languageName: node
+  linkType: hard
+
+"avsc@https://github.com/Bundlr-Network/avsc#csp-fixes":
+  version: 5.4.7
+  resolution: "avsc@https://github.com/Bundlr-Network/avsc.git#commit=a730cc8018b79e114b6a3381bbb57760a24c6cef"
+  checksum: 94d2b1b20c51fecb11a2e596d042c057055c11d9275e8718b090b81a90e82134571553f2c250001770f5a92cfed4e8687fdd77b138c120eaa424db8335d4a1a9
+  languageName: node
+  linkType: hard
+
+"axios@npm:^0.21.1, axios@npm:^0.21.3":
   version: 0.21.4
   resolution: "axios@npm:0.21.4"
   dependencies:
@@ -5232,6 +5332,13 @@ __metadata:
   dependencies:
     is-number: ^7.0.0
   checksum: f76fa01b3d5be85db6a2a143e24df9f60dd047d151062d0ba3df62953f2f697b16fe5dad9b0ac6191c7efc7b1d9dcaa4b768174b7b29da89d4428e64bc0a20ed
+  languageName: node
+  linkType: hard
+
+"toidentifier@npm:1.0.1":
+  version: 1.0.1
+  resolution: "toidentifier@npm:1.0.1"
+  checksum: 952c29e2a85d7123239b5cfdd889a0dde47ab0497f0913d70588f19c53f7e0b5327c95f4651e413c74b785147f9637b17410ac8c846d5d4a20a5a33eb6dc3a45
   languageName: node
   linkType: hard
 

@@ -38,6 +38,7 @@ export const CreateStruct = new beet.FixableBeetArgsStruct<
  *
  * @property [_writable_, **signer**] payer Payer and creator of the rule set
  * @property [_writable_] rulesetPda The PDA account where the ruleset is stored
+ * @property [_writable_] frequency (optional) Optional frequency account
  * @category Instructions
  * @category Create
  * @category generated
@@ -46,12 +47,18 @@ export type CreateInstructionAccounts = {
   payer: web3.PublicKey;
   rulesetPda: web3.PublicKey;
   systemProgram?: web3.PublicKey;
+  frequency?: web3.PublicKey;
 };
 
 export const createInstructionDiscriminator = 0;
 
 /**
  * Creates a _Create_ instruction.
+ *
+ * Optional accounts that are not provided will be omitted from the accounts
+ * array passed with the instruction.
+ * An optional account that is set cannot follow an optional account that is unset.
+ * Otherwise an Error is raised.
  *
  * @param accounts that will be accessed while the instruction is processed
  * @param args to provide as instruction data to the program
@@ -86,6 +93,14 @@ export function createCreateInstruction(
       isSigner: false,
     },
   ];
+
+  if (accounts.frequency != null) {
+    keys.push({
+      pubkey: accounts.frequency,
+      isWritable: true,
+      isSigner: false,
+    });
+  }
 
   const ix = new web3.TransactionInstruction({
     programId,
