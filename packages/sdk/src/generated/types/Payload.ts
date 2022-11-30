@@ -18,6 +18,7 @@ import * as beetSolana from '@metaplex-foundation/beet-solana';
  * @private
  */
 export type PayloadRecord = {
+  None: void /* scalar variant */;
   All: void /* scalar variant */;
   Any: void /* scalar variant */;
   AdditionalSigner: void /* scalar variant */;
@@ -42,6 +43,7 @@ export type PayloadRecord = {
  */
 export type Payload = beet.DataEnumKeyAsKind<PayloadRecord>;
 
+export const isPayloadNone = (x: Payload): x is Payload & { __kind: 'None' } => x.__kind === 'None';
 export const isPayloadAll = (x: Payload): x is Payload & { __kind: 'All' } => x.__kind === 'All';
 export const isPayloadAny = (x: Payload): x is Payload & { __kind: 'Any' } => x.__kind === 'Any';
 export const isPayloadAdditionalSigner = (
@@ -67,6 +69,7 @@ export const isPayloadPubkeyTreeMatch = (
  * @category generated
  */
 export const payloadBeet = beet.dataEnum<PayloadRecord>([
+  ['None', beet.unit],
   ['All', beet.unit],
   ['Any', beet.unit],
   ['AdditionalSigner', beet.unit],
