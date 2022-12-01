@@ -22,13 +22,6 @@
           "isMut": false,
           "isSigner": false,
           "desc": "System program"
-        },
-        {
-          "name": "frequency",
-          "isMut": true,
-          "isSigner": false,
-          "desc": "Optional frequency account",
-          "optional": true
         }
       ],
       "args": [
@@ -349,28 +342,63 @@
   "errors": [
     {
       "code": 0,
-      "name": "ErrorName",
-      "msg": "Error message"
-    },
-    {
-      "code": 1,
       "name": "NumericalOverflow",
       "msg": "Numerical Overflow"
     },
     {
-      "code": 2,
+      "code": 1,
       "name": "DataTypeMismatch",
       "msg": "Data type mismatch"
     },
     {
-      "code": 3,
+      "code": 2,
       "name": "IncorrectOwner",
       "msg": "Incorrect account owner"
     },
     {
-      "code": 4,
+      "code": 3,
       "name": "PayloadVecIndexError",
       "msg": "Could not index into PayloadVec"
+    },
+    {
+      "code": 4,
+      "name": "DerivedKeyInvalid",
+      "msg": "Derived key invalid"
+    },
+    {
+      "code": 5,
+      "name": "AdditionalSignerCheckFailed",
+      "msg": "Additional Signer check failed"
+    },
+    {
+      "code": 6,
+      "name": "PubkeyMatchCheckFailed",
+      "msg": "Pubkey Match check failed"
+    },
+    {
+      "code": 7,
+      "name": "DerivedKeyMatchCheckFailed",
+      "msg": "Derived Key Match check failed"
+    },
+    {
+      "code": 8,
+      "name": "ProgramOwnedCheckFailed",
+      "msg": "Program Owned check failed"
+    },
+    {
+      "code": 9,
+      "name": "AmountCheckFailed",
+      "msg": "Amount checked failed"
+    },
+    {
+      "code": 10,
+      "name": "FrequencyCheckFailed",
+      "msg": "Frequency check failed"
+    },
+    {
+      "code": 11,
+      "name": "PubkeyTreeMatchCheckFailed",
+      "msg": "Pubkey Tree Match check failed"
     }
   ],
   "metadata": {

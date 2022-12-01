@@ -35,7 +35,6 @@ pub enum RuleSetInstruction {
     #[account(0, writable, signer, name="payer", desc="Payer and creator of the rule set")]
     #[account(1, writable, name="ruleset_pda", desc = "The PDA account where the ruleset is stored")]
     #[account(2, name = "system_program", desc = "System program")]
-    #[account(3, optional, writable, name = "frequency", desc = "Optional frequency account")]
     Create(CreateArgs),
 
     /// This instruction executes the RuleSet stored in the ruleset PDA account by sending

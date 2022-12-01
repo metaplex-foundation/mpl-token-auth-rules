@@ -4,13 +4,10 @@ use crate::{
     error::RuleSetError,
     instruction::RuleSetInstruction,
     pda::PREFIX,
-    state::{Operation, Rule, RuleSet},
+    state::RuleSet,
     utils::{assert_derivation, create_or_allocate_account_raw},
-    Payload, PayloadVec,
 };
 use borsh::BorshDeserialize;
-use rmp_serde::Serializer;
-use serde::Serialize;
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
@@ -52,75 +49,22 @@ impl Processor {
                     &[bump],
                 ];
 
-                let adtl_signer = Rule::AdditionalSigner {
-                    account: *payer_info.key,
-                };
-                let adtl_signer2 = Rule::AdditionalSigner {
-                    account: *payer_info.key,
-                };
-                let amount_check = Rule::Amount { amount: 1 };
-
-                let first_rule = Rule::All {
-                    rules: vec![adtl_signer, adtl_signer2],
-                };
-
-                let overall_rule = Rule::All {
-                    rules: vec![first_rule, amount_check],
-                };
-
-                let mut operations = RuleSet::new();
-                operations.add(Operation::Transfer, overall_rule);
-
-                let mut serialized_rule_set = Vec::new();
-                operations
-                    .serialize(&mut Serializer::new(&mut serialized_rule_set))
-                    .unwrap();
-
                 // Create or allocate RuleSet PDA account.
                 create_or_allocate_account_raw(
                     *program_id,
                     ruleset_pda_info,
                     system_program_info,
                     payer_info,
-                    serialized_rule_set.len(),
+                    args.serialized_rule_set.len(),
                     ruleset_seeds,
                 )?;
 
                 // Copy user-pre-serialized RuleSet to PDA account.
                 sol_memcpy(
                     &mut **ruleset_pda_info.try_borrow_mut_data().unwrap(),
-                    &serialized_rule_set,
-                    serialized_rule_set.len(),
+                    &args.serialized_rule_set,
+                    args.serialized_rule_set.len(),
                 );
-
-                msg!("{:#?}", serialized_rule_set == args.serialized_rule_set);
-
-                let unserialized_data: RuleSet = rmp_serde::from_slice(&args.serialized_rule_set)
-                    .map_err(|_| RuleSetError::ErrorName)?;
-
-                msg!("{:#?}", unserialized_data);
-
-                // Get the Rule from the RuleSet based on the caller-specified Operation.
-                let rule = unserialized_data
-                    .get(Operation::Transfer)
-                    .ok_or(RuleSetError::ErrorName)?;
-
-                let accounts_map = HashMap::from([
-                    (*payer_info.key, payer_info),
-                    (*ruleset_pda_info.key, ruleset_pda_info),
-                    (*system_program_info.key, system_program_info),
-                ]);
-
-                // Store the payloads that represent rule-specific data.
-                let mut payloads_vec = PayloadVec::new();
-                payloads_vec.add(&(Rule::Amount { amount: 1 }), Payload::Amount { amount: 1 })?;
-                // HashMap::from([(amount_check.to_u8(), Payload::Amount { amount: 2 })]);
-
-                // Validate the Rule.
-                if let Err(err) = rule.validate(&accounts_map, &payloads_vec) {
-                    msg!("Failed to validate: {}", err);
-                    return Err(err);
-                }
 
                 Ok(())
             }
