@@ -8,7 +8,7 @@ use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, transaction::Transaction};
 use token_authorization_rules::{
     state::{Operation, Rule, RuleSet},
-    Payload, PayloadVec,
+    Payload,
 };
 use utils::program_test;
 
@@ -30,12 +30,6 @@ async fn test_validator_transaction() {
         account: context.payer.pubkey(),
     };
     let amount_check = Rule::Amount { amount: 2 };
-
-    // Store the payloads that represent rule-specific data.
-    let mut payloads = PayloadVec::new();
-    payloads
-        .add(&amount_check, Payload::Amount { amount: 2 })
-        .unwrap();
 
     let first_rule = Rule::All {
         rules: vec![adtl_signer, adtl_signer2],
@@ -81,6 +75,9 @@ async fn test_validator_transaction() {
         .await
         .expect("creation should succeed");
 
+    // Store the payload of data to validate against the rule definition.
+    let payload = Payload::new(None, None, Some(2), None);
+
     // Create a `validate` instruction.
     let validate_ix = token_authorization_rules::instruction::validate(
         token_authorization_rules::id(),
@@ -88,7 +85,7 @@ async fn test_validator_transaction() {
         ruleset_addr,
         "da rulez".to_string(),
         Operation::Transfer,
-        payloads,
+        payload,
         vec![],
         vec![],
     );
