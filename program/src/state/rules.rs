@@ -1,4 +1,9 @@
-use crate::{error::RuleSetError, utils::assert_derivation, Payload, PayloadVec};
+use crate::{
+    error::RuleSetError,
+    payload::{LeafInfo, SeedsVec},
+    utils::assert_derivation,
+    Payload,
+};
 use serde::{Deserialize, Serialize};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey, sysvar::Sysvar,
@@ -12,7 +17,7 @@ pub enum Rule {
     All { rules: Vec<Rule> },
     Any { rules: Vec<Rule> },
     AdditionalSigner { account: Pubkey },
-    PubkeyMatch { account: Pubkey },
+    PubkeyMatch { destination: Pubkey },
     DerivedKeyMatch { account: Pubkey },
     ProgramOwned { program: Pubkey },
     Amount { amount: u64 },
@@ -24,13 +29,13 @@ impl Rule {
     pub fn validate(
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
-        payloads: &PayloadVec,
+        payload: &Payload,
     ) -> ProgramResult {
         match self {
             Rule::All { rules } => {
                 msg!("Validating All");
                 for rule in rules {
-                    rule.validate(accounts, payloads)?;
+                    rule.validate(accounts, payload)?;
                 }
                 Ok(())
             }
@@ -38,7 +43,7 @@ impl Rule {
                 msg!("Validating Any");
                 let mut error: Option<ProgramResult> = None;
                 for rule in rules {
-                    match rule.validate(accounts, payloads) {
+                    match rule.validate(accounts, payload) {
                         Ok(_) => return Ok(()),
                         Err(e) => error = Some(Err(e)),
                     }
@@ -57,10 +62,10 @@ impl Rule {
                     Err(RuleSetError::AdditionalSignerCheckFailed.into())
                 }
             }
-            Rule::PubkeyMatch { account } => {
+            Rule::PubkeyMatch { destination } => {
                 msg!("Validating PubkeyMatch");
-                if let Some(Payload::PubkeyMatch { destination: d }) = payloads.get(self) {
-                    if d == account {
+                if let Some(payload_destination) = &payload.destination_key {
+                    if destination == payload_destination {
                         Ok(())
                     } else {
                         Err(RuleSetError::PubkeyMatchCheckFailed.into())
@@ -71,7 +76,7 @@ impl Rule {
             }
             Rule::DerivedKeyMatch { account } => {
                 msg!("Validating DerivedKeyMatch");
-                if let Some(Payload::DerivedKeyMatch { seeds }) = payloads.get(self) {
+                if let Some(SeedsVec { seeds }) = &payload.derived_key_seeds {
                     if let Some(account) = accounts.get(account) {
                         let vec_of_slices = seeds.iter().map(Vec::as_slice).collect::<Vec<&[u8]>>();
                         let seeds = &vec_of_slices[..];
@@ -98,8 +103,8 @@ impl Rule {
             }
             Rule::Amount { amount } => {
                 msg!("Validating Amount");
-                if let Some(Payload::Amount { amount: a }) = payloads.get(self) {
-                    if amount == a {
+                if let Some(payload_amount) = &payload.amount {
+                    if amount == payload_amount {
                         Ok(())
                     } else {
                         Err(RuleSetError::AmountCheckFailed.into())
@@ -136,7 +141,7 @@ impl Rule {
             }
             Rule::PubkeyTreeMatch { root } => {
                 msg!("Validating PubkeyTreeMatch");
-                if let Some(Payload::PubkeyTreeMatch { proof, leaf }) = payloads.get(self) {
+                if let Some(LeafInfo { proof, leaf }) = &payload.tree_match_leaf {
                     let mut computed_hash = *leaf;
                     for proof_element in proof.iter() {
                         if computed_hash <= *proof_element {
