@@ -12,7 +12,7 @@ pub struct LeafInfo {
     pub leaf: [u8; 32],
 }
 
-#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Default)]
 pub struct Payload {
     pub destination_key: Option<Pubkey>,
     pub derived_key_seeds: Option<SeedsVec>,
