@@ -35,7 +35,6 @@ export const createTokenAuthorizationRules = async (
     tx.recentBlockhash = blockhash;
     tx.feePayer = payer.publicKey;
     const sig = await connection.sendTransaction(tx, [payer], { skipPreflight: true });
-    // await connection.sendTransaction(tx, [payer]);
     await connection.confirmTransaction(sig, "finalized");
     return ruleSetAddress[0];
 }
