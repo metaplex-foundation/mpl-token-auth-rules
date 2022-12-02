@@ -6,16 +6,19 @@
  */
 
 import * as beet from '@metaplex-foundation/beet';
-import { Payload, payloadBeet } from './Payload';
-export type PayloadVec = {
-  payloads: Payload[];
+export type LeafInfo = {
+  proof: number[] /* size: 32 */[];
+  leaf: number[] /* size: 32 */;
 };
 
 /**
  * @category userTypes
  * @category generated
  */
-export const payloadVecBeet = new beet.FixableBeetArgsStruct<PayloadVec>(
-  [['payloads', beet.array(payloadBeet)]],
-  'PayloadVec',
+export const leafInfoBeet = new beet.FixableBeetArgsStruct<LeafInfo>(
+  [
+    ['proof', beet.array(beet.uniformFixedSizeArray(beet.u8, 32))],
+    ['leaf', beet.uniformFixedSizeArray(beet.u8, 32)],
+  ],
+  'LeafInfo',
 );

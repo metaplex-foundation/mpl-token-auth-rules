@@ -200,25 +200,51 @@
             }
           },
           {
-            "name": "payloads",
+            "name": "payload",
             "type": {
-              "defined": "PayloadVec"
+              "defined": "Payload"
             }
           }
         ]
       }
     },
     {
-      "name": "PayloadVec",
+      "name": "SeedsVec",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "payloads",
+            "name": "seeds",
+            "type": {
+              "vec": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "LeafInfo",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "proof",
             "type": {
               "vec": {
-                "defined": "Payload"
+                "array": [
+                  "u8",
+                  32
+                ]
               }
+            }
+          },
+          {
+            "name": "leaf",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
             }
           }
         ]
@@ -227,79 +253,35 @@
     {
       "name": "Payload",
       "type": {
-        "kind": "enum",
-        "variants": [
+        "kind": "struct",
+        "fields": [
           {
-            "name": "None"
+            "name": "destinationKey",
+            "type": {
+              "option": "publicKey"
+            }
           },
           {
-            "name": "All"
-          },
-          {
-            "name": "Any"
-          },
-          {
-            "name": "AdditionalSigner"
-          },
-          {
-            "name": "PubkeyMatch",
-            "fields": [
-              {
-                "name": "destination",
-                "type": "publicKey"
+            "name": "derivedKeySeeds",
+            "type": {
+              "option": {
+                "defined": "SeedsVec"
               }
-            ]
+            }
           },
           {
-            "name": "DerivedKeyMatch",
-            "fields": [
-              {
-                "name": "seeds",
-                "type": {
-                  "vec": "bytes"
-                }
+            "name": "amount",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "treeMatchLeaf",
+            "type": {
+              "option": {
+                "defined": "LeafInfo"
               }
-            ]
-          },
-          {
-            "name": "ProgramOwned"
-          },
-          {
-            "name": "Amount",
-            "fields": [
-              {
-                "name": "amount",
-                "type": "u64"
-              }
-            ]
-          },
-          {
-            "name": "Frequency"
-          },
-          {
-            "name": "PubkeyTreeMatch",
-            "fields": [
-              {
-                "name": "proof",
-                "type": {
-                  "vec": {
-                    "array": [
-                      "u8",
-                      32
-                    ]
-                  }
-                }
-              },
-              {
-                "name": "leaf",
-                "type": {
-                  "array": [
-                    "u8",
-                    32
-                  ]
-                }
-              }
-            ]
+            }
           }
         ]
       }
