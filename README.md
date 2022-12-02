@@ -103,15 +103,8 @@ fn main() {
 
     println!("Create tx signature: {}", signature);
 
-    // Store the payloads that represent rule-specific data that will be used for validation.
-    let mut payloads = PayloadVec::new();
-    let unused = 0;
-    payloads
-        .add(
-            &Rule::Amount { amount: unused },
-            Payload::Amount { amount: 2 },
-        )
-        .unwrap();
+    // Store the payload of data to validate against the rule definition.
+    let payload = Payload::new(None, None, Some(2), None);
 
     // Create a `validate` instruction.
     let validate_ix = token_authorization_rules::instruction::validate(
@@ -120,7 +113,7 @@ fn main() {
         ruleset_addr,
         "da rulez".to_string(),
         Operation::Transfer,
-        payloads,
+        payload,
         vec![],
         vec![],
     );
