@@ -18,7 +18,8 @@
     "lint": "(cd program; cargo clippy) && yarn workspace token-authorization-rules lint"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "cli"
   ],
   "devDependencies": {
     "@metaplex-foundation/amman": "^0.12.1",

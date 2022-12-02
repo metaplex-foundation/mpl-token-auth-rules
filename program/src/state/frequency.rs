@@ -1,8 +1,9 @@
 use borsh::{BorshDeserialize, BorshSerialize};
+use shank::ShankAccount;
 
 use super::{Key, SolanaAccount};
 
-#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, ShankAccount)]
 pub struct FrequencyAccount {
     pub key: Key,
     pub last_update: i64,

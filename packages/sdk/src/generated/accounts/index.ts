@@ -1,5 +1,5 @@
-export * from './AccountThingy';
+export * from './FrequencyAccount';
 
-import { AccountThingy } from './AccountThingy';
+import { FrequencyAccount } from './FrequencyAccount';
 
-export const accountProviders = { AccountThingy };
+export const accountProviders = { FrequencyAccount };
