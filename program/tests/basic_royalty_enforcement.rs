@@ -19,16 +19,14 @@ async fn basic_royalty_enforcement() {
         "basic_royalty_enforcement".to_string(),
     );
 
-    // Rule for Transfers.  Initially the rule was to allow transfers to
-    // either a Token Owned Escrow OR an Identity-associated wallet.  But
-    // Identity was descoped.
+    // Rule for Transfers: Allow transfers to a Token Owned Escrow account.
     let program_is_token_metadata = Rule::ProgramOwned {
         program: mpl_token_metadata::id(),
     };
 
     let marketplace_tree_root = [0u8; 32];
 
-    // Rule for Delegate and SaleTransfer.  The provided leaf node must be a
+    // Rule for Delegate and SaleTransfer: The provided leaf node must be a
     // member of the marketplace Merkle tree.
     let leaf_in_marketplace_tree = Rule::PubkeyTreeMatch {
         root: marketplace_tree_root,
