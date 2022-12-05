@@ -1,7 +1,7 @@
 [package]
-name = "token-authorization-rules"
+name = "mpl-token-auth-rules"
 version = "0.1.0"
-description = "Token Authorization Rules that can be used to restrict common token operations"
+description = "MPL Token Authorization Rules that can be used to restrict common token operations"
 authors = ["Metaplex Developers <dev@metaplex.com>"]
 repository = "https://github.com/metaplex-foundation/token-authorization-rules"
 license = "../LICENSE"

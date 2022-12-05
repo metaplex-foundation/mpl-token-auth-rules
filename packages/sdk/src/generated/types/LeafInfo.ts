@@ -7,8 +7,8 @@
 
 import * as beet from '@metaplex-foundation/beet';
 export type LeafInfo = {
-  proof: number[] /* size: 32 */[];
   leaf: number[] /* size: 32 */;
+  proof: number[] /* size: 32 */[];
 };
 
 /**
@@ -17,8 +17,8 @@ export type LeafInfo = {
  */
 export const leafInfoBeet = new beet.FixableBeetArgsStruct<LeafInfo>(
   [
-    ['proof', beet.array(beet.uniformFixedSizeArray(beet.u8, 32))],
     ['leaf', beet.uniformFixedSizeArray(beet.u8, 32)],
+    ['proof', beet.array(beet.uniformFixedSizeArray(beet.u8, 32))],
   ],
   'LeafInfo',
 );

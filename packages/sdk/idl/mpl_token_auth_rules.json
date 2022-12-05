@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "name": "token_authorization_rules",
+  "name": "mpl_token_auth_rules",
   "instructions": [
     {
       "name": "Create",
@@ -228,6 +228,15 @@
         "kind": "struct",
         "fields": [
           {
+            "name": "leaf",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
             "name": "proof",
             "type": {
               "vec": {
@@ -236,15 +245,6 @@
                   32
                 ]
               }
-            }
-          },
-          {
-            "name": "leaf",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
             }
           }
         ]

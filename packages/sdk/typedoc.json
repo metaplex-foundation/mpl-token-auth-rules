@@ -1,5 +1,5 @@
 {
-  "entryPoints": ["src/token-authorization-rules.ts"],
+  "entryPoints": ["src/mpl-token-auth-rules.ts"],
   "excludeInternal": true,
   "excludePrivate": true,
   "categorizeByGroup": false,
@@ -17,5 +17,5 @@
   ],
   "readme": "none",
   "emit": "both",
-  "out": "./docs/token-authorization-rules"
+  "out": "./docs/mpl-token-auth-rules"
 }

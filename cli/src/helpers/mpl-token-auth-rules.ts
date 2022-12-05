@@ -6,7 +6,7 @@ import {
     SYSVAR_INSTRUCTIONS_PUBKEY,
     Transaction,
 } from "@solana/web3.js";
-import { createCreateInstruction, PROGRAM_ID } from "../../../packages/sdk/src/token-authorization-rules";
+import { createCreateInstruction, PROGRAM_ID } from "../../../packages/sdk/src/mpl-token-auth-rules";
 import { findRuleSetPDA } from "./pda";
 
 export const createTokenAuthorizationRules = async (
