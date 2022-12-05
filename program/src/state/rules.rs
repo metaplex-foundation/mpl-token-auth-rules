@@ -91,15 +91,14 @@ impl Rule {
             }
             Rule::ProgramOwned { program } => {
                 msg!("Validating ProgramOwned");
-                if let Some(account) = accounts.get(program) {
-                    if account.owner == program {
-                        Ok(())
-                    } else {
-                        Err(RuleSetError::ProgramOwnedCheckFailed.into())
+                if let Some(payload_destination) = &payload.destination_key {
+                    if let Some(account) = accounts.get(payload_destination) {
+                        if *account.owner == *program {
+                            return Ok(());
+                        }
                     }
-                } else {
-                    Err(RuleSetError::ProgramOwnedCheckFailed.into())
                 }
+                Err(RuleSetError::ProgramOwnedCheckFailed.into())
             }
             Rule::Amount { amount } => {
                 msg!("Validating Amount");
