@@ -8,8 +8,14 @@ pub struct SeedsVec {
 
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 pub struct LeafInfo {
-    pub proof: Vec<[u8; 32]>,
     pub leaf: [u8; 32],
+    pub proof: Vec<[u8; 32]>,
+}
+
+impl LeafInfo {
+    pub fn new(leaf: [u8; 32], proof: Vec<[u8; 32]>) -> Self {
+        Self { leaf, proof }
+    }
 }
 
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Default)]
