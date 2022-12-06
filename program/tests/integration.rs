@@ -19,7 +19,7 @@ async fn test_validator_transaction() {
     // Find RuleSet PDA.
     let (ruleset_addr, _ruleset_bump) = mpl_token_auth_rules::pda::find_ruleset_address(
         context.payer.pubkey(),
-        "da rulez".to_string(),
+        "test ruleset".to_string(),
     );
 
     // Create some rules.
@@ -56,7 +56,7 @@ async fn test_validator_transaction() {
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         ruleset_addr,
-        "da rulez".to_string(),
+        "test ruleset".to_string(),
         serialized_data,
     );
 
@@ -83,7 +83,7 @@ async fn test_validator_transaction() {
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         ruleset_addr,
-        "da rulez".to_string(),
+        "test ruleset".to_string(),
         Operation::Transfer,
         payload,
         vec![],

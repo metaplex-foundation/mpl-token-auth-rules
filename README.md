@@ -15,43 +15,38 @@ There are **Primitive Rules** and **Composed Rules** that are created by combini
 # Examples
 ## Rust
 ```rust
+use mpl_token_auth_rules::{
+    state::{Operation, Rule, RuleSet},
+    Payload,
+};
 use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::{
-    commitment_config::CommitmentConfig, native_token::LAMPORTS_PER_SOL, signature::Signer,
-    signer::keypair::Keypair, transaction::Transaction,
-};
-use mpl_token_auth_rules::{
-    state::{Operation, Rule, RuleSet},
-    Payload, PayloadVec,
+    native_token::LAMPORTS_PER_SOL, signature::Signer, signer::keypair::Keypair,
+    transaction::Transaction,
 };
 
 fn main() {
-    let url = "http://localhost:8899".to_string();
+    let url = "https://api.devnet.solana.com".to_string();
     let rpc_client = RpcClient::new(url);
 
     let payer = Keypair::new();
 
-    let _signature = rpc_client
+    let signature = rpc_client
         .request_airdrop(&payer.pubkey(), LAMPORTS_PER_SOL)
         .unwrap();
 
-    let balance = rpc_client
-        .wait_for_balance_with_commitment(
-            &payer.pubkey(),
-            Some(LAMPORTS_PER_SOL),
-            CommitmentConfig::default(),
-        )
-        .unwrap();
-
-    println!("Payer balance: {}", balance);
+    loop {
+        let confirmed = rpc_client.confirm_transaction(&signature).unwrap();
+        if confirmed {
+            break;
+        }
+    }
 
     // Find RuleSet PDA.
-    let (ruleset_addr, _ruleset_bump) = mpl_token_auth_rules::pda::find_ruleset_address(
-        payer.pubkey(),
-        "da rulez".to_string(),
-    );
+    let (ruleset_addr, _ruleset_bump) =
+        mpl_token_auth_rules::pda::find_ruleset_address(payer.pubkey(), "test ruleset".to_string());
 
     // Create some rules.
     let adtl_signer = Rule::AdditionalSigner {
@@ -87,7 +82,7 @@ fn main() {
         mpl_token_auth_rules::id(),
         payer.pubkey(),
         ruleset_addr,
-        "da rulez".to_string(),
+        "test ruleset".to_string(),
         serialized_data,
     );
 
@@ -113,7 +108,7 @@ fn main() {
         mpl_token_auth_rules::id(),
         payer.pubkey(),
         ruleset_addr,
-        "da rulez".to_string(),
+        "test ruleset".to_string(),
         Operation::Transfer,
         payload,
         vec![],
