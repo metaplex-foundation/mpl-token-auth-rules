@@ -1,7 +1,11 @@
 {
   "name": "@metaplex-foundation/mpl-token-auth-rules",
   "version": "0.1.0",
-  "description": "MPL Token Authorization Rules that can be used to restrict common token operations",
+  "description": "Javascript SDK for MPL Token Authorization Rules.  MPL Token Authorization Rules can be used to restrict common token operations",
+  "homepage": "https://metaplex.com",
+  "repository": "https://github.com/metaplex-foundation/mpl-token-auth-rules.git",
+  "author": "Metaplex Maintainers <contact@metaplex.com>",
+  "license": "Apache-2.0",
   "main": "dist/src/mpl-token-auth-rules.js",
   "types": "dist/src/mpl-token-auth-rules.d.ts",
   "scripts": {
@@ -23,10 +27,11 @@
     "registry": "https://registry.npmjs.org"
   },
   "keywords": [
+    "nft",
+    "metaplex",
     "solana",
     "blockchain"
   ],
-  "license": "MIT",
   "dependencies": {
     "@metaplex-foundation/beet": "^0.7.1",
     "@metaplex-foundation/beet-solana": "^0.4.0",
