@@ -1,21 +1,21 @@
 {
-  "name": "token-authorization-rules-workspace",
+  "name": "mpl-token-auth-rules-workspace",
   "packageManager": "yarn@3.2.0-rc.12",
   "version": "0.0.0",
-  "description": "",
+  "description": "Workspace for MPL Token Authorization Rules",
   "homepage": "https://metaplex.com",
   "repository": "https://github.com/metaplex-foundation/token-authorization-rules.git",
   "author": "Metaplex Maintainers <contact@metaplex.com>",
   "license": "Apache-2.0",
   "scripts": {
     "build:rust": "(cd program; cargo build-bpf)",
-    "build:sdk": "yarn workspace token-authorization-rules build",
-    "build:docs": "yarn workspace token-authorization-rules build:docs",
+    "build:sdk": "yarn workspace @metaplex-foundation/mpl-token-auth-rules build",
+    "build:docs": "yarn workspace @metaplex-foundation/mpl-token-auth-rules build:docs",
     "build": "yarn build:rust && yarn solita && yarn fix:format && yarn build:sdk && yarn build:docs",
     "update-sol-deps": "./scripts/update-solana-dependencies.sh",
     "amman": "./scripts/amman.sh",
-    "fix:format": "(cd program; cargo fmt) && yarn workspace token-authorization-rules fix:prettier",
-    "lint": "(cd program; cargo clippy) && yarn workspace token-authorization-rules lint"
+    "fix:format": "(cd program; cargo fmt) && yarn workspace @metaplex-foundation/mpl-token-auth-rules fix:prettier",
+    "lint": "(cd program; cargo clippy) && yarn workspace @metaplex-foundation/mpl-token-auth-rules lint"
   },
   "workspaces": [
     "packages/*",

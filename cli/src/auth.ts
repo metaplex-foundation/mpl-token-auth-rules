@@ -1,5 +1,5 @@
 import { encode, decode } from '@msgpack/msgpack';
-import { createTokenAuthorizationRules } from './helpers/token-authorization-rules';
+import { createTokenAuthorizationRules } from './helpers/mpl-token-auth-rules';
 import { Keypair, Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { Command, program } from "commander";
 import log from "loglevel";

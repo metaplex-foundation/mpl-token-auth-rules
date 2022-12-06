@@ -1,9 +1,9 @@
 {
-  "name": "token-authorization-rules",
+  "name": "@metaplex-foundation/mpl-token-auth-rules",
   "version": "0.1.0",
-  "description": "",
-  "main": "dist/src/token-authorization-rules.js",
-  "types": "dist/src/token-authorization-rules.d.ts",
+  "description": "MPL Token Authorization Rules that can be used to restrict common token operations",
+  "main": "dist/src/mpl-token-auth-rules.js",
+  "types": "dist/src/mpl-token-auth-rules.d.ts",
   "scripts": {
     "check:publish-ready": "yarn build && yarn test",
     "postversion": "git add package.json && git commit -m \\\"chore: update $npm_package_name to v$npm_package_version\\\" && git tag $npm_package_name@$npm_package_version",

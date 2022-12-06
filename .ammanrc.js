@@ -4,7 +4,7 @@ const path = require('path');
 const accountProviders = require('./packages/sdk/dist/generated/accounts');
 
 const localDeployDir = path.join(__dirname, 'program', 'target', 'deploy');
-const MY_PROGRAM_ID = require("./packages/sdk/idl/token_authorization_rules.json").metadata.address;
+const MY_PROGRAM_ID = require("./packages/sdk/idl/mpl_token_auth_rules.json").metadata.address;
 
 function localDeployPath(programName) {
     return path.join(localDeployDir, `${programName}.so`);
@@ -12,9 +12,9 @@ function localDeployPath(programName) {
 
 const programs = [
     {
-        label: 'token_authorization_rules',
+        label: 'mpl_token_auth_rules',
         programId: MY_PROGRAM_ID,
-        deployPath: localDeployPath('token_authorization_rules')
+        deployPath: localDeployPath('mpl_token_auth_rules')
     },
 ];
 
