@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "description": "Workspace for MPL Token Authorization Rules",
   "homepage": "https://metaplex.com",
-  "repository": "https://github.com/metaplex-foundation/token-authorization-rules.git",
+  "repository": "https://github.com/metaplex-foundation/mpl-token-auth-rules.git",
   "author": "Metaplex Maintainers <contact@metaplex.com>",
   "license": "Apache-2.0",
   "scripts": {
