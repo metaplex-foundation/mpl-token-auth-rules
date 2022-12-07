@@ -381,6 +381,11 @@
       "code": 11,
       "name": "PubkeyTreeMatchCheckFailed",
       "msg": "Pubkey Tree Match check failed"
+    },
+    {
+      "code": 12,
+      "name": "PayerIsNotSigner",
+      "msg": "Payer is not a signer"
     }
   ],
   "metadata": {
