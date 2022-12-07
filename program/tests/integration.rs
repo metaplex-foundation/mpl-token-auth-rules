@@ -12,8 +12,11 @@ use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_program::instruction::InstructionError;
 use solana_program_test::{tokio, BanksClientError};
-use solana_sdk::transaction::TransactionError;
-use solana_sdk::{signature::Signer, signer::keypair::Keypair, transaction::Transaction};
+use solana_sdk::{
+    signature::Signer,
+    signer::keypair::Keypair,
+    transaction::{Transaction, TransactionError},
+};
 use utils::program_test;
 
 #[tokio::test]
