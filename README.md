@@ -13,7 +13,9 @@ There are **Primitive Rules** and **Composed Rules** that are created by combini
 **Composed Rules** return a true or false based on whether any or all of the primitive rules return true.  Composed rules can then be combined into higher-level composed rules that implement more complex boolean logic.  Because of the recursive definition of the `Rule` enum, calling `validate()` on a top-level composed rule will start at the top and validate at every level, down to the component primitive rules.
 
 # Examples
+
 ## Rust
+**Note: Additional Rust examples can be found in the [program/tests](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/main/program/tests) directory.**
 ```rust
 use mpl_token_auth_rules::{
     state::{Operation, Rule, RuleSet},

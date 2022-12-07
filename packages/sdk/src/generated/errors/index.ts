@@ -261,6 +261,26 @@ createErrorFromNameLookup.set(
 );
 
 /**
+ * PayerIsNotSigner: 'Payer is not a signer'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class PayerIsNotSignerError extends Error {
+  readonly code: number = 0xc;
+  readonly name: string = 'PayerIsNotSigner';
+  constructor() {
+    super('Payer is not a signer');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, PayerIsNotSignerError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0xc, () => new PayerIsNotSignerError());
+createErrorFromNameLookup.set('PayerIsNotSigner', () => new PayerIsNotSignerError());
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

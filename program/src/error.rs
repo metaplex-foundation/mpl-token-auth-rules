@@ -55,6 +55,10 @@ pub enum RuleSetError {
     /// 11 - Pubkey Tree Match check failed
     #[error("Pubkey Tree Match check failed")]
     PubkeyTreeMatchCheckFailed,
+
+    /// 12 - Payer is not a signer
+    #[error("Payer is not a signer")]
+    PayerIsNotSigner,
 }
 
 impl PrintProgramError for RuleSetError {

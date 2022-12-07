@@ -3,17 +3,21 @@
 pub mod utils;
 
 use mpl_token_auth_rules::{
+    error::RuleSetError,
     state::{Operation, Rule, RuleSet},
     Payload,
 };
+use num_traits::cast::FromPrimitive;
 use rmp_serde::Serializer;
 use serde::Serialize;
-use solana_program_test::tokio;
-use solana_sdk::{signature::Signer, transaction::Transaction};
+use solana_program::instruction::InstructionError;
+use solana_program_test::{tokio, BanksClientError};
+use solana_sdk::transaction::TransactionError;
+use solana_sdk::{signature::Signer, signer::keypair::Keypair, transaction::Transaction};
 use utils::program_test;
 
 #[tokio::test]
-async fn test_validator_transaction() {
+async fn test_payer_not_signer_fails() {
     let mut context = program_test().start_with_context().await;
 
     // Find RuleSet PDA.
@@ -22,12 +26,79 @@ async fn test_validator_transaction() {
         "test ruleset".to_string(),
     );
 
+    // Create a `create` instruction.
+    let create_ix = mpl_token_auth_rules::instruction::create(
+        mpl_token_auth_rules::id(),
+        context.payer.pubkey(),
+        ruleset_addr,
+        "test ruleset".to_string(),
+        vec![],
+    );
+
+    // Add it to a non-signed transaction.
+    let create_tx = Transaction::new_with_payer(&[create_ix], Some(&context.payer.pubkey()));
+
+    // Process the transaction.
+    let err = context
+        .banks_client
+        .process_transaction(create_tx)
+        .await
+        .expect_err("creation should fail");
+
+    // Deconstruct the error code and make sure it is what we expect.
+    match err {
+        BanksClientError::TransactionError(TransactionError::SignatureFailure) => (),
+        _ => panic!("Unexpected error {:?}", err),
+    }
+
+    // Create a `validate` instruction.
+    let validate_ix = mpl_token_auth_rules::instruction::validate(
+        mpl_token_auth_rules::id(),
+        context.payer.pubkey(),
+        ruleset_addr,
+        "test ruleset".to_string(),
+        Operation::Transfer,
+        Payload::default(),
+        vec![],
+        vec![],
+    );
+
+    // Add it to a non-signed transaction.
+    let validate_tx = Transaction::new_with_payer(&[validate_ix], Some(&context.payer.pubkey()));
+
+    // Process the transaction.
+    let err = context
+        .banks_client
+        .process_transaction(validate_tx)
+        .await
+        .expect_err("validation should fail");
+
+    // Deconstruct the error code and make sure it is what we expect.
+    match err {
+        BanksClientError::TransactionError(TransactionError::SignatureFailure) => (),
+        _ => panic!("Unexpected error {:?}", err),
+    }
+}
+
+#[tokio::test]
+async fn test_additional_signer_and_amount() {
+    let mut context = program_test().start_with_context().await;
+
+    // Find RuleSet PDA.
+    let (ruleset_addr, _ruleset_bump) = mpl_token_auth_rules::pda::find_ruleset_address(
+        context.payer.pubkey(),
+        "test ruleset".to_string(),
+    );
+
+    // Second signer.
+    let second_signer = Keypair::new();
+
     // Create some rules.
     let adtl_signer = Rule::AdditionalSigner {
         account: context.payer.pubkey(),
     };
     let adtl_signer2 = Rule::AdditionalSigner {
-        account: context.payer.pubkey(),
+        account: second_signer.pubkey(),
     };
     let amount_check = Rule::Amount { amount: 2 };
 
@@ -78,14 +149,14 @@ async fn test_validator_transaction() {
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::new(None, None, Some(2), None);
 
-    // Create a `validate` instruction.
+    // Create a `validate` instruction WITHOUT the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         ruleset_addr,
         "test ruleset".to_string(),
         Operation::Transfer,
-        payload,
+        payload.clone(),
         vec![],
         vec![],
     );
@@ -99,9 +170,90 @@ async fn test_validator_transaction() {
     );
 
     // Process the transaction.
+    let err = context
+        .banks_client
+        .process_transaction(validate_tx)
+        .await
+        .expect_err("validation should fail");
+
+    // Deconstruct the error code and make sure it is what we expect.
+    match err {
+        BanksClientError::TransactionError(TransactionError::InstructionError(
+            _,
+            InstructionError::Custom(val),
+        )) => {
+            let rule_set_error = RuleSetError::from_u32(val).unwrap();
+            assert_eq!(rule_set_error, RuleSetError::AdditionalSignerCheckFailed);
+        }
+        _ => panic!("Unexpected error {:?}", err),
+    }
+
+    // Create a `validate` instruction WITH the second signer.
+    let validate_ix = mpl_token_auth_rules::instruction::validate(
+        mpl_token_auth_rules::id(),
+        context.payer.pubkey(),
+        ruleset_addr,
+        "test ruleset".to_string(),
+        Operation::Transfer,
+        payload,
+        vec![second_signer.pubkey()],
+        vec![],
+    );
+
+    // Add it to a transaction.
+    let validate_tx = Transaction::new_signed_with_payer(
+        &[validate_ix],
+        Some(&context.payer.pubkey()),
+        &[&context.payer, &second_signer],
+        context.last_blockhash,
+    );
+
+    // Process the transaction, this time it should succeed.
     context
         .banks_client
         .process_transaction(validate_tx)
         .await
         .expect("validation should succeed");
+
+    // Store a payload of data with the WRONG amount.
+    let payload = Payload::new(None, None, Some(1), None);
+
+    // Create a `validate` instruction.
+    let validate_ix = mpl_token_auth_rules::instruction::validate(
+        mpl_token_auth_rules::id(),
+        context.payer.pubkey(),
+        ruleset_addr,
+        "test ruleset".to_string(),
+        Operation::Transfer,
+        payload,
+        vec![second_signer.pubkey()],
+        vec![],
+    );
+
+    // Add it to a transaction.
+    let validate_tx = Transaction::new_signed_with_payer(
+        &[validate_ix],
+        Some(&context.payer.pubkey()),
+        &[&context.payer, &second_signer],
+        context.last_blockhash,
+    );
+
+    // Process the transaction.
+    let err = context
+        .banks_client
+        .process_transaction(validate_tx)
+        .await
+        .expect_err("validation should fail");
+
+    // Deconstruct the error code and make sure it is what we expect.
+    match err {
+        BanksClientError::TransactionError(TransactionError::InstructionError(
+            _,
+            InstructionError::Custom(val),
+        )) => {
+            let rule_set_error = RuleSetError::from_u32(val).unwrap();
+            assert_eq!(rule_set_error, RuleSetError::AmountCheckFailed);
+        }
+        _ => panic!("Unexpected error {:?}", err),
+    }
 }
