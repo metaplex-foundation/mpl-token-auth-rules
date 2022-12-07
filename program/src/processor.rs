@@ -65,7 +65,7 @@ impl Processor {
 
                 // Copy user-pre-serialized RuleSet to PDA account.
                 sol_memcpy(
-                    &mut **ruleset_pda_info.try_borrow_mut_data().unwrap(),
+                    &mut ruleset_pda_info.try_borrow_mut_data().unwrap(),
                     &args.serialized_rule_set,
                     args.serialized_rule_set.len(),
                 );
