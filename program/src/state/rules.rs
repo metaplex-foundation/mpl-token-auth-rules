@@ -112,8 +112,12 @@ impl Rule {
                     Err(RuleSetError::AmountCheckFailed.into())
                 }
             }
+            #[allow(unused_variables)]
             Rule::Frequency { freq_account } => {
                 msg!("Validating Frequency");
+                // TODO Rule is not implemented.
+                return Err(RuleSetError::NotImplemented.into());
+                #[allow(unreachable_code)]
                 // Deserialize the frequency account
                 if let Some(account) = accounts.get(freq_account) {
                     let current_time = solana_program::clock::Clock::get()?.unix_timestamp;
@@ -125,7 +129,8 @@ impl Rule {
                             .ok_or(RuleSetError::NumericalOverflow)?
                             <= current_time
                         {
-                            Ok(())
+                            // TODO Rule is not implemented.
+                            Err(RuleSetError::NotImplemented.into())
                         } else {
                             Err(RuleSetError::FrequencyCheckFailed.into())
                         }
