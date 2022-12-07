@@ -31,6 +31,10 @@ impl Processor {
                 let ruleset_pda_info = next_account_info(account_info_iter)?;
                 let system_program_info = next_account_info(account_info_iter)?;
 
+                if !payer_info.is_signer {
+                    return Err(RuleSetError::PayerIsNotSigner.into());
+                }
+
                 // Check RuleSet account info derivation.
                 let bump = assert_derivation(
                     program_id,
@@ -73,6 +77,10 @@ impl Processor {
                 let payer_info = next_account_info(account_info_iter)?;
                 let ruleset_pda_info = next_account_info(account_info_iter)?;
                 let _system_program_info = next_account_info(account_info_iter)?;
+
+                if !payer_info.is_signer {
+                    return Err(RuleSetError::PayerIsNotSigner.into());
+                }
 
                 // Check RuleSet account info derivation.
                 let _bump = assert_derivation(
