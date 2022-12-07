@@ -2,7 +2,11 @@
     "name": "auth-cli",
     "version": "0.0.1",
     "main": "auth-cli.ts",
+    "description": "JavaScript CLI for MPL Token Authorization Rules.  MPL Token Authorization Rules can be used to restrict common token operations",
+    "homepage": "https://metaplex.com",
     "repository": "https://github.com/metaplex-foundation/mpl-token-auth-rules.git",
+    "author": "Metaplex Maintainers <contact@metaplex.com>",
+    "license": "Apache-2.0",
     "scripts": {
         "start": "ts-node src/auth.ts",
         "start:windows": "nodemon --watch 'src/**/*.ts' --exec \"npx ts-node\" src/auth.ts",
