@@ -228,6 +228,15 @@
         "kind": "struct",
         "fields": [
           {
+            "name": "leaf",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
             "name": "proof",
             "type": {
               "vec": {
@@ -236,15 +245,6 @@
                   32
                 ]
               }
-            }
-          },
-          {
-            "name": "leaf",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
             }
           }
         ]
