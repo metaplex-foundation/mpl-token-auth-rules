@@ -2,15 +2,15 @@
 
 pub mod utils;
 
+use mpl_token_auth_rules::{
+    state::{Operation, Rule, RuleSet},
+    LeafInfo, Payload,
+};
 use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_program_test::tokio;
 use solana_sdk::{
     signature::Signer, signer::keypair::Keypair, system_instruction, transaction::Transaction,
-};
-use token_authorization_rules::{
-    state::{Operation, Rule, RuleSet},
-    LeafInfo, Payload,
 };
 use utils::program_test;
 
@@ -22,7 +22,7 @@ async fn basic_royalty_enforcement() {
     // Create RuleSet
     // --------------------------------
     // Find RuleSet PDA.
-    let (ruleset_addr, _ruleset_bump) = token_authorization_rules::pda::find_ruleset_address(
+    let (ruleset_addr, _ruleset_bump) = mpl_token_auth_rules::pda::find_ruleset_address(
         context.payer.pubkey(),
         "basic_royalty_enforcement".to_string(),
     );
@@ -62,8 +62,8 @@ async fn basic_royalty_enforcement() {
         .unwrap();
 
     // Create a `create` instruction.
-    let create_ix = token_authorization_rules::instruction::create(
-        token_authorization_rules::id(),
+    let create_ix = mpl_token_auth_rules::instruction::create(
+        mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         ruleset_addr,
         "basic_royalty_enforcement".to_string(),
@@ -117,8 +117,8 @@ async fn basic_royalty_enforcement() {
     );
 
     // Create a `validate` instruction for a `Transfer` operation.
-    let validate_ix = token_authorization_rules::instruction::validate(
-        token_authorization_rules::id(),
+    let validate_ix = mpl_token_auth_rules::instruction::validate(
+        mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         ruleset_addr,
         "basic_royalty_enforcement".to_string(),
@@ -175,8 +175,8 @@ async fn basic_royalty_enforcement() {
     let payload = Payload::new(None, None, None, Some(leaf_info));
 
     // Create a `validate` instruction for a `Delegate` operation.
-    let validate_ix = token_authorization_rules::instruction::validate(
-        token_authorization_rules::id(),
+    let validate_ix = mpl_token_auth_rules::instruction::validate(
+        mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         ruleset_addr,
         "basic_royalty_enforcement".to_string(),
@@ -205,8 +205,8 @@ async fn basic_royalty_enforcement() {
     // Validate SaleTransfer operation
     // --------------------------------
     // Create a `validate` instruction for a `SaleTransfer` operation.
-    let validate_ix = token_authorization_rules::instruction::validate(
-        token_authorization_rules::id(),
+    let validate_ix = mpl_token_auth_rules::instruction::validate(
+        mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         ruleset_addr,
         "basic_royalty_enforcement".to_string(),

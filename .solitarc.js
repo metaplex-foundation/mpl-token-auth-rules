@@ -6,7 +6,7 @@ const binaryInstallDir = path.join(__dirname, '.crates');
 
 module.exports = {
     idlGenerator: 'shank',
-    programName: 'token_authorization_rules',
+    programName: 'mpl_token_auth_rules',
     idlDir,
     sdkDir,
     binaryInstallDir,

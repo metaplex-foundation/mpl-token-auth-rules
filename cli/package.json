@@ -2,7 +2,7 @@
     "name": "auth-cli",
     "version": "0.0.1",
     "main": "auth-cli.ts",
-    "repository": "git@github.com:metaplex-foundation/token-authorization-rules.git",
+    "repository": "https://github.com/metaplex-foundation/mpl-token-auth-rules.git",
     "scripts": {
         "start": "ts-node src/auth.ts",
         "start:windows": "nodemon --watch 'src/**/*.ts' --exec \"npx ts-node\" src/auth.ts",

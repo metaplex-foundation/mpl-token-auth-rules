@@ -2399,6 +2399,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "mpl-token-auth-rules"
+version = "0.1.0"
+dependencies = [
+ "assert_matches",
+ "borsh",
+ "mpl-token-metadata",
+ "num-derive",
+ "num-traits",
+ "rmp-serde",
+ "serde",
+ "serde_json",
+ "shank",
+ "solana-logger",
+ "solana-program",
+ "solana-program-test",
+ "solana-sdk",
+ "solana-validator",
+ "spl-token",
+ "thiserror",
+]
+
+[[package]]
 name = "mpl-token-metadata"
 version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5957,28 +5979,6 @@ name = "tinyvec_macros"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
-
-[[package]]
-name = "token-authorization-rules"
-version = "0.1.0"
-dependencies = [
- "assert_matches",
- "borsh",
- "mpl-token-metadata",
- "num-derive",
- "num-traits",
- "rmp-serde",
- "serde",
- "serde_json",
- "shank",
- "solana-logger",
- "solana-program",
- "solana-program-test",
- "solana-sdk",
- "solana-validator",
- "spl-token",
- "thiserror",
-]
 
 [[package]]
 name = "tokio"

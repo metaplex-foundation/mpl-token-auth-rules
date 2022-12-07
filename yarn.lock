@@ -742,6 +742,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@metaplex-foundation/mpl-token-auth-rules@workspace:packages/sdk":
+  version: 0.0.0-use.local
+  resolution: "@metaplex-foundation/mpl-token-auth-rules@workspace:packages/sdk"
+  dependencies:
+    "@metaplex-foundation/beet": ^0.7.1
+    "@metaplex-foundation/beet-solana": ^0.4.0
+    "@metaplex-foundation/cusper": ^0.0.2
+    "@solana/spl-token": ^0.3.6
+    "@solana/web3.js": ^1.66.2
+    eslint: ^8.27.0
+    rimraf: ^3.0.2
+    supports-color: ^9.2.3
+    typedoc: ^0.23.21
+    typescript: ^4.9.3
+  languageName: unknown
+  linkType: soft
+
 "@metaplex-foundation/mpl-token-metadata@npm:^2.2.2":
   version: 2.5.1
   resolution: "@metaplex-foundation/mpl-token-metadata@npm:2.5.1"
@@ -4160,6 +4177,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mpl-token-auth-rules-workspace@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "mpl-token-auth-rules-workspace@workspace:."
+  dependencies:
+    "@metaplex-foundation/amman": ^0.12.1
+    "@metaplex-foundation/solita": ^0.19.0
+    "@typescript-eslint/eslint-plugin": ^5.43.0
+    "@typescript-eslint/parser": ^5.43.0
+    esbuild-runner: ^2.2.2
+    eslint: ^8.27.0
+    eslint-config-prettier: ^8.5.0
+    eslint-plugin-prettier: ^4.2.1
+    prettier: ^2.7.1
+  languageName: unknown
+  linkType: soft
+
 "ms@npm:2.1.2":
   version: 2.1.2
   resolution: "ms@npm:2.1.2"
@@ -5341,39 +5374,6 @@ __metadata:
   checksum: 952c29e2a85d7123239b5cfdd889a0dde47ab0497f0913d70588f19c53f7e0b5327c95f4651e413c74b785147f9637b17410ac8c846d5d4a20a5a33eb6dc3a45
   languageName: node
   linkType: hard
-
-"token-authorization-rules-workspace@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "token-authorization-rules-workspace@workspace:."
-  dependencies:
-    "@metaplex-foundation/amman": ^0.12.1
-    "@metaplex-foundation/solita": ^0.19.0
-    "@typescript-eslint/eslint-plugin": ^5.43.0
-    "@typescript-eslint/parser": ^5.43.0
-    esbuild-runner: ^2.2.2
-    eslint: ^8.27.0
-    eslint-config-prettier: ^8.5.0
-    eslint-plugin-prettier: ^4.2.1
-    prettier: ^2.7.1
-  languageName: unknown
-  linkType: soft
-
-"token-authorization-rules@workspace:packages/sdk":
-  version: 0.0.0-use.local
-  resolution: "token-authorization-rules@workspace:packages/sdk"
-  dependencies:
-    "@metaplex-foundation/beet": ^0.7.1
-    "@metaplex-foundation/beet-solana": ^0.4.0
-    "@metaplex-foundation/cusper": ^0.0.2
-    "@solana/spl-token": ^0.3.6
-    "@solana/web3.js": ^1.66.2
-    eslint: ^8.27.0
-    rimraf: ^3.0.2
-    supports-color: ^9.2.3
-    typedoc: ^0.23.21
-    typescript: ^4.9.3
-  languageName: unknown
-  linkType: soft
 
 "tokenize-whitespace@npm:0.0.1":
   version: 0.0.1

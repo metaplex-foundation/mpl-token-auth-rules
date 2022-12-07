@@ -1,5 +1,7 @@
-# Token Authorization Rules
+# Metaplex Token Authorization Rules
 A program that provides the ability to create and execute rules to restrict common token operations such as transferring and selling.
+
+> ⚠️ **Metaplex Token Authorization Rules is currently experimental and has not been formally audited. Use in production at your own risk.**
 
 ## Overview
 Authorization rules are variants of a `Rule` enum that implements a `validate()` function.
@@ -13,43 +15,38 @@ There are **Primitive Rules** and **Composed Rules** that are created by combini
 # Examples
 ## Rust
 ```rust
+use mpl_token_auth_rules::{
+    state::{Operation, Rule, RuleSet},
+    Payload,
+};
 use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::{
-    commitment_config::CommitmentConfig, native_token::LAMPORTS_PER_SOL, signature::Signer,
-    signer::keypair::Keypair, transaction::Transaction,
-};
-use token_authorization_rules::{
-    state::{Operation, Rule, RuleSet},
-    Payload, PayloadVec,
+    native_token::LAMPORTS_PER_SOL, signature::Signer, signer::keypair::Keypair,
+    transaction::Transaction,
 };
 
 fn main() {
-    let url = "http://localhost:8899".to_string();
+    let url = "https://api.devnet.solana.com".to_string();
     let rpc_client = RpcClient::new(url);
 
     let payer = Keypair::new();
 
-    let _signature = rpc_client
+    let signature = rpc_client
         .request_airdrop(&payer.pubkey(), LAMPORTS_PER_SOL)
         .unwrap();
 
-    let balance = rpc_client
-        .wait_for_balance_with_commitment(
-            &payer.pubkey(),
-            Some(LAMPORTS_PER_SOL),
-            CommitmentConfig::default(),
-        )
-        .unwrap();
-
-    println!("Payer balance: {}", balance);
+    loop {
+        let confirmed = rpc_client.confirm_transaction(&signature).unwrap();
+        if confirmed {
+            break;
+        }
+    }
 
     // Find RuleSet PDA.
-    let (ruleset_addr, _ruleset_bump) = token_authorization_rules::pda::find_ruleset_address(
-        payer.pubkey(),
-        "da rulez".to_string(),
-    );
+    let (ruleset_addr, _ruleset_bump) =
+        mpl_token_auth_rules::pda::find_ruleset_address(payer.pubkey(), "test ruleset".to_string());
 
     // Create some rules.
     let adtl_signer = Rule::AdditionalSigner {
@@ -81,11 +78,11 @@ fn main() {
         .unwrap();
 
     // Create a `create` instruction.
-    let create_ix = token_authorization_rules::instruction::create(
-        token_authorization_rules::id(),
+    let create_ix = mpl_token_auth_rules::instruction::create(
+        mpl_token_auth_rules::id(),
         payer.pubkey(),
         ruleset_addr,
-        "da rulez".to_string(),
+        "test ruleset".to_string(),
         serialized_data,
     );
 
@@ -107,11 +104,11 @@ fn main() {
     let payload = Payload::new(None, None, Some(2), None);
 
     // Create a `validate` instruction.
-    let validate_ix = token_authorization_rules::instruction::validate(
-        token_authorization_rules::id(),
+    let validate_ix = mpl_token_auth_rules::instruction::validate(
+        mpl_token_auth_rules::id(),
         payer.pubkey(),
         ruleset_addr,
-        "da rulez".to_string(),
+        "test ruleset".to_string(),
         Operation::Transfer,
         payload,
         vec![],
@@ -146,15 +143,19 @@ fn main() {
 
 ---
 
-### Build the rust program alone
+### Build and test the Rust program
 ```
-$ yarn build:rust
+$ cd program/
+$ cargo build-bpf
+$ cargo test-bpf
+$ cd ..
 ```
 
 ---
 
-### Generate the JS SDK and rebuild IDL only (using shank and solita)
+### Build the program, generate the JS API, and rebuild IDL (using Shank and Solita)
 ```
+$ yarn build:rust
 $ yarn solita
 ```
 
