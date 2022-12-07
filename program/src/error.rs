@@ -59,6 +59,10 @@ pub enum RuleSetError {
     /// 12 - Payer is not a signer
     #[error("Payer is not a signer")]
     PayerIsNotSigner,
+
+    /// 13 - Feature is not implemented yet
+    #[error("Not implemented")]
+    NotImplemented,
 }
 
 impl PrintProgramError for RuleSetError {
