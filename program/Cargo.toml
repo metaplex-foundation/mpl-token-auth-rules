@@ -16,13 +16,14 @@ borsh = "0.9.3"
 thiserror = "~1.0"
 num-derive = "0.3.3"
 num-traits = "~0.2"
-serde = { version = "1.0.147", features = ["derive"]}
-serde_json = "1.0.87"
+serde = { version = "1.0.136", features = ["derive"]}
+serde_with = { version = "1.12.0", optional = true }
 rmp-serde = "1.1.1"
 
 [features]
 no-entrypoint = []
 test-bpf = []
+serde-feature = ["serde_with"]
 
 [dev-dependencies]
 assert_matches = "1.5.0"
@@ -32,6 +33,7 @@ solana-validator = "=1.13.5"
 solana-logger = "=1.13.5"
 spl-token = { version = "3.5.0", features = [ "no-entrypoint" ] }
 mpl-token-metadata = { version = "1", features = [ "no-entrypoint" ] }
+serde_json = "1.0.87"
 
 [lib]
 crate-type = ["cdylib", "lib"]
