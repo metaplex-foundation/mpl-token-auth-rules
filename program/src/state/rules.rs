@@ -5,9 +5,7 @@ use crate::{
     Payload,
 };
 use serde::{Deserialize, Serialize};
-use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey, sysvar::Sysvar,
-};
+use solana_program::{account_info::AccountInfo, msg, pubkey::Pubkey, sysvar::Sysvar};
 use std::collections::HashMap;
 
 use super::{FrequencyAccount, SolanaAccount};
@@ -16,6 +14,7 @@ use super::{FrequencyAccount, SolanaAccount};
 pub enum Rule {
     All { rules: Vec<Rule> },
     Any { rules: Vec<Rule> },
+    Not { rule: Box<Rule> },
     AdditionalSigner { account: Pubkey },
     PubkeyMatch { destination: Pubkey },
     DerivedKeyMatch { account: Pubkey },
@@ -30,48 +29,54 @@ impl Rule {
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
-    ) -> ProgramResult {
+    ) -> (bool, usize) {
         match self {
             Rule::All { rules } => {
                 msg!("Validating All");
+                let mut last = self.to_usize();
                 for rule in rules {
-                    rule.validate(accounts, payload)?;
+                    last = rule.to_usize();
+                    let result = rule.validate(accounts, payload);
+                    if !result.0 {
+                        return result;
+                    }
                 }
-                Ok(())
+                (true, last)
             }
             Rule::Any { rules } => {
                 msg!("Validating Any");
-                let mut error: Option<ProgramResult> = None;
+                let mut last = self.to_usize();
                 for rule in rules {
-                    match rule.validate(accounts, payload) {
-                        Ok(_) => return Ok(()),
-                        Err(e) => error = Some(Err(e)),
+                    last = rule.to_usize();
+                    let result = rule.validate(accounts, payload);
+                    if result.0 {
+                        return result;
                     }
                 }
-                error.unwrap_or_else(|| Err(RuleSetError::DataTypeMismatch.into()))
+                (false, last)
+            }
+            Rule::Not { rule } => {
+                let result = rule.validate(accounts, payload);
+                (!result.0, result.1)
             }
             Rule::AdditionalSigner { account } => {
                 msg!("Validating AdditionalSigner");
-                if let Some(account) = accounts.get(account) {
-                    if account.is_signer {
-                        Ok(())
-                    } else {
-                        Err(RuleSetError::AdditionalSignerCheckFailed.into())
-                    }
+                if let Some(signer) = accounts.get(account) {
+                    (signer.is_signer, self.to_usize())
                 } else {
-                    Err(RuleSetError::AdditionalSignerCheckFailed.into())
+                    (false, self.to_usize())
                 }
             }
             Rule::PubkeyMatch { destination } => {
                 msg!("Validating PubkeyMatch");
                 if let Some(payload_destination) = &payload.destination_key {
                     if destination == payload_destination {
-                        Ok(())
+                        (true, self.to_usize())
                     } else {
-                        Err(RuleSetError::PubkeyMatchCheckFailed.into())
+                        (false, self.to_usize())
                     }
                 } else {
-                    Err(RuleSetError::PubkeyMatchCheckFailed.into())
+                    (false, self.to_usize())
                 }
             }
             Rule::DerivedKeyMatch { account } => {
@@ -80,13 +85,16 @@ impl Rule {
                     if let Some(account) = accounts.get(account) {
                         let vec_of_slices = seeds.iter().map(Vec::as_slice).collect::<Vec<&[u8]>>();
                         let seeds = &vec_of_slices[..];
-                        let _bump = assert_derivation(&crate::id(), account, seeds)?;
-                        Ok(())
+                        if let Ok(_bump) = assert_derivation(&crate::id(), account, seeds) {
+                            (true, self.to_usize())
+                        } else {
+                            (false, self.to_usize())
+                        }
                     } else {
-                        Err(RuleSetError::DerivedKeyMatchCheckFailed.into())
+                        (false, self.to_usize())
                     }
                 } else {
-                    Err(RuleSetError::DerivedKeyMatchCheckFailed.into())
+                    (false, self.to_usize())
                 }
             }
             Rule::ProgramOwned { program } => {
@@ -94,49 +102,53 @@ impl Rule {
                 if let Some(payload_destination) = &payload.destination_key {
                     if let Some(account) = accounts.get(payload_destination) {
                         if *account.owner == *program {
-                            return Ok(());
+                            return (true, self.to_usize());
                         }
                     }
                 }
-                Err(RuleSetError::ProgramOwnedCheckFailed.into())
+                (false, self.to_usize())
             }
             Rule::Amount { amount } => {
                 msg!("Validating Amount");
                 if let Some(payload_amount) = &payload.amount {
                     if amount == payload_amount {
-                        Ok(())
+                        (true, self.to_usize())
                     } else {
-                        Err(RuleSetError::AmountCheckFailed.into())
+                        (false, self.to_usize())
                     }
                 } else {
-                    Err(RuleSetError::AmountCheckFailed.into())
+                    (false, self.to_usize())
                 }
             }
             Rule::Frequency { freq_account } => {
                 msg!("Validating Frequency");
                 // Deserialize the frequency account
                 if let Some(account) = accounts.get(freq_account) {
-                    let current_time = solana_program::clock::Clock::get()?.unix_timestamp;
-                    let freq_account = FrequencyAccount::from_account_info(account);
-                    if let Ok(freq_account) = freq_account {
-                        if freq_account
-                            .last_update
-                            .checked_add(freq_account.period)
-                            .ok_or(RuleSetError::NumericalOverflow)?
-                            <= current_time
-                        {
-                            Ok(())
+                    if let Ok(current_time) = solana_program::clock::Clock::get() {
+                        let freq_account = FrequencyAccount::from_account_info(account);
+                        if let Ok(freq_account) = freq_account {
+                            // Grab the current time
+                            // Compare  last time + period to current time
+                            if let Some(freq_check) =
+                                freq_account.last_update.checked_add(freq_account.period)
+                            {
+                                if freq_check < current_time.unix_timestamp {
+                                    (true, self.to_usize())
+                                } else {
+                                    (false, self.to_usize())
+                                }
+                            } else {
+                                (false, self.to_usize())
+                            }
                         } else {
-                            Err(RuleSetError::FrequencyCheckFailed.into())
+                            (false, self.to_usize())
                         }
                     } else {
-                        Err(RuleSetError::FrequencyCheckFailed.into())
+                        (false, self.to_usize())
                     }
                 } else {
-                    Err(RuleSetError::FrequencyCheckFailed.into())
+                    (false, self.to_usize())
                 }
-                // Grab the current time
-                // Compare  last time + period to current time
             }
             Rule::PubkeyTreeMatch { root } => {
                 msg!("Validating PubkeyTreeMatch");
@@ -163,12 +175,12 @@ impl Rule {
                     }
                     // Check if the computed hash (root) is equal to the provided root
                     if computed_hash == *root {
-                        Ok(())
+                        (true, self.to_usize())
                     } else {
-                        Err(RuleSetError::PubkeyTreeMatchCheckFailed.into())
+                        (false, self.to_usize())
                     }
                 } else {
-                    Err(RuleSetError::PubkeyTreeMatchCheckFailed.into())
+                    (false, self.to_usize())
                 }
             }
         }
@@ -178,13 +190,30 @@ impl Rule {
         match self {
             Rule::All { .. } => 0,
             Rule::Any { .. } => 1,
-            Rule::AdditionalSigner { .. } => 2,
-            Rule::PubkeyMatch { .. } => 3,
-            Rule::DerivedKeyMatch { .. } => 4,
-            Rule::ProgramOwned { .. } => 5,
-            Rule::Amount { .. } => 6,
-            Rule::Frequency { .. } => 7,
-            Rule::PubkeyTreeMatch { .. } => 8,
+            Rule::Not { .. } => 2,
+            Rule::AdditionalSigner { .. } => 3,
+            Rule::PubkeyMatch { .. } => 4,
+            Rule::DerivedKeyMatch { .. } => 5,
+            Rule::ProgramOwned { .. } => 6,
+            Rule::Amount { .. } => 7,
+            Rule::Frequency { .. } => 8,
+            Rule::PubkeyTreeMatch { .. } => 9,
+        }
+    }
+
+    pub fn to_error(rule_type: usize) -> RuleSetError {
+        match rule_type {
+            0 => todo!(),                                   // Rule::All { .. }
+            1 => todo!(),                                   // Rule::Any { .. }
+            2 => todo!(),                                   // Rule::Not { .. }
+            3 => RuleSetError::AdditionalSignerCheckFailed, // Rule::AdditionalSigner { .. }
+            4 => RuleSetError::PubkeyMatchCheckFailed,      // Rule::PubkeyMatch { .. }
+            5 => RuleSetError::DerivedKeyMatchCheckFailed,  // Rule::DerivedKeyMatch { .. }
+            6 => RuleSetError::ProgramOwnedCheckFailed,     // Rule::ProgramOwned { .. }
+            7 => RuleSetError::AmountCheckFailed,           // Rule::Amount { .. }
+            8 => RuleSetError::FrequencyCheckFailed,        // Rule::Frequency { .. }
+            9 => RuleSetError::PubkeyTreeMatchCheckFailed,  // Rule::PubkeyTreeMatch { .. }
+            _ => unreachable!(),
         }
     }
 }

@@ -4,7 +4,7 @@ use crate::{
     error::RuleSetError,
     instruction::RuleSetInstruction,
     pda::PREFIX,
-    state::RuleSet,
+    state::{Rule, RuleSet},
     utils::{assert_derivation, create_or_allocate_account_raw},
 };
 use borsh::BorshDeserialize;
@@ -119,9 +119,10 @@ impl Processor {
                     .ok_or(RuleSetError::DataTypeMismatch)?;
 
                 // Validate the Rule.
-                if let Err(err) = rule.validate(&accounts_map, &args.payload) {
-                    msg!("Failed to validate: {}", err);
-                    return Err(err);
+                let result = rule.validate(&accounts_map, &args.payload);
+                if !result.0 {
+                    msg!("Failed to validate: {}", Rule::to_error(result.1));
+                    return Err(Rule::to_error(result.1).into());
                 }
 
                 Ok(())
