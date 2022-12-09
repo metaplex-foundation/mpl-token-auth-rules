@@ -1,6 +1,7 @@
 use crate::{
     error::RuleSetError,
     payload::{LeafInfo, SeedsVec},
+    pda::FREQ_PDA,
     utils::assert_derivation,
     Payload,
 };
@@ -136,8 +137,10 @@ impl Rule {
                     (false, self.to_error())
                 }
             }
-            #[allow(unused_variables)]
-            Rule::Frequency { freq_account } => {
+            Rule::Frequency {
+                freq_name,
+                freq_account,
+            } => {
                 msg!("Validating Frequency");
                 // TODO Rule is not implemented.
                 return (false, RuleSetError::NotImplemented);

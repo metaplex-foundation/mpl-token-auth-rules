@@ -62,11 +62,11 @@ pub fn create_or_allocate_account_raw<'a>(
 
 pub fn assert_derivation(
     program_id: &Pubkey,
-    account: &AccountInfo,
+    account: &Pubkey,
     path: &[&[u8]],
 ) -> Result<u8, ProgramError> {
     let (key, bump) = Pubkey::find_program_address(path, program_id);
-    if key != *account.key {
+    if key != *account {
         return Err(RuleSetError::DerivedKeyInvalid.into());
     }
     Ok(bump)

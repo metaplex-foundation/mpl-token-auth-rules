@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default)]
 pub struct RuleSet {
-    operations: HashMap<Operation, Rule>,
+    pub operations: HashMap<Operation, Rule>,
 }
 
 impl RuleSet {

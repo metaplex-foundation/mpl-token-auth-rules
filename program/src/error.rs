@@ -63,6 +63,10 @@ pub enum RuleSetError {
     /// 13 - Feature is not implemented yet
     #[error("Not implemented")]
     NotImplemented,
+
+    /// 14 - Borsh Serialization Error
+    #[error("Borsh Serialization Error")]
+    BorshSerializationError,
 }
 
 impl PrintProgramError for RuleSetError {
