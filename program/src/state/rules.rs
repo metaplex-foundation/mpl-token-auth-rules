@@ -120,8 +120,10 @@ impl Rule {
                     (false, self.to_usize())
                 }
             }
+            #[allow(unused_variables)]
             Rule::Frequency { freq_account } => {
                 msg!("Validating Frequency");
+                #[allow(unreachable_code)]
                 // Deserialize the frequency account
                 if let Some(account) = accounts.get(freq_account) {
                     if let Ok(current_time) = solana_program::clock::Clock::get() {
