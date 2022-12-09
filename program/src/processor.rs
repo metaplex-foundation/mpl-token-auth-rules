@@ -46,7 +46,7 @@ impl Processor {
                     ],
                 )?;
 
-                let ruleset_seeds = &[
+                let rule_set_seeds = &[
                     PREFIX.as_ref(),
                     payer_info.key.as_ref(),
                     args.rule_set_name.as_ref(),
@@ -69,7 +69,7 @@ impl Processor {
                     system_program_info,
                     payer_info,
                     args.serialized_rule_set.len(),
-                    ruleset_seeds,
+                    rule_set_seeds,
                 )?;
 
                 // Copy user-pre-serialized RuleSet to PDA account.

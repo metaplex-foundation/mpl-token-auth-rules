@@ -1,6 +1,6 @@
 use solana_program::pubkey::Pubkey;
 
-pub const PREFIX: &str = "ruleset";
+pub const PREFIX: &str = "rule_set";
 pub const FREQ_PDA: &str = "frequency";
 
 pub fn find_rule_set_address(creator: Pubkey, rule_set_name: String) -> (Pubkey, u8) {

@@ -47,16 +47,16 @@ pub struct CreateFrequencyRuleArgs {
 #[rustfmt::skip]
 /// Instructions available in this program.
 pub enum RuleSetInstruction {
-    /// This instruction stores a caller-pre-serialized `RuleSet` into the ruleset PDA account.
+    /// This instruction stores a caller-pre-serialized `RuleSet` into the rule_set PDA account.
     #[account(0, writable, signer, name="payer", desc="Payer and creator of the RuleSet")]
-    #[account(1, writable, name="ruleset_pda", desc = "The PDA account where the RuleSet is stored")]
+    #[account(1, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
     #[account(2, name = "system_program", desc = "System program")]
     Create(CreateArgs),
 
-    /// This instruction executes the RuleSet stored in the ruleset PDA account by sending
+    /// This instruction executes the RuleSet stored in the rule_set PDA account by sending
     /// it an `AccountsMap` and a `PayloadMap` and calling the `RuleSet`'s `validate` method.
     #[account(0, writable, signer, name="payer", desc="Payer and creator of the RuleSet")]
-    #[account(1, writable, name="ruleset", desc = "The PDA account where the RuleSet is stored")]
+    #[account(1, writable, name="rule_set", desc = "The PDA account where the RuleSet is stored")]
     #[account(2, name = "system_program", desc = "System program")]
     #[account(3, optional, signer, name="opt_rule_signer_1", desc = "Optional rule validation signer 1")]
     #[account(4, optional, signer, name="opt_rule_signer_2", desc = "Optional rule validation signer 2")]

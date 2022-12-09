@@ -47,8 +47,8 @@ fn main() {
     }
 
     // Find RuleSet PDA.
-    let (ruleset_addr, _ruleset_bump) =
-        mpl_token_auth_rules::pda::find_ruleset_address(payer.pubkey(), "test ruleset".to_string());
+    let (rule_set_addr, _rule_set_bump) =
+        mpl_token_auth_rules::pda::find_rule_set_address(payer.pubkey(), "test rule_set".to_string());
 
     // Create some rules.
     let adtl_signer = Rule::AdditionalSigner {
@@ -83,8 +83,8 @@ fn main() {
     let create_ix = mpl_token_auth_rules::instruction::create(
         mpl_token_auth_rules::id(),
         payer.pubkey(),
-        ruleset_addr,
-        "test ruleset".to_string(),
+        rule_set_addr,
+        "test rule_set".to_string(),
         serialized_data,
     );
 
@@ -109,8 +109,8 @@ fn main() {
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         payer.pubkey(),
-        ruleset_addr,
-        "test ruleset".to_string(),
+        rule_set_addr,
+        "test rule_set".to_string(),
         Operation::Transfer,
         payload,
         vec![],

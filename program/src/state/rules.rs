@@ -138,7 +138,7 @@ impl Rule {
                 }
             }
             Rule::Frequency {
-                freq_name,
+                freq_name: _,
                 freq_account,
             } => {
                 msg!("Validating Frequency");

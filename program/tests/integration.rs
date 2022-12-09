@@ -24,17 +24,17 @@ async fn test_payer_not_signer_fails() {
     let mut context = program_test().start_with_context().await;
 
     // Find RuleSet PDA.
-    let (ruleset_addr, _ruleset_bump) = mpl_token_auth_rules::pda::find_ruleset_address(
+    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
         context.payer.pubkey(),
-        "test ruleset".to_string(),
+        "test rule_set".to_string(),
     );
 
     // Create a `create` instruction.
     let create_ix = mpl_token_auth_rules::instruction::create(
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
-        ruleset_addr,
-        "test ruleset".to_string(),
+        rule_set_addr,
+        "test rule_set".to_string(),
         vec![],
     );
 
@@ -58,8 +58,8 @@ async fn test_payer_not_signer_fails() {
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
-        ruleset_addr,
-        "test ruleset".to_string(),
+        rule_set_addr,
+        "test rule_set".to_string(),
         Operation::Transfer,
         Payload::default(),
         vec![],
@@ -88,9 +88,9 @@ async fn test_additional_signer_and_amount() {
     let mut context = program_test().start_with_context().await;
 
     // Find RuleSet PDA.
-    let (ruleset_addr, _ruleset_bump) = mpl_token_auth_rules::pda::find_ruleset_address(
+    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
         context.payer.pubkey(),
-        "test ruleset".to_string(),
+        "test rule_set".to_string(),
     );
 
     // Second signer.
@@ -132,8 +132,8 @@ async fn test_additional_signer_and_amount() {
     let create_ix = mpl_token_auth_rules::instruction::create(
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
-        ruleset_addr,
-        "test ruleset".to_string(),
+        rule_set_addr,
+        "test rule_set".to_string(),
         serialized_data,
     );
 
@@ -159,8 +159,8 @@ async fn test_additional_signer_and_amount() {
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
-        ruleset_addr,
-        "test ruleset".to_string(),
+        rule_set_addr,
+        "test rule_set".to_string(),
         Operation::Transfer,
         payload.clone(),
         vec![],
@@ -198,8 +198,8 @@ async fn test_additional_signer_and_amount() {
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
-        ruleset_addr,
-        "test ruleset".to_string(),
+        rule_set_addr,
+        "test rule_set".to_string(),
         Operation::Transfer,
         payload,
         vec![second_signer.pubkey()],
@@ -228,8 +228,8 @@ async fn test_additional_signer_and_amount() {
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
-        ruleset_addr,
-        "test ruleset".to_string(),
+        rule_set_addr,
+        "test rule_set".to_string(),
         Operation::Transfer,
         payload,
         vec![second_signer.pubkey()],
