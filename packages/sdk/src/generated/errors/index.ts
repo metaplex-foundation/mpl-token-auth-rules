@@ -281,6 +281,26 @@ createErrorFromCodeLookup.set(0xc, () => new PayerIsNotSignerError());
 createErrorFromNameLookup.set('PayerIsNotSigner', () => new PayerIsNotSignerError());
 
 /**
+ * NotImplemented: 'Not implemented'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class NotImplementedError extends Error {
+  readonly code: number = 0xd;
+  readonly name: string = 'NotImplemented';
+  constructor() {
+    super('Not implemented');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, NotImplementedError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0xd, () => new NotImplementedError());
+createErrorFromNameLookup.set('NotImplemented', () => new NotImplementedError());
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated
