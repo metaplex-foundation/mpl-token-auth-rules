@@ -15,16 +15,37 @@ use super::{FrequencyAccount, SolanaAccount};
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub enum Rule {
-    All { rules: Vec<Rule> },
-    Any { rules: Vec<Rule> },
-    Not { rule: Box<Rule> },
-    AdditionalSigner { account: Pubkey },
-    PubkeyMatch { destination: Pubkey },
-    DerivedKeyMatch { account: Pubkey },
-    ProgramOwned { program: Pubkey },
-    Amount { amount: u64 },
-    Frequency { freq_account: Pubkey },
-    PubkeyTreeMatch { root: [u8; 32] },
+    All {
+        rules: Vec<Rule>,
+    },
+    Any {
+        rules: Vec<Rule>,
+    },
+    Not {
+        rule: Box<Rule>,
+    },
+    AdditionalSigner {
+        account: Pubkey,
+    },
+    PubkeyMatch {
+        destination: Pubkey,
+    },
+    DerivedKeyMatch {
+        account: Pubkey,
+    },
+    ProgramOwned {
+        program: Pubkey,
+    },
+    Amount {
+        amount: u64,
+    },
+    Frequency {
+        freq_name: String,
+        freq_account: Pubkey,
+    },
+    PubkeyTreeMatch {
+        root: [u8; 32],
+    },
 }
 
 impl Rule {
@@ -99,14 +120,10 @@ impl Rule {
             Rule::DerivedKeyMatch { account } => {
                 msg!("Validating DerivedKeyMatch");
                 if let Some(SeedsVec { seeds }) = &payload.derived_key_seeds {
-                    if let Some(account) = accounts.get(account) {
-                        let vec_of_slices = seeds.iter().map(Vec::as_slice).collect::<Vec<&[u8]>>();
-                        let seeds = &vec_of_slices[..];
-                        if let Ok(_bump) = assert_derivation(&crate::id(), account, seeds) {
-                            (true, self.to_error())
-                        } else {
-                            (false, self.to_error())
-                        }
+                    let vec_of_slices = seeds.iter().map(Vec::as_slice).collect::<Vec<&[u8]>>();
+                    let seeds = &vec_of_slices[..];
+                    if let Ok(_bump) = assert_derivation(&crate::id(), account, seeds) {
+                        (true, self.to_error())
                     } else {
                         (false, self.to_error())
                     }
@@ -142,9 +159,6 @@ impl Rule {
                 freq_account,
             } => {
                 msg!("Validating Frequency");
-                // TODO Rule is not implemented.
-                return (false, RuleSetError::NotImplemented);
-                #[allow(unreachable_code)]
                 // Deserialize the frequency account
                 if let Some(account) = accounts.get(freq_account) {
                     if let Ok(current_time) = solana_program::clock::Clock::get() {
@@ -161,7 +175,7 @@ impl Rule {
                                     (false, self.to_error())
                                 }
                             } else {
-                                (false, self.to_error())
+                                (false, RuleSetError::NumericalOverflow)
                             }
                         } else {
                             (false, self.to_error())
@@ -206,6 +220,51 @@ impl Rule {
                     (false, self.to_error())
                 }
             }
+        }
+    }
+
+    pub fn assert_rule_pda_derivations(
+        &self,
+        payer: &Pubkey,
+        rule_set_name: &String,
+    ) -> ProgramResult {
+        match self {
+            Rule::All { rules } => {
+                for rule in rules {
+                    rule.assert_rule_pda_derivations(payer, rule_set_name)?;
+                }
+                Ok(())
+            }
+            Rule::Any { rules } => {
+                let mut error: Option<ProgramResult> = None;
+                for rule in rules {
+                    match rule.assert_rule_pda_derivations(payer, rule_set_name) {
+                        Ok(_) => return Ok(()),
+                        Err(e) => error = Some(Err(e)),
+                    }
+                }
+                error.unwrap_or_else(|| Err(RuleSetError::DataTypeMismatch.into()))
+            }
+            Rule::Frequency {
+                freq_name,
+                freq_account,
+            } => {
+                msg!("Assert Frequency PDA deriviation");
+                // Check Frequency account info derivation.
+                let _bump = assert_derivation(
+                    &crate::id(),
+                    freq_account,
+                    &[
+                        FREQ_PDA.as_bytes(),
+                        payer.as_ref(),
+                        rule_set_name.as_bytes(),
+                        freq_name.as_bytes(),
+                    ],
+                )?;
+
+                Ok(())
+            }
+            _ => Ok(()),
         }
     }
 

@@ -263,3 +263,122 @@ async fn test_additional_signer_and_amount() {
         _ => panic!("Unexpected error {:?}", err),
     }
 }
+
+#[tokio::test]
+async fn test_frequency() {
+    let mut context = program_test().start_with_context().await;
+
+    // Find Frequency Rule PDA.
+    let (freq_account, _freq_account_bump) = mpl_token_auth_rules::pda::find_frequency_pda_address(
+        context.payer.pubkey(),
+        "test rule_set".to_string(),
+        "frequency rule".to_string(),
+    );
+
+    // Create a `create` instruction.
+    let freq_rule_ix = mpl_token_auth_rules::instruction::create_frequency_rule(
+        mpl_token_auth_rules::id(),
+        context.payer.pubkey(),
+        freq_account,
+        "test rule_set".to_string(),
+        "frequency rule".to_string(),
+        0,
+        10,
+    );
+
+    // Add it to a transaction.
+    let freq_rule_tx = Transaction::new_signed_with_payer(
+        &[freq_rule_ix],
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        context.last_blockhash,
+    );
+
+    // Process the transaction.
+    context
+        .banks_client
+        .process_transaction(freq_rule_tx)
+        .await
+        .expect("creation of frequency PDA should succeed");
+
+    // Find RuleSet PDA.
+    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
+        context.payer.pubkey(),
+        "test rule_set".to_string(),
+    );
+
+    // Create a Frequency Rule.
+    let freq_rule = Rule::Frequency {
+        freq_name: "frequency rule".to_string(),
+        freq_account,
+    };
+
+    // Create a RuleSet.
+    let mut rule_set = RuleSet::new();
+    rule_set.add(Operation::Transfer, freq_rule);
+
+    println!("{:#?}", rule_set);
+
+    // Serialize the RuleSet using RMP serde.
+    let mut serialized_data = Vec::new();
+    rule_set
+        .serialize(&mut Serializer::new(&mut serialized_data))
+        .unwrap();
+
+    // Create a `create` instruction.
+    let create_ix = mpl_token_auth_rules::instruction::create(
+        mpl_token_auth_rules::id(),
+        context.payer.pubkey(),
+        rule_set_addr,
+        "test rule_set".to_string(),
+        serialized_data,
+    );
+
+    // Add it to a transaction.
+    let create_tx = Transaction::new_signed_with_payer(
+        &[create_ix],
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        context.last_blockhash,
+    );
+
+    // Process the transaction.
+    context
+        .banks_client
+        .process_transaction(create_tx)
+        .await
+        .expect("creation should succeed");
+
+    // We need several slots between unverifying and running set_and_verify_collection.
+    context.warp_to_slot(2).unwrap();
+
+    // Store the payload of data to validate against the rule definition.
+    let payload = Payload::default();
+
+    // Create a `validate` instruction WITHOUT the second signer.
+    let validate_ix = mpl_token_auth_rules::instruction::validate(
+        mpl_token_auth_rules::id(),
+        context.payer.pubkey(),
+        rule_set_addr,
+        "test rule_set".to_string(),
+        Operation::Transfer,
+        payload.clone(),
+        vec![],
+        vec![freq_account],
+    );
+
+    // Add it to a transaction.
+    let validate_tx = Transaction::new_signed_with_payer(
+        &[validate_ix],
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        context.last_blockhash,
+    );
+
+    // Process the transaction.
+    context
+        .banks_client
+        .process_transaction(validate_tx)
+        .await
+        .expect("validation should succeed");
+}

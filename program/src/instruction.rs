@@ -1,7 +1,4 @@
-use crate::{
-    state::{FrequencyAccount, Operation},
-    Payload,
-};
+use crate::{state::Operation, Payload};
 use borsh::{BorshDeserialize, BorshSerialize};
 use shank::ShankInstruction;
 use solana_program::{
@@ -39,8 +36,10 @@ pub struct CreateFrequencyRuleArgs {
     pub rule_set_name: String,
     /// Name of the Frequency Rule, used in Frequency PDA derivation.
     pub freq_rule_name: String,
-    /// Frequency Rule data that will be stored in the Frequency PDA account.
-    pub freq_data: FrequencyAccount,
+    /// Timestamp of last update.
+    pub last_update: i64,
+    /// Timestamp of permitted period.
+    pub period: i64,
 }
 
 #[derive(Debug, Clone, ShankInstruction, BorshSerialize, BorshDeserialize)]
@@ -160,7 +159,8 @@ pub fn create_frequency_rule(
     freq_rule_pda: Pubkey,
     rule_set_name: String,
     freq_rule_name: String,
-    freq_data: FrequencyAccount,
+    last_update: i64,
+    period: i64,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(payer, true),
@@ -174,7 +174,8 @@ pub fn create_frequency_rule(
         data: RuleSetInstruction::CreateFrequencyRule(CreateFrequencyRuleArgs {
             rule_set_name,
             freq_rule_name,
-            freq_data,
+            last_update,
+            period,
         })
         .try_to_vec()
         .unwrap(),

@@ -4,7 +4,7 @@ use crate::{
     error::RuleSetError,
     instruction::RuleSetInstruction,
     pda::{FREQ_PDA, PREFIX},
-    state::RuleSet,
+    state::{FrequencyAccount, RuleSet},
     utils::{assert_derivation, create_or_allocate_account_raw},
 };
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -165,9 +165,10 @@ impl Processor {
                     &[bump],
                 ];
 
+                let freq_data = FrequencyAccount::new(args.last_update, args.period);
+
                 // Serialize the Frequency Rule.
-                let serialized_rule = args
-                    .freq_data
+                let serialized_rule = freq_data
                     .try_to_vec()
                     .map_err(|_| RuleSetError::BorshSerializationError)?;
 
