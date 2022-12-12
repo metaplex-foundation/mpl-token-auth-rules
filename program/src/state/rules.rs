@@ -5,7 +5,9 @@ use crate::{
     Payload,
 };
 use serde::{Deserialize, Serialize};
-use solana_program::{account_info::AccountInfo, msg, pubkey::Pubkey, sysvar::Sysvar};
+use solana_program::{
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey, sysvar::Sysvar,
+};
 use std::collections::HashMap;
 
 use super::{FrequencyAccount, SolanaAccount};
@@ -29,6 +31,20 @@ impl Rule {
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
+    ) -> ProgramResult {
+        let (status, rollup_err) = self.ll_validate(accounts, payload);
+
+        if status {
+            ProgramResult::Ok(())
+        } else {
+            ProgramResult::Err(rollup_err.into())
+        }
+    }
+
+    pub fn ll_validate(
+        &self,
+        accounts: &HashMap<Pubkey, &AccountInfo>,
+        payload: &Payload,
     ) -> (bool, RuleSetError) {
         match self {
             Rule::All { rules } => {
@@ -36,7 +52,7 @@ impl Rule {
                 let mut last = self.to_error();
                 for rule in rules {
                     last = rule.to_error();
-                    let result = rule.validate(accounts, payload);
+                    let result = rule.ll_validate(accounts, payload);
                     if !result.0 {
                         return result;
                     }
@@ -48,7 +64,7 @@ impl Rule {
                 let mut last = self.to_error();
                 for rule in rules {
                     last = rule.to_error();
-                    let result = rule.validate(accounts, payload);
+                    let result = rule.ll_validate(accounts, payload);
                     if result.0 {
                         return result;
                     }
@@ -56,7 +72,7 @@ impl Rule {
                 (false, last)
             }
             Rule::Not { rule } => {
-                let result = rule.validate(accounts, payload);
+                let result = rule.ll_validate(accounts, payload);
                 (!result.0, result.1)
             }
             Rule::AdditionalSigner { account } => {
@@ -187,21 +203,6 @@ impl Rule {
                     (false, self.to_error())
                 }
             }
-        }
-    }
-
-    pub fn to_usize(&self) -> usize {
-        match self {
-            Rule::All { .. } => 0,
-            Rule::Any { .. } => 1,
-            Rule::Not { .. } => 2,
-            Rule::AdditionalSigner { .. } => 3,
-            Rule::PubkeyMatch { .. } => 4,
-            Rule::DerivedKeyMatch { .. } => 5,
-            Rule::ProgramOwned { .. } => 6,
-            Rule::Amount { .. } => 7,
-            Rule::Frequency { .. } => 8,
-            Rule::PubkeyTreeMatch { .. } => 9,
         }
     }
 

@@ -119,10 +119,9 @@ impl Processor {
                     .ok_or(RuleSetError::DataTypeMismatch)?;
 
                 // Validate the Rule.
-                let result = rule.validate(&accounts_map, &args.payload);
-                if !result.0 {
-                    msg!("Failed to validate: {}", result.1);
-                    return Err(result.1.into());
+                if let Err(err) = rule.validate(&accounts_map, &args.payload) {
+                    msg!("Failed to validate: {}", err);
+                    return Err(err);
                 }
 
                 Ok(())
