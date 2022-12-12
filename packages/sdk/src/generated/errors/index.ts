@@ -301,6 +301,26 @@ createErrorFromCodeLookup.set(0xd, () => new NotImplementedError());
 createErrorFromNameLookup.set('NotImplemented', () => new NotImplementedError());
 
 /**
+ * BorshSerializationError: 'Borsh Serialization Error'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class BorshSerializationErrorError extends Error {
+  readonly code: number = 0xe;
+  readonly name: string = 'BorshSerializationError';
+  constructor() {
+    super('Borsh Serialization Error');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, BorshSerializationErrorError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0xe, () => new BorshSerializationErrorError());
+createErrorFromNameLookup.set('BorshSerializationError', () => new BorshSerializationErrorError());
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

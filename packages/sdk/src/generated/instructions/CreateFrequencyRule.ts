@@ -7,66 +7,69 @@
 
 import * as beet from '@metaplex-foundation/beet';
 import * as web3 from '@solana/web3.js';
-import { CreateArgs, createArgsBeet } from '../types/CreateArgs';
+import {
+  CreateFrequencyRuleArgs,
+  createFrequencyRuleArgsBeet,
+} from '../types/CreateFrequencyRuleArgs';
 
 /**
  * @category Instructions
- * @category Create
+ * @category CreateFrequencyRule
  * @category generated
  */
-export type CreateInstructionArgs = {
-  createArgs: CreateArgs;
+export type CreateFrequencyRuleInstructionArgs = {
+  createFrequencyRuleArgs: CreateFrequencyRuleArgs;
 };
 /**
  * @category Instructions
- * @category Create
+ * @category CreateFrequencyRule
  * @category generated
  */
-export const CreateStruct = new beet.FixableBeetArgsStruct<
-  CreateInstructionArgs & {
+export const CreateFrequencyRuleStruct = new beet.FixableBeetArgsStruct<
+  CreateFrequencyRuleInstructionArgs & {
     instructionDiscriminator: number;
   }
 >(
   [
     ['instructionDiscriminator', beet.u8],
-    ['createArgs', createArgsBeet],
+    ['createFrequencyRuleArgs', createFrequencyRuleArgsBeet],
   ],
-  'CreateInstructionArgs',
+  'CreateFrequencyRuleInstructionArgs',
 );
 /**
- * Accounts required by the _Create_ instruction
+ * Accounts required by the _CreateFrequencyRule_ instruction
  *
- * @property [_writable_, **signer**] payer Payer and creator of the RuleSet
- * @property [_writable_] ruleSetPda The PDA account where the RuleSet is stored
+ * @property [_writable_, **signer**] payer Payer and creator of the Frequency Rule
+ * @property [_writable_] frequencyPda The PDA account where the Frequency Rule is stored
  * @category Instructions
- * @category Create
+ * @category CreateFrequencyRule
  * @category generated
  */
-export type CreateInstructionAccounts = {
+export type CreateFrequencyRuleInstructionAccounts = {
   payer: web3.PublicKey;
-  ruleSetPda: web3.PublicKey;
+  frequencyPda: web3.PublicKey;
   systemProgram?: web3.PublicKey;
 };
 
-export const createInstructionDiscriminator = 0;
+export const createFrequencyRuleInstructionDiscriminator = 2;
 
 /**
- * Creates a _Create_ instruction.
+ * Creates a _CreateFrequencyRule_ instruction.
  *
  * @param accounts that will be accessed while the instruction is processed
  * @param args to provide as instruction data to the program
  *
  * @category Instructions
- * @category Create
+ * @category CreateFrequencyRule
  * @category generated
  */
-export function createCreateInstruction(
-  accounts: CreateInstructionAccounts,
-  args: CreateInstructionArgs,
+export function createCreateFrequencyRuleInstruction(
+  accounts: CreateFrequencyRuleInstructionAccounts,
+  args: CreateFrequencyRuleInstructionArgs,
   programId = new web3.PublicKey('auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'),
 ) {
-  const [data] = CreateStruct.serialize({
-    instructionDiscriminator: createInstructionDiscriminator,
+  const [data] = CreateFrequencyRuleStruct.serialize({
+    instructionDiscriminator: createFrequencyRuleInstructionDiscriminator,
     ...args,
   });
   const keys: web3.AccountMeta[] = [
@@ -76,7 +79,7 @@ export function createCreateInstruction(
       isSigner: true,
     },
     {
-      pubkey: accounts.ruleSetPda,
+      pubkey: accounts.frequencyPda,
       isWritable: true,
       isSigner: false,
     },

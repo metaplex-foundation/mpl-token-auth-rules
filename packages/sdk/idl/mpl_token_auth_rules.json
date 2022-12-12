@@ -9,13 +9,13 @@
           "name": "payer",
           "isMut": true,
           "isSigner": true,
-          "desc": "Payer and creator of the rule set"
+          "desc": "Payer and creator of the RuleSet"
         },
         {
-          "name": "rulesetPda",
+          "name": "ruleSetPda",
           "isMut": true,
           "isSigner": false,
-          "desc": "The PDA account where the ruleset is stored"
+          "desc": "The PDA account where the RuleSet is stored"
         },
         {
           "name": "systemProgram",
@@ -44,13 +44,13 @@
           "name": "payer",
           "isMut": true,
           "isSigner": true,
-          "desc": "Payer and creator of the rule set"
+          "desc": "Payer and creator of the RuleSet"
         },
         {
-          "name": "ruleset",
+          "name": "ruleSet",
           "isMut": true,
           "isSigner": false,
-          "desc": "The PDA account where the ruleset is stored"
+          "desc": "The PDA account where the RuleSet is stored"
         },
         {
           "name": "systemProgram",
@@ -141,6 +141,41 @@
         "type": "u8",
         "value": 1
       }
+    },
+    {
+      "name": "CreateFrequencyRule",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "desc": "Payer and creator of the Frequency Rule"
+        },
+        {
+          "name": "frequencyPda",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "The PDA account where the Frequency Rule is stored"
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "System program"
+        }
+      ],
+      "args": [
+        {
+          "name": "createFrequencyRuleArgs",
+          "type": {
+            "defined": "CreateFrequencyRuleArgs"
+          }
+        }
+      ],
+      "discriminant": {
+        "type": "u8",
+        "value": 2
+      }
     }
   ],
   "accounts": [
@@ -174,7 +209,7 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "name",
+            "name": "ruleSetName",
             "type": "string"
           },
           {
@@ -190,7 +225,7 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "name",
+            "name": "ruleSetName",
             "type": "string"
           },
           {
@@ -204,6 +239,30 @@
             "type": {
               "defined": "Payload"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "CreateFrequencyRuleArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "ruleSetName",
+            "type": "string"
+          },
+          {
+            "name": "freqRuleName",
+            "type": "string"
+          },
+          {
+            "name": "lastUpdate",
+            "type": "i64"
+          },
+          {
+            "name": "period",
+            "type": "i64"
           }
         ]
       }
@@ -391,6 +450,11 @@
       "code": 13,
       "name": "NotImplemented",
       "msg": "Not implemented"
+    },
+    {
+      "code": 14,
+      "name": "BorshSerializationError",
+      "msg": "Borsh Serialization Error"
     }
   ],
   "metadata": {

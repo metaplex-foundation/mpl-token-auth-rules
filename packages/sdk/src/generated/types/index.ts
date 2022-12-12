@@ -1,4 +1,5 @@
 export * from './CreateArgs';
+export * from './CreateFrequencyRuleArgs';
 export * from './Key';
 export * from './LeafInfo';
 export * from './Operation';
