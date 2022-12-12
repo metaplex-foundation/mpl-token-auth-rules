@@ -103,14 +103,17 @@ async fn test_additional_signer_and_amount() {
     let adtl_signer2 = Rule::AdditionalSigner {
         account: second_signer.pubkey(),
     };
-    let amount_check = Rule::Amount { amount: 2 };
+    let amount_check = Rule::Amount { amount: 1 };
+    let not_amount_check = Rule::Not {
+        rule: Box::new(amount_check),
+    };
 
     let first_rule = Rule::All {
         rules: vec![adtl_signer, adtl_signer2],
     };
 
     let overall_rule = Rule::All {
-        rules: vec![first_rule, amount_check],
+        rules: vec![first_rule, not_amount_check],
     };
 
     // Create a RuleSet.

@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.1.1",
   "name": "mpl_token_auth_rules",
   "instructions": [
     {
@@ -386,6 +386,11 @@
       "code": 12,
       "name": "PayerIsNotSigner",
       "msg": "Payer is not a signer"
+    },
+    {
+      "code": 13,
+      "name": "NotImplemented",
+      "msg": "Not implemented"
     }
   ],
   "metadata": {
