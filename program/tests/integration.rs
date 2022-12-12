@@ -268,6 +268,9 @@ async fn test_additional_signer_and_amount() {
 async fn test_frequency() {
     let mut context = program_test().start_with_context().await;
 
+    // --------------------------------
+    // Frequency Rule PDA
+    // --------------------------------
     // Find Frequency Rule PDA.
     let (freq_account, _freq_account_bump) = mpl_token_auth_rules::pda::find_frequency_pda_address(
         context.payer.pubkey(),
@@ -275,7 +278,7 @@ async fn test_frequency() {
         "frequency rule".to_string(),
     );
 
-    // Create a `create` instruction.
+    // Create a `create_frequency_rule` instruction.
     let freq_rule_ix = mpl_token_auth_rules::instruction::create_frequency_rule(
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
@@ -301,6 +304,9 @@ async fn test_frequency() {
         .await
         .expect("creation of frequency PDA should succeed");
 
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
     // Find RuleSet PDA.
     let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
         context.payer.pubkey(),
@@ -349,13 +355,16 @@ async fn test_frequency() {
         .await
         .expect("creation should succeed");
 
+    // --------------------------------
+    // Validate Frequency Rule
+    // --------------------------------
     // We need several slots between unverifying and running set_and_verify_collection.
     context.warp_to_slot(2).unwrap();
 
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::default();
 
-    // Create a `validate` instruction WITHOUT the second signer.
+    // Create a `validate` instruction passing in the Frequency Rule account.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
