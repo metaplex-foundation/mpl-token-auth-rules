@@ -10,6 +10,16 @@ pub struct FrequencyAccount {
     pub period: i64,
 }
 
+impl FrequencyAccount {
+    pub fn new(last_update: i64, period: i64) -> Self {
+        Self {
+            key: Key::Frequency,
+            last_update,
+            period,
+        }
+    }
+}
+
 impl SolanaAccount for FrequencyAccount {
     fn key() -> Key {
         Key::Frequency

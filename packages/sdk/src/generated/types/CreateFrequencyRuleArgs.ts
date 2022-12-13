@@ -6,23 +6,23 @@
  */
 
 import * as beet from '@metaplex-foundation/beet';
-import { Operation, operationBeet } from './Operation';
-import { Payload, payloadBeet } from './Payload';
-export type ValidateArgs = {
+export type CreateFrequencyRuleArgs = {
   ruleSetName: string;
-  operation: Operation;
-  payload: Payload;
+  freqRuleName: string;
+  lastUpdate: beet.bignum;
+  period: beet.bignum;
 };
 
 /**
  * @category userTypes
  * @category generated
  */
-export const validateArgsBeet = new beet.FixableBeetArgsStruct<ValidateArgs>(
+export const createFrequencyRuleArgsBeet = new beet.FixableBeetArgsStruct<CreateFrequencyRuleArgs>(
   [
     ['ruleSetName', beet.utf8String],
-    ['operation', operationBeet],
-    ['payload', payloadBeet],
+    ['freqRuleName', beet.utf8String],
+    ['lastUpdate', beet.i64],
+    ['period', beet.i64],
   ],
-  'ValidateArgs',
+  'CreateFrequencyRuleArgs',
 );

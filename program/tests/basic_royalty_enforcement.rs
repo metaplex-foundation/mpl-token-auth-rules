@@ -22,7 +22,7 @@ async fn basic_royalty_enforcement() {
     // Create RuleSet
     // --------------------------------
     // Find RuleSet PDA.
-    let (ruleset_addr, _ruleset_bump) = mpl_token_auth_rules::pda::find_ruleset_address(
+    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
         context.payer.pubkey(),
         "basic_royalty_enforcement".to_string(),
     );
@@ -44,7 +44,7 @@ async fn basic_royalty_enforcement() {
         root: marketplace_tree_root,
     };
 
-    // Create Basic Royalty Enforcement Ruleset.
+    // Create Basic Royalty Enforcement RuleSet.
     let mut basic_royalty_enforcement_rule_set = RuleSet::new();
     basic_royalty_enforcement_rule_set.add(Operation::Transfer, owned_by_token_metadata);
     basic_royalty_enforcement_rule_set.add(Operation::Delegate, leaf_in_marketplace_tree.clone());
@@ -65,7 +65,7 @@ async fn basic_royalty_enforcement() {
     let create_ix = mpl_token_auth_rules::instruction::create(
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
-        ruleset_addr,
+        rule_set_addr,
         "basic_royalty_enforcement".to_string(),
         serialized_data,
     );
@@ -120,7 +120,7 @@ async fn basic_royalty_enforcement() {
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
-        ruleset_addr,
+        rule_set_addr,
         "basic_royalty_enforcement".to_string(),
         Operation::Transfer,
         payload,
@@ -178,7 +178,7 @@ async fn basic_royalty_enforcement() {
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
-        ruleset_addr,
+        rule_set_addr,
         "basic_royalty_enforcement".to_string(),
         Operation::Delegate,
         payload.clone(),
@@ -208,7 +208,7 @@ async fn basic_royalty_enforcement() {
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
-        ruleset_addr,
+        rule_set_addr,
         "basic_royalty_enforcement".to_string(),
         Operation::SaleTransfer,
         payload,

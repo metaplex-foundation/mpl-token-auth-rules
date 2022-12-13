@@ -11,36 +11,51 @@ use solana_program::{
 /// Args for `create` instruction.
 pub struct CreateArgs {
     /// Name of the RuleSet, used in PDA derivation.
-    pub name: String,
+    pub rule_set_name: String,
     /// RuleSet pre-serialized by caller into the MessagePack format.
     pub serialized_rule_set: Vec<u8>,
 }
+
 #[repr(C)]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 /// Args for `validate` instruction.
 pub struct ValidateArgs {
     /// Name of the RuleSet, used in PDA derivation.
-    pub name: String,
+    pub rule_set_name: String,
     /// `Operation` to validate.
     pub operation: Operation,
     /// `Payload` data used for rule validation.
     pub payload: Payload,
 }
 
+#[repr(C)]
+#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+/// Args for `create_frequency_rule` instruction.
+pub struct CreateFrequencyRuleArgs {
+    /// Name of the RuleSet, used in PDA derivation.
+    pub rule_set_name: String,
+    /// Name of the Frequency Rule, used in Frequency PDA derivation.
+    pub freq_rule_name: String,
+    /// Timestamp of last update.
+    pub last_update: i64,
+    /// Timestamp of permitted period.
+    pub period: i64,
+}
+
 #[derive(Debug, Clone, ShankInstruction, BorshSerialize, BorshDeserialize)]
 #[rustfmt::skip]
 /// Instructions available in this program.
 pub enum RuleSetInstruction {
-    /// This instruction stores a caller-pre-serialized `RuleSet` into the ruleset PDA account.
-    #[account(0, writable, signer, name="payer", desc="Payer and creator of the rule set")]
-    #[account(1, writable, name="ruleset_pda", desc = "The PDA account where the ruleset is stored")]
+    /// This instruction stores a caller-pre-serialized `RuleSet` into the rule_set PDA account.
+    #[account(0, writable, signer, name="payer", desc="Payer and creator of the RuleSet")]
+    #[account(1, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
     #[account(2, name = "system_program", desc = "System program")]
     Create(CreateArgs),
 
-    /// This instruction executes the RuleSet stored in the ruleset PDA account by sending
+    /// This instruction executes the RuleSet stored in the rule_set PDA account by sending
     /// it an `AccountsMap` and a `PayloadMap` and calling the `RuleSet`'s `validate` method.
-    #[account(0, writable, signer, name="payer", desc="Payer and creator of the rule set")]
-    #[account(1, writable, name="ruleset", desc = "The PDA account where the ruleset is stored")]
+    #[account(0, writable, signer, name="payer", desc="Payer and creator of the RuleSet")]
+    #[account(1, writable, name="rule_set", desc = "The PDA account where the RuleSet is stored")]
     #[account(2, name = "system_program", desc = "System program")]
     #[account(3, optional, signer, name="opt_rule_signer_1", desc = "Optional rule validation signer 1")]
     #[account(4, optional, signer, name="opt_rule_signer_2", desc = "Optional rule validation signer 2")]
@@ -53,18 +68,24 @@ pub enum RuleSetInstruction {
     #[account(11, optional, name = "opt_rule_nonsigner_4", desc = "Optional rule validation non-signer 4")]
     #[account(12, optional, name = "opt_rule_nonsigner_5", desc = "Optional rule validation non-signer 5")]
     Validate(ValidateArgs),
+
+    /// This instruction stores a Frequency Rule into a Frequency Rule PDA account.
+    #[account(0, writable, signer, name="payer", desc="Payer and creator of the Frequency Rule")]
+    #[account(1, writable, name="frequency_pda", desc = "The PDA account where the Frequency Rule is stored")]
+    #[account(2, name = "system_program", desc = "System program")]
+    CreateFrequencyRule(CreateFrequencyRuleArgs),
 }
 /// Builds a `create` instruction.
 pub fn create(
     program_id: Pubkey,
     payer: Pubkey,
-    ruleset_pda: Pubkey,
-    name: String,
+    rule_set_pda: Pubkey,
+    rule_set_name: String,
     serialized_rule_set: Vec<u8>,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(payer, true),
-        AccountMeta::new(ruleset_pda, false),
+        AccountMeta::new(rule_set_pda, false),
         AccountMeta::new_readonly(solana_program::system_program::id(), false),
     ];
 
@@ -72,7 +93,7 @@ pub fn create(
         program_id,
         accounts,
         data: RuleSetInstruction::Create(CreateArgs {
-            name,
+            rule_set_name,
             serialized_rule_set,
         })
         .try_to_vec()
@@ -85,8 +106,8 @@ pub fn create(
 pub fn validate(
     program_id: Pubkey,
     payer: Pubkey,
-    ruleset_pda: Pubkey,
-    name: String,
+    rule_set_pda: Pubkey,
+    rule_set_name: String,
     operation: Operation,
     payload: Payload,
     rule_signer_accounts: Vec<Pubkey>,
@@ -94,7 +115,7 @@ pub fn validate(
 ) -> Instruction {
     let mut accounts = vec![
         AccountMeta::new(payer, true),
-        AccountMeta::new(ruleset_pda, false),
+        AccountMeta::new(rule_set_pda, false),
         AccountMeta::new_readonly(solana_program::system_program::id(), false),
     ];
 
@@ -122,9 +143,39 @@ pub fn validate(
         program_id,
         accounts,
         data: RuleSetInstruction::Validate(ValidateArgs {
-            name,
+            rule_set_name,
             operation,
             payload,
+        })
+        .try_to_vec()
+        .unwrap(),
+    }
+}
+
+/// Builds a `create_frequency_rule` instruction.
+pub fn create_frequency_rule(
+    program_id: Pubkey,
+    payer: Pubkey,
+    freq_rule_pda: Pubkey,
+    rule_set_name: String,
+    freq_rule_name: String,
+    last_update: i64,
+    period: i64,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(payer, true),
+        AccountMeta::new(freq_rule_pda, false),
+        AccountMeta::new_readonly(solana_program::system_program::id(), false),
+    ];
+
+    Instruction {
+        program_id,
+        accounts,
+        data: RuleSetInstruction::CreateFrequencyRule(CreateFrequencyRuleArgs {
+            rule_set_name,
+            freq_rule_name,
+            last_update,
+            period,
         })
         .try_to_vec()
         .unwrap(),
