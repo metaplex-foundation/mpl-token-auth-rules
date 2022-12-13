@@ -11,7 +11,7 @@ import * as beetSolana from '@metaplex-foundation/beet-solana';
 import { SeedsVec, seedsVecBeet } from './SeedsVec';
 import { LeafInfo, leafInfoBeet } from './LeafInfo';
 export type Payload = {
-  destinationKey: beet.COption<web3.PublicKey>;
+  target: beet.COption<web3.PublicKey>;
   derivedKeySeeds: beet.COption<SeedsVec>;
   amount: beet.COption<beet.bignum>;
   treeMatchLeaf: beet.COption<LeafInfo>;
@@ -23,7 +23,7 @@ export type Payload = {
  */
 export const payloadBeet = new beet.FixableBeetArgsStruct<Payload>(
   [
-    ['destinationKey', beet.coption(beetSolana.publicKey)],
+    ['target', beet.coption(beetSolana.publicKey)],
     ['derivedKeySeeds', beet.coption(seedsVecBeet)],
     ['amount', beet.coption(beet.u64)],
     ['treeMatchLeaf', beet.coption(leafInfoBeet)],
