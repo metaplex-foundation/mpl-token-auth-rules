@@ -28,7 +28,7 @@ pub enum Rule {
         account: Pubkey,
     },
     PubkeyMatch {
-        destination: Pubkey,
+        target: Pubkey,
     },
     DerivedKeyMatch {
         account: Pubkey,
@@ -105,10 +105,10 @@ impl Rule {
                     (false, self.to_error())
                 }
             }
-            Rule::PubkeyMatch { destination } => {
+            Rule::PubkeyMatch { target } => {
                 msg!("Validating PubkeyMatch");
-                if let Some(payload_destination) = &payload.destination_key {
-                    if destination == payload_destination {
+                if let Some(payload_target) = &payload.target {
+                    if target == payload_target {
                         (true, self.to_error())
                     } else {
                         (false, self.to_error())
@@ -133,8 +133,8 @@ impl Rule {
             }
             Rule::ProgramOwned { program } => {
                 msg!("Validating ProgramOwned");
-                if let Some(payload_destination) = &payload.destination_key {
-                    if let Some(account) = accounts.get(payload_destination) {
+                if let Some(payload_target) = &payload.target {
+                    if let Some(account) = accounts.get(payload_target) {
                         if *account.owner == *program {
                             return (true, self.to_error());
                         }

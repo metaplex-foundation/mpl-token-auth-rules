@@ -35,7 +35,7 @@ pub struct Payload {
         feature = "serde-feature",
         serde(with = "As::<Option<DisplayFromStr>>")
     )]
-    pub destination_key: Option<Pubkey>,
+    pub target: Option<Pubkey>,
     pub derived_key_seeds: Option<SeedsVec>,
     pub amount: Option<u64>,
     pub tree_match_leaf: Option<LeafInfo>,
@@ -43,13 +43,13 @@ pub struct Payload {
 
 impl Payload {
     pub fn new(
-        destination_key: Option<Pubkey>,
+        target: Option<Pubkey>,
         derived_key_seeds: Option<SeedsVec>,
         amount: Option<u64>,
         tree_match_leaf: Option<LeafInfo>,
     ) -> Self {
         Self {
-            destination_key,
+            target,
             derived_key_seeds,
             amount,
             tree_match_leaf,
