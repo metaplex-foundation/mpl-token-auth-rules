@@ -135,8 +135,8 @@ fn main() {
 }
 ```
 
-## JS
-**Note: Additional JS examples can be found in the [/cli/](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/cli) source along with the example rulesets in [/cli/examples/](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/cli/examples)
+## JavaScript
+**Note: Additional JS examples can be found in the [/cli/](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/cli) source along with the example rulesets in [/cli/examples/](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/cli/examples)**
 ```js
 import { encode, decode } from '@msgpack/msgpack';
 import { createCreateInstruction, createTokenAuthorizationRules, PREFIX, PROGRAM_ID } from './helpers/mpl-token-auth-rules';
