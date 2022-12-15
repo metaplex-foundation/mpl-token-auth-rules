@@ -2445,7 +2445,6 @@ version = "0.1.1"
 dependencies = [
  "assert_matches",
  "borsh",
- "getrandom 0.1.16",
  "mpl-token-metadata",
  "num-derive",
  "num-traits",
