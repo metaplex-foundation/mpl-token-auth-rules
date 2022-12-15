@@ -37,19 +37,23 @@ pub enum PayloadType {
 #[repr(C)]
 #[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Default)]
-pub struct Payload(HashMap<PayloadKey, PayloadType>);
+pub struct Payload {
+    map: HashMap<PayloadKey, PayloadType>,
+}
 
 impl Payload {
     pub fn new() -> Self {
-        Self(HashMap::new())
+        Self {
+            map: HashMap::new(),
+        }
     }
 
     pub fn from(map: HashMap<PayloadKey, PayloadType>) -> Self {
-        Self(map)
+        Self { map }
     }
 
     pub fn get_pubkey(&self, key: &PayloadKey) -> Option<Pubkey> {
-        if let Some(val) = self.0.get(key) {
+        if let Some(val) = self.map.get(key) {
             match val {
                 PayloadType::Pubkey(pubkey) => Some(*pubkey),
                 _ => None,
@@ -60,7 +64,7 @@ impl Payload {
     }
 
     pub fn get_seeds(&self, key: &PayloadKey) -> Option<SeedsVec> {
-        if let Some(val) = self.0.get(key) {
+        if let Some(val) = self.map.get(key) {
             match val {
                 PayloadType::Seeds(seeds) => Some(seeds.clone()),
                 _ => None,
@@ -71,7 +75,7 @@ impl Payload {
     }
 
     pub fn get_merkle_proof(&self, key: &PayloadKey) -> Option<LeafInfo> {
-        if let Some(val) = self.0.get(key) {
+        if let Some(val) = self.map.get(key) {
             match val {
                 PayloadType::MerkleProof(leaf_info) => Some(leaf_info.clone()),
                 _ => None,
@@ -82,7 +86,7 @@ impl Payload {
     }
 
     pub fn get_amount(&self, key: &PayloadKey) -> Option<u64> {
-        if let Some(val) = self.0.get(key) {
+        if let Some(val) = self.map.get(key) {
             match val {
                 PayloadType::Number(number) => Some(*number),
                 _ => None,
