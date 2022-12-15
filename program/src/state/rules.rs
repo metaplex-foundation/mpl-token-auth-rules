@@ -1,6 +1,6 @@
 use crate::{
     error::RuleSetError,
-    payload::{ParsedPayload, PayloadField, PayloadKey},
+    payload::{Payload, PayloadKey},
     pda::FREQ_PDA,
     utils::assert_derivation,
 };
@@ -55,21 +55,9 @@ impl Rule {
     pub fn validate(
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
-        payload: &Vec<PayloadField>,
+        payload: &Payload,
     ) -> ProgramResult {
-        let mut parsed_payload = ParsedPayload::default();
-        for field in payload {
-            match field {
-                PayloadField::Target(target) => parsed_payload.target = Some(target.clone()),
-                PayloadField::Holder(holder) => parsed_payload.holder = Some(holder.clone()),
-                PayloadField::Authority(authority) => {
-                    parsed_payload.authority = Some(authority.clone())
-                }
-                PayloadField::Amount(amount) => parsed_payload.amount = Some(*amount),
-            }
-        }
-
-        let (status, rollup_err) = self.ll_validate(accounts, &parsed_payload);
+        let (status, rollup_err) = self.ll_validate(accounts, payload);
 
         if status {
             ProgramResult::Ok(())
@@ -81,7 +69,7 @@ impl Rule {
     pub fn ll_validate(
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
-        payload: &ParsedPayload,
+        payload: &Payload,
     ) -> (bool, RuleSetError) {
         match self {
             Rule::All { rules } => {
@@ -123,7 +111,7 @@ impl Rule {
             Rule::PubkeyMatch { pubkey, field } => {
                 msg!("Validating PubkeyMatch");
 
-                let key = match payload.get_pubkey(*field) {
+                let key = match payload.get_pubkey(field) {
                     Some(pubkey) => pubkey,
                     _ => return (false, self.to_error()),
                 };
@@ -137,7 +125,7 @@ impl Rule {
             Rule::DerivedKeyMatch { account, field } => {
                 msg!("Validating DerivedKeyMatch");
 
-                let seeds = match payload.get_seeds(*field) {
+                let seeds = match payload.get_seeds(field) {
                     Some(seeds) => seeds,
                     _ => return (false, self.to_error()),
                 };
@@ -157,7 +145,7 @@ impl Rule {
             Rule::ProgramOwned { program, field } => {
                 msg!("Validating ProgramOwned");
 
-                let key = match payload.get_pubkey(*field) {
+                let key = match payload.get_pubkey(field) {
                     Some(pubkey) => pubkey,
                     _ => return (false, self.to_error()),
                 };
@@ -172,7 +160,7 @@ impl Rule {
             }
             Rule::Amount { amount } => {
                 msg!("Validating Amount");
-                if let Some(payload_amount) = &payload.amount {
+                if let Some(payload_amount) = &payload.get_amount(&PayloadKey::Amount) {
                     if amount == payload_amount {
                         (true, self.to_error())
                     } else {
@@ -218,7 +206,7 @@ impl Rule {
             Rule::PubkeyTreeMatch { root, field } => {
                 msg!("Validating PubkeyTreeMatch");
 
-                let merkle_proof = match payload.get_merkle_proof(*field) {
+                let merkle_proof = match payload.get_merkle_proof(field) {
                     Some(merkle_proof) => merkle_proof,
                     _ => return (false, self.to_error()),
                 };

@@ -1,7 +1,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-#[cfg(feature = "serde-feature")]
 use serde::{Deserialize, Serialize};
 use solana_program::pubkey::Pubkey;
+use std::collections::HashMap;
 
 #[repr(C)]
 #[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
@@ -31,87 +31,81 @@ pub enum PayloadType {
     Pubkey(Pubkey),
     Seeds(SeedsVec),
     MerkleProof(LeafInfo),
-}
-
-#[repr(C)]
-#[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
-#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
-pub enum PayloadField {
-    Target(PayloadType),
-    Holder(PayloadType),
-    Authority(PayloadType),
-    Amount(u64),
+    Number(u64),
 }
 
 #[repr(C)]
 #[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Default)]
-pub struct ParsedPayload {
-    pub target: Option<PayloadType>,
-    pub holder: Option<PayloadType>,
-    pub authority: Option<PayloadType>,
-    pub amount: Option<u64>,
-}
+pub struct Payload(HashMap<PayloadKey, PayloadType>);
 
-impl ParsedPayload {
-    pub fn get_pubkey(&self, key: PayloadKey) -> Option<Pubkey> {
-        match key {
-            PayloadKey::Target => match &self.target {
-                Some(PayloadType::Pubkey(pubkey)) => Some(*pubkey),
+impl Payload {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+
+    pub fn from(map: HashMap<PayloadKey, PayloadType>) -> Self {
+        Self(map)
+    }
+
+    pub fn get_pubkey(&self, key: &PayloadKey) -> Option<Pubkey> {
+        if let Some(val) = self.0.get(key) {
+            match val {
+                PayloadType::Pubkey(pubkey) => Some(*pubkey),
                 _ => None,
-            },
-            PayloadKey::Holder => match &self.holder {
-                Some(PayloadType::Pubkey(pubkey)) => Some(*pubkey),
-                _ => None,
-            },
-            PayloadKey::Authority => match &self.authority {
-                Some(PayloadType::Pubkey(pubkey)) => Some(*pubkey),
-                _ => None,
-            },
-            PayloadKey::Amount => None,
+            }
+        } else {
+            None
         }
     }
 
-    pub fn get_seeds(&self, key: PayloadKey) -> Option<SeedsVec> {
-        match key {
-            PayloadKey::Target => match &self.target {
-                Some(PayloadType::Seeds(seeds)) => Some(seeds.clone()),
+    pub fn get_seeds(&self, key: &PayloadKey) -> Option<SeedsVec> {
+        if let Some(val) = self.0.get(key) {
+            match val {
+                PayloadType::Seeds(seeds) => Some(seeds.clone()),
                 _ => None,
-            },
-            PayloadKey::Holder => match &self.holder {
-                Some(PayloadType::Seeds(seeds)) => Some(seeds.clone()),
-                _ => None,
-            },
-            PayloadKey::Authority => match &self.authority {
-                Some(PayloadType::Seeds(seeds)) => Some(seeds.clone()),
-                _ => None,
-            },
-            PayloadKey::Amount => None,
+            }
+        } else {
+            None
         }
     }
 
-    pub fn get_merkle_proof(&self, key: PayloadKey) -> Option<LeafInfo> {
-        match key {
-            PayloadKey::Target => match &self.target {
-                Some(PayloadType::MerkleProof(leaf_info)) => Some(leaf_info.clone()),
+    pub fn get_merkle_proof(&self, key: &PayloadKey) -> Option<LeafInfo> {
+        if let Some(val) = self.0.get(key) {
+            match val {
+                PayloadType::MerkleProof(leaf_info) => Some(leaf_info.clone()),
                 _ => None,
-            },
-            PayloadKey::Holder => match &self.holder {
-                Some(PayloadType::MerkleProof(leaf_info)) => Some(leaf_info.clone()),
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn get_amount(&self, key: &PayloadKey) -> Option<u64> {
+        if let Some(val) = self.0.get(key) {
+            match val {
+                PayloadType::Number(number) => Some(*number),
                 _ => None,
-            },
-            PayloadKey::Authority => match &self.authority {
-                Some(PayloadType::MerkleProof(leaf_info)) => Some(leaf_info.clone()),
-                _ => None,
-            },
-            PayloadKey::Amount => None,
+            }
+        } else {
+            None
         }
     }
 }
 
 #[repr(C)]
 #[derive(
-    BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy,
+    BorshSerialize,
+    BorshDeserialize,
+    Serialize,
+    Deserialize,
+    PartialOrd,
+    Hash,
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Copy,
 )]
 pub enum PayloadKey {
     Target,

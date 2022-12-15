@@ -4,7 +4,7 @@ pub mod utils;
 
 use mpl_token_auth_rules::{
     error::RuleSetError,
-    payload::PayloadField,
+    payload::{PayloadKey, PayloadType},
     state::{Operation, Rule, RuleSet},
 };
 use num_traits::cast::FromPrimitive;
@@ -17,6 +17,7 @@ use solana_sdk::{
     signer::keypair::Keypair,
     transaction::{Transaction, TransactionError},
 };
+use std::collections::HashMap;
 use utils::program_test;
 
 #[tokio::test]
@@ -61,7 +62,7 @@ async fn test_payer_not_signer_fails() {
         rule_set_addr,
         "test rule_set".to_string(),
         Operation::Transfer,
-        vec![],
+        HashMap::default(),
         vec![],
         vec![],
     );
@@ -153,7 +154,7 @@ async fn test_additional_signer_and_amount() {
         .expect("creation should succeed");
 
     // Store the payload of data to validate against the rule definition.
-    let payload = vec![PayloadField::Amount(2)];
+    let payload = HashMap::from([(PayloadKey::Amount, PayloadType::Number(2))]);
 
     // Create a `validate` instruction WITHOUT the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
@@ -222,7 +223,7 @@ async fn test_additional_signer_and_amount() {
         .expect("validation should succeed");
 
     // Store a payload of data with the WRONG amount.
-    let payload = vec![PayloadField::Amount(1)];
+    let payload = HashMap::from([(PayloadKey::Amount, PayloadType::Number(1))]);
 
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
@@ -361,9 +362,6 @@ async fn test_frequency() {
     // We need several slots between unverifying and running set_and_verify_collection.
     context.warp_to_slot(2).unwrap();
 
-    // Store the payload of data to validate against the rule definition.
-    let payload = vec![];
-
     // Create a `validate` instruction passing in the Frequency Rule account.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
@@ -371,7 +369,7 @@ async fn test_frequency() {
         rule_set_addr,
         "test rule_set".to_string(),
         Operation::Transfer,
-        payload.clone(),
+        HashMap::default(),
         vec![],
         vec![freq_account],
     );
