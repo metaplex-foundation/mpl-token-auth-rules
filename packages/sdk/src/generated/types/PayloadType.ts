@@ -23,6 +23,7 @@ export type PayloadTypeRecord = {
   Pubkey: { fields: [web3.PublicKey] };
   Seeds: { fields: [SeedsVec] };
   MerkleProof: { fields: [LeafInfo] };
+  Number: { fields: [beet.bignum] };
 };
 
 /**
@@ -45,6 +46,8 @@ export const isPayloadTypeSeeds = (x: PayloadType): x is PayloadType & { __kind:
 export const isPayloadTypeMerkleProof = (
   x: PayloadType,
 ): x is PayloadType & { __kind: 'MerkleProof' } => x.__kind === 'MerkleProof';
+export const isPayloadTypeNumber = (x: PayloadType): x is PayloadType & { __kind: 'Number' } =>
+  x.__kind === 'Number';
 
 /**
  * @category userTypes
@@ -70,6 +73,13 @@ export const payloadTypeBeet = beet.dataEnum<PayloadTypeRecord>([
     new beet.FixableBeetArgsStruct<PayloadTypeRecord['MerkleProof']>(
       [['fields', beet.tuple([leafInfoBeet])]],
       'PayloadTypeRecord["MerkleProof"]',
+    ),
+  ],
+  [
+    'Number',
+    new beet.BeetArgsStruct<PayloadTypeRecord['Number']>(
+      [['fields', beet.fixedSizeTuple([beet.u64])]],
+      'PayloadTypeRecord["Number"]',
     ),
   ],
 ]) as beet.FixableBeet<PayloadType>;

@@ -237,9 +237,7 @@
           {
             "name": "payload",
             "type": {
-              "vec": {
-                "defined": "PayloadField"
-              }
+              "defined": "Payload"
             }
           }
         ]
@@ -312,38 +310,21 @@
       }
     },
     {
-      "name": "ParsedPayload",
+      "name": "Payload",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "target",
+            "name": "map",
             "type": {
-              "option": {
-                "defined": "PayloadType"
-              }
-            }
-          },
-          {
-            "name": "holder",
-            "type": {
-              "option": {
-                "defined": "PayloadType"
-              }
-            }
-          },
-          {
-            "name": "authority",
-            "type": {
-              "option": {
-                "defined": "PayloadType"
-              }
-            }
-          },
-          {
-            "name": "amount",
-            "type": {
-              "option": "u64"
+              "hashMap": [
+                {
+                  "defined": "PayloadKey"
+                },
+                {
+                  "defined": "PayloadType"
+                }
+              ]
             }
           }
         ]
@@ -375,41 +356,9 @@
                 "defined": "LeafInfo"
               }
             ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "PayloadField",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Target",
-            "fields": [
-              {
-                "defined": "PayloadType"
-              }
-            ]
           },
           {
-            "name": "Holder",
-            "fields": [
-              {
-                "defined": "PayloadType"
-              }
-            ]
-          },
-          {
-            "name": "Authority",
-            "fields": [
-              {
-                "defined": "PayloadType"
-              }
-            ]
-          },
-          {
-            "name": "Amount",
+            "name": "Number",
             "fields": [
               "u64"
             ]
