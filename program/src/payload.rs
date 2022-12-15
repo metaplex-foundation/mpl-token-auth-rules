@@ -1,14 +1,17 @@
 use borsh::{BorshDeserialize, BorshSerialize};
+#[cfg(feature = "serde-feature")]
 use serde::{Deserialize, Serialize};
 use solana_program::pubkey::Pubkey;
 
 #[repr(C)]
+#[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 pub struct SeedsVec {
     pub seeds: Vec<Vec<u8>>,
 }
 
 #[repr(C)]
+#[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 pub struct LeafInfo {
     pub leaf: [u8; 32],
@@ -22,6 +25,7 @@ impl LeafInfo {
 }
 
 #[repr(C)]
+#[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 pub enum PayloadType {
     Pubkey(Pubkey),
@@ -30,6 +34,7 @@ pub enum PayloadType {
 }
 
 #[repr(C)]
+#[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 pub enum PayloadField {
     Target(PayloadType),
@@ -39,6 +44,7 @@ pub enum PayloadField {
 }
 
 #[repr(C)]
+#[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Default)]
 pub struct ParsedPayload {
     pub target: Option<PayloadType>,
