@@ -64,13 +64,17 @@ pub enum RuleSetError {
     #[error("Not implemented")]
     NotImplemented,
 
-    /// 14 - Borsh Serialization Error
-    #[error("Borsh Serialization Error")]
+    /// 14 - Borsh serialization error
+    #[error("Borsh serialization error")]
     BorshSerializationError,
 
     /// 15 - Value in Payload is occupied
     #[error("Value in Payload is occupied")]
     PayloadValueOccupied,
+
+    /// 16 - Account data is empty
+    #[error("Account data is empty")]
+    DataIsEmpty,
 }
 
 impl PrintProgramError for RuleSetError {

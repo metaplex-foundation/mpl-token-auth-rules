@@ -83,12 +83,18 @@ impl Processor {
             }
             RuleSetInstruction::Validate(args) => {
                 let account_info_iter = &mut accounts.iter();
-                let payer_info = next_account_info(account_info_iter)?;
+                let rule_set_owner_info = next_account_info(account_info_iter)?;
                 let rule_set_pda_info = next_account_info(account_info_iter)?;
                 let _system_program_info = next_account_info(account_info_iter)?;
 
-                if !payer_info.is_signer {
-                    return Err(RuleSetError::PayerIsNotSigner.into());
+                // RuleSet must be owned by this program.
+                if rule_set_pda_info.owner != program_id {
+                    return Err(RuleSetError::IncorrectOwner.into());
+                }
+
+                // RuleSet must not be empty.
+                if rule_set_pda_info.data_is_empty() {
+                    return Err(RuleSetError::DataIsEmpty.into());
                 }
 
                 // Check RuleSet account info derivation.
@@ -97,7 +103,7 @@ impl Processor {
                     rule_set_pda_info.key,
                     &[
                         PREFIX.as_bytes(),
-                        payer_info.key.as_ref(),
+                        rule_set_owner_info.key.as_ref(),
                         args.rule_set_name.as_bytes(),
                     ],
                 )?;
@@ -118,9 +124,6 @@ impl Processor {
                 // Deserialize RuleSet.
                 let rule_set: RuleSet =
                     rmp_serde::from_slice(&data).map_err(|_| RuleSetError::DataTypeMismatch)?;
-
-                // Debug.
-                msg!("{:#?}", rule_set);
 
                 // Get the Rule from the RuleSet based on the caller-specified Operation.
                 let rule = rule_set
