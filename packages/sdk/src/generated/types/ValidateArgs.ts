@@ -7,11 +7,11 @@
 
 import * as beet from '@metaplex-foundation/beet';
 import { Operation, operationBeet } from './Operation';
-import { Payload, payloadBeet } from './Payload';
+import { PayloadField, payloadFieldBeet } from './PayloadField';
 export type ValidateArgs = {
   ruleSetName: string;
   operation: Operation;
-  payload: Payload;
+  payload: PayloadField[];
 };
 
 /**
@@ -22,7 +22,7 @@ export const validateArgsBeet = new beet.FixableBeetArgsStruct<ValidateArgs>(
   [
     ['ruleSetName', beet.utf8String],
     ['operation', operationBeet],
-    ['payload', payloadBeet],
+    ['payload', beet.array(payloadFieldBeet)],
   ],
   'ValidateArgs',
 );

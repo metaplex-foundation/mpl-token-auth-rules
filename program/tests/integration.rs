@@ -4,8 +4,8 @@ pub mod utils;
 
 use mpl_token_auth_rules::{
     error::RuleSetError,
+    payload::PayloadField,
     state::{Operation, Rule, RuleSet},
-    Payload,
 };
 use num_traits::cast::FromPrimitive;
 use rmp_serde::Serializer;
@@ -61,7 +61,7 @@ async fn test_payer_not_signer_fails() {
         rule_set_addr,
         "test rule_set".to_string(),
         Operation::Transfer,
-        Payload::default(),
+        vec![],
         vec![],
         vec![],
     );
@@ -153,7 +153,7 @@ async fn test_additional_signer_and_amount() {
         .expect("creation should succeed");
 
     // Store the payload of data to validate against the rule definition.
-    let payload = Payload::new(None, None, Some(2), None);
+    let payload = vec![PayloadField::Amount(2)];
 
     // Create a `validate` instruction WITHOUT the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
@@ -222,7 +222,7 @@ async fn test_additional_signer_and_amount() {
         .expect("validation should succeed");
 
     // Store a payload of data with the WRONG amount.
-    let payload = Payload::new(None, None, Some(1), None);
+    let payload = vec![PayloadField::Amount(1)];
 
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
@@ -362,7 +362,7 @@ async fn test_frequency() {
     context.warp_to_slot(2).unwrap();
 
     // Store the payload of data to validate against the rule definition.
-    let payload = Payload::default();
+    let payload = vec![];
 
     // Create a `validate` instruction passing in the Frequency Rule account.
     let validate_ix = mpl_token_auth_rules::instruction::validate(

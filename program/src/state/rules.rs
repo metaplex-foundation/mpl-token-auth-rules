@@ -1,9 +1,8 @@
 use crate::{
     error::RuleSetError,
-    payload::{LeafInfo, SeedsVec},
+    payload::{ParsedPayload, PayloadField, PayloadKey},
     pda::FREQ_PDA,
     utils::assert_derivation,
-    Payload,
 };
 use serde::{Deserialize, Serialize};
 use solana_program::{
@@ -28,13 +27,16 @@ pub enum Rule {
         account: Pubkey,
     },
     PubkeyMatch {
-        target: Pubkey,
+        pubkey: Pubkey,
+        field: PayloadKey,
     },
     DerivedKeyMatch {
         account: Pubkey,
+        field: PayloadKey,
     },
     ProgramOwned {
         program: Pubkey,
+        field: PayloadKey,
     },
     Amount {
         amount: u64,
@@ -45,6 +47,7 @@ pub enum Rule {
     },
     PubkeyTreeMatch {
         root: [u8; 32],
+        field: PayloadKey,
     },
 }
 
@@ -52,9 +55,21 @@ impl Rule {
     pub fn validate(
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
-        payload: &Payload,
+        payload: &Vec<PayloadField>,
     ) -> ProgramResult {
-        let (status, rollup_err) = self.ll_validate(accounts, payload);
+        let mut parsed_payload = ParsedPayload::default();
+        for field in payload {
+            match field {
+                PayloadField::Target(target) => parsed_payload.target = Some(target.clone()),
+                PayloadField::Holder(holder) => parsed_payload.holder = Some(holder.clone()),
+                PayloadField::Authority(authority) => {
+                    parsed_payload.authority = Some(authority.clone())
+                }
+                PayloadField::Amount(amount) => parsed_payload.amount = Some(*amount),
+            }
+        }
+
+        let (status, rollup_err) = self.ll_validate(accounts, &parsed_payload);
 
         if status {
             ProgramResult::Ok(())
@@ -66,7 +81,7 @@ impl Rule {
     pub fn ll_validate(
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
-        payload: &Payload,
+        payload: &ParsedPayload,
     ) -> (bool, RuleSetError) {
         match self {
             Rule::All { rules } => {
@@ -105,41 +120,54 @@ impl Rule {
                     (false, self.to_error())
                 }
             }
-            Rule::PubkeyMatch { target } => {
+            Rule::PubkeyMatch { pubkey, field } => {
                 msg!("Validating PubkeyMatch");
-                if let Some(payload_target) = &payload.target {
-                    if target == payload_target {
-                        (true, self.to_error())
-                    } else {
-                        (false, self.to_error())
-                    }
+
+                let key = match payload.get_pubkey(*field) {
+                    Some(pubkey) => pubkey,
+                    _ => return (false, self.to_error()),
+                };
+
+                if key == *pubkey {
+                    (true, self.to_error())
                 } else {
                     (false, self.to_error())
                 }
             }
-            Rule::DerivedKeyMatch { account } => {
+            Rule::DerivedKeyMatch { account, field } => {
                 msg!("Validating DerivedKeyMatch");
-                if let Some(SeedsVec { seeds }) = &payload.derived_key_seeds {
-                    let vec_of_slices = seeds.iter().map(Vec::as_slice).collect::<Vec<&[u8]>>();
-                    let seeds = &vec_of_slices[..];
-                    if let Ok(_bump) = assert_derivation(&crate::id(), account, seeds) {
-                        (true, self.to_error())
-                    } else {
-                        (false, self.to_error())
-                    }
+
+                let seeds = match payload.get_seeds(*field) {
+                    Some(seeds) => seeds,
+                    _ => return (false, self.to_error()),
+                };
+
+                let vec_of_slices = seeds
+                    .seeds
+                    .iter()
+                    .map(Vec::as_slice)
+                    .collect::<Vec<&[u8]>>();
+                let seeds = &vec_of_slices[..];
+                if let Ok(_bump) = assert_derivation(&crate::id(), account, seeds) {
+                    (true, self.to_error())
                 } else {
                     (false, self.to_error())
                 }
             }
-            Rule::ProgramOwned { program } => {
+            Rule::ProgramOwned { program, field } => {
                 msg!("Validating ProgramOwned");
-                if let Some(payload_target) = &payload.target {
-                    if let Some(account) = accounts.get(payload_target) {
-                        if *account.owner == *program {
-                            return (true, self.to_error());
-                        }
+
+                let key = match payload.get_pubkey(*field) {
+                    Some(pubkey) => pubkey,
+                    _ => return (false, self.to_error()),
+                };
+
+                if let Some(account) = accounts.get(&key) {
+                    if *account.owner == *program {
+                        return (true, self.to_error());
                     }
                 }
+
                 (false, self.to_error())
             }
             Rule::Amount { amount } => {
@@ -187,35 +215,37 @@ impl Rule {
                     (false, self.to_error())
                 }
             }
-            Rule::PubkeyTreeMatch { root } => {
+            Rule::PubkeyTreeMatch { root, field } => {
                 msg!("Validating PubkeyTreeMatch");
-                if let Some(LeafInfo { proof, leaf }) = &payload.tree_match_leaf {
-                    let mut computed_hash = *leaf;
-                    for proof_element in proof.iter() {
-                        if computed_hash <= *proof_element {
-                            // Hash(current computed hash + current element of the proof)
-                            computed_hash = solana_program::keccak::hashv(&[
-                                &[0x01],
-                                &computed_hash,
-                                proof_element,
-                            ])
-                            .0;
-                        } else {
-                            // Hash(current element of the proof + current computed hash)
-                            computed_hash = solana_program::keccak::hashv(&[
-                                &[0x01],
-                                proof_element,
-                                &computed_hash,
-                            ])
-                            .0;
-                        }
-                    }
-                    // Check if the computed hash (root) is equal to the provided root
-                    if computed_hash == *root {
-                        (true, self.to_error())
+
+                let merkle_proof = match payload.get_merkle_proof(*field) {
+                    Some(merkle_proof) => merkle_proof,
+                    _ => return (false, self.to_error()),
+                };
+
+                let mut computed_hash = merkle_proof.leaf;
+                for proof_element in merkle_proof.proof.iter() {
+                    if computed_hash <= *proof_element {
+                        // Hash(current computed hash + current element of the proof)
+                        computed_hash = solana_program::keccak::hashv(&[
+                            &[0x01],
+                            &computed_hash,
+                            proof_element,
+                        ])
+                        .0;
                     } else {
-                        (false, self.to_error())
+                        // Hash(current element of the proof + current computed hash)
+                        computed_hash = solana_program::keccak::hashv(&[
+                            &[0x01],
+                            proof_element,
+                            &computed_hash,
+                        ])
+                        .0;
                     }
+                }
+                // Check if the computed hash (root) is equal to the provided root
+                if computed_hash == *root {
+                    (true, self.to_error())
                 } else {
                     (false, self.to_error())
                 }
