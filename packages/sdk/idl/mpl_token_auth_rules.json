@@ -1,5 +1,5 @@
 {
-  "version": "0.1.1",
+  "version": "0.1.2",
   "name": "mpl_token_auth_rules",
   "instructions": [
     {
@@ -496,6 +496,11 @@
       "code": 14,
       "name": "BorshSerializationError",
       "msg": "Borsh Serialization Error"
+    },
+    {
+      "code": 15,
+      "name": "PayloadValueOccupied",
+      "msg": "Value in Payload is occupied"
     }
   ],
   "metadata": {

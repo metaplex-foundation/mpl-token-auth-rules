@@ -3,7 +3,7 @@
 pub mod utils;
 
 use mpl_token_auth_rules::{
-    payload::{LeafInfo, PayloadKey, PayloadType},
+    payload::{LeafInfo, Payload, PayloadKey, PayloadType},
     state::{Operation, Rule, RuleSet},
 };
 use rmp_serde::Serializer;
@@ -12,7 +12,6 @@ use solana_program_test::tokio;
 use solana_sdk::{
     signature::Signer, signer::keypair::Keypair, system_instruction, transaction::Transaction,
 };
-use std::collections::HashMap;
 use utils::program_test;
 
 #[tokio::test]
@@ -112,7 +111,7 @@ async fn basic_royalty_enforcement() {
     // Store the payload of data to validate against the rule definition.
     // In this case the Target will be used to look up the `AccountInfo`
     // and see who the owner is.
-    let payload = HashMap::from([(
+    let payload = Payload::from([(
         PayloadKey::Target,
         PayloadType::Pubkey(fake_token_metadata_owned_escrow.pubkey()),
     )]);
@@ -173,7 +172,7 @@ async fn basic_royalty_enforcement() {
 
     // Store the payload of data to validate against the rule definition.
     // In this case it is a leaf node and its associated Merkle proof.
-    let payload = HashMap::from([(PayloadKey::Target, PayloadType::MerkleProof(leaf_info))]);
+    let payload = Payload::from([(PayloadKey::Target, PayloadType::MerkleProof(leaf_info))]);
 
     // Create a `validate` instruction for a `Delegate` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
