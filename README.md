@@ -18,7 +18,7 @@ There are **Primitive Rules** and **Composed Rules** that are created by combini
 **Note: Additional Rust examples can be found in the [program/tests](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/main/program/tests) directory.**
 ```rust
 use mpl_token_auth_rules::{
-    payload::{PayloadKey, PayloadType},
+    payload::{Payload, PayloadKey, PayloadTyp},
     state::{Operation, Rule, RuleSet},
 };
 use rmp_serde::Serializer;
@@ -28,7 +28,6 @@ use solana_sdk::{
     native_token::LAMPORTS_PER_SOL, signature::Signer, signer::keypair::Keypair,
     transaction::Transaction,
 };
-use std::collections::HashMap;
 
 fn main() {
     let url = "https://api.devnet.solana.com".to_string();
@@ -110,7 +109,7 @@ fn main() {
     println!("Create tx signature: {}", signature);
 
     // Store the payload of data to validate against the rule definition.
-    let payload = HashMap::from([(PayloadKey::Amount, PayloadType::Number(2))]);
+    let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(2))]);
 
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(

@@ -67,6 +67,10 @@ pub enum RuleSetError {
     /// 14 - Borsh Serialization Error
     #[error("Borsh Serialization Error")]
     BorshSerializationError,
+
+    /// 15 - Value in Payload is occupied
+    #[error("Value in Payload is occupied")]
+    PayloadValueOccupied,
 }
 
 impl PrintProgramError for RuleSetError {

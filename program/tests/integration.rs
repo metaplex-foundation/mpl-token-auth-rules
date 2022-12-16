@@ -4,7 +4,7 @@ pub mod utils;
 
 use mpl_token_auth_rules::{
     error::RuleSetError,
-    payload::{PayloadKey, PayloadType},
+    payload::{Payload, PayloadKey, PayloadType},
     state::{Operation, Rule, RuleSet},
 };
 use num_traits::cast::FromPrimitive;
@@ -17,7 +17,6 @@ use solana_sdk::{
     signer::keypair::Keypair,
     transaction::{Transaction, TransactionError},
 };
-use std::collections::HashMap;
 use utils::program_test;
 
 #[tokio::test]
@@ -62,7 +61,7 @@ async fn test_payer_not_signer_fails() {
         rule_set_addr,
         "test rule_set".to_string(),
         Operation::Transfer,
-        HashMap::default(),
+        Payload::default(),
         vec![],
         vec![],
     );
@@ -154,7 +153,7 @@ async fn test_additional_signer_and_amount() {
         .expect("creation should succeed");
 
     // Store the payload of data to validate against the rule definition.
-    let payload = HashMap::from([(PayloadKey::Amount, PayloadType::Number(2))]);
+    let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(2))]);
 
     // Create a `validate` instruction WITHOUT the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
@@ -223,7 +222,7 @@ async fn test_additional_signer_and_amount() {
         .expect("validation should succeed");
 
     // Store a payload of data with the WRONG amount.
-    let payload = HashMap::from([(PayloadKey::Amount, PayloadType::Number(1))]);
+    let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(1))]);
 
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
@@ -369,7 +368,7 @@ async fn test_frequency() {
         rule_set_addr,
         "test rule_set".to_string(),
         Operation::Transfer,
-        HashMap::default(),
+        Payload::default(),
         vec![],
         vec![freq_account],
     );

@@ -116,7 +116,7 @@ impl Rule {
                     _ => return (false, self.to_error()),
                 };
 
-                if key == *pubkey {
+                if key == pubkey {
                     (true, self.to_error())
                 } else {
                     (false, self.to_error())

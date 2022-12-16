@@ -1,6 +1,7 @@
+use crate::error::RuleSetError;
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
-use solana_program::pubkey::Pubkey;
+use solana_program::{entrypoint::ProgramResult, pubkey::Pubkey};
 use std::collections::HashMap;
 
 #[repr(C)]
@@ -42,20 +43,52 @@ pub struct Payload {
 }
 
 impl Payload {
+    /// Create a new empty `Payload`.
     pub fn new() -> Self {
         Self {
             map: HashMap::new(),
         }
     }
 
-    pub fn from(map: HashMap<PayloadKey, PayloadType>) -> Self {
-        Self { map }
+    /// Create a `Payload` from an array of key-value pairs, specified as
+    /// `(PayloadKey, PayloadType)` tuples.
+    pub fn from<const N: usize>(arr: [(PayloadKey, PayloadType); N]) -> Self {
+        Self {
+            map: HashMap::from(arr),
+        }
     }
 
-    pub fn get_pubkey(&self, key: &PayloadKey) -> Option<Pubkey> {
+    /// Inserts a key-value pair into the `Payload`.  If the `Payload` did not have this key
+    ///  present, then `None` is returned.  If the `Payload` did have this key present, the value
+    /// is updated, and the old value is returned.  The key is not updated, though; this matters
+    /// for types that can be `==` without being identical.  See `std::collections::HashMap`
+    /// documentation for more info.
+    pub fn insert(&mut self, key: PayloadKey, value: PayloadType) -> Option<PayloadType> {
+        self.map.insert(key, value)
+    }
+
+    /// Tries to insert a key-value pair into a `Payload`.  If this key is already in the `Payload`
+    /// nothing is updated and an error is returned.
+    pub fn try_insert(&mut self, key: PayloadKey, value: PayloadType) -> ProgramResult {
+        if self.map.get(&key).is_none() && self.map.insert(key, value).is_none() {
+            Ok(())
+        } else {
+            Err(RuleSetError::PayloadValueOccupied.into())
+        }
+    }
+
+    /// Returns a reference to the value corresponding to the key.
+    pub fn get(&self, key: &PayloadKey) -> Option<&PayloadType> {
+        self.map.get(key)
+    }
+
+    /// Get a reference to the `Pubkey` associated with a key, if and only if the `Payload` value
+    /// is the `PayloadType::Pubkey` variant.  Returns `None` if the key is not present in the
+    /// `Payload` or the value is a different `PayloadType` variant.
+    pub fn get_pubkey(&self, key: &PayloadKey) -> Option<&Pubkey> {
         if let Some(val) = self.map.get(key) {
             match val {
-                PayloadType::Pubkey(pubkey) => Some(*pubkey),
+                PayloadType::Pubkey(pubkey) => Some(pubkey),
                 _ => None,
             }
         } else {
@@ -63,10 +96,13 @@ impl Payload {
         }
     }
 
-    pub fn get_seeds(&self, key: &PayloadKey) -> Option<SeedsVec> {
+    /// Get a reference to the `SeedsVec` associated with a key, if and only if the `Payload` value
+    /// is the `PayloadType::Seeds` variant.  Returns `None` if the key is not present in the
+    /// `Payload` or the value is a different `PayloadType` variant.
+    pub fn get_seeds(&self, key: &PayloadKey) -> Option<&SeedsVec> {
         if let Some(val) = self.map.get(key) {
             match val {
-                PayloadType::Seeds(seeds) => Some(seeds.clone()),
+                PayloadType::Seeds(seeds) => Some(seeds),
                 _ => None,
             }
         } else {
@@ -74,10 +110,13 @@ impl Payload {
         }
     }
 
-    pub fn get_merkle_proof(&self, key: &PayloadKey) -> Option<LeafInfo> {
+    /// Get a reference to the `LeafInfo` associated with a key, if and only if the `Payload` value
+    /// is the `PayloadType::MerkleProof` variant.  Returns `None` if the key is not present in the
+    /// `Payload` or the value is a different `PayloadType` variant.
+    pub fn get_merkle_proof(&self, key: &PayloadKey) -> Option<&LeafInfo> {
         if let Some(val) = self.map.get(key) {
             match val {
-                PayloadType::MerkleProof(leaf_info) => Some(leaf_info.clone()),
+                PayloadType::MerkleProof(leaf_info) => Some(leaf_info),
                 _ => None,
             }
         } else {
@@ -85,6 +124,9 @@ impl Payload {
         }
     }
 
+    /// Get the `u64` associated with a key, if and only if the `Payload` value is the
+    /// `PayloadType::Number` variant.  Returns `None` if the key is not present in the `Payload`
+    /// or the value is a different `PayloadType` variant.
     pub fn get_amount(&self, key: &PayloadKey) -> Option<u64> {
         if let Some(val) = self.map.get(key) {
             match val {
