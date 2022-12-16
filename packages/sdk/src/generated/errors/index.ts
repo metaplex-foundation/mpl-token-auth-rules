@@ -321,6 +321,26 @@ createErrorFromCodeLookup.set(0xe, () => new BorshSerializationErrorError());
 createErrorFromNameLookup.set('BorshSerializationError', () => new BorshSerializationErrorError());
 
 /**
+ * PayloadValueOccupied: 'Value in Payload is occupied'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class PayloadValueOccupiedError extends Error {
+  readonly code: number = 0xf;
+  readonly name: string = 'PayloadValueOccupied';
+  constructor() {
+    super('Value in Payload is occupied');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, PayloadValueOccupiedError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0xf, () => new PayloadValueOccupiedError());
+createErrorFromNameLookup.set('PayloadValueOccupied', () => new PayloadValueOccupiedError());
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated
