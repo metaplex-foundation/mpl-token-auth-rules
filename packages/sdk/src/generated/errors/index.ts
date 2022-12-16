@@ -301,7 +301,7 @@ createErrorFromCodeLookup.set(0xd, () => new NotImplementedError());
 createErrorFromNameLookup.set('NotImplemented', () => new NotImplementedError());
 
 /**
- * BorshSerializationError: 'Borsh Serialization Error'
+ * BorshSerializationError: 'Borsh serialization error'
  *
  * @category Errors
  * @category generated
@@ -310,7 +310,7 @@ export class BorshSerializationErrorError extends Error {
   readonly code: number = 0xe;
   readonly name: string = 'BorshSerializationError';
   constructor() {
-    super('Borsh Serialization Error');
+    super('Borsh serialization error');
     if (typeof Error.captureStackTrace === 'function') {
       Error.captureStackTrace(this, BorshSerializationErrorError);
     }
@@ -339,6 +339,26 @@ export class PayloadValueOccupiedError extends Error {
 
 createErrorFromCodeLookup.set(0xf, () => new PayloadValueOccupiedError());
 createErrorFromNameLookup.set('PayloadValueOccupied', () => new PayloadValueOccupiedError());
+
+/**
+ * DataIsEmpty: 'Account data is empty'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class DataIsEmptyError extends Error {
+  readonly code: number = 0x10;
+  readonly name: string = 'DataIsEmpty';
+  constructor() {
+    super('Account data is empty');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, DataIsEmptyError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x10, () => new DataIsEmptyError());
+createErrorFromNameLookup.set('DataIsEmpty', () => new DataIsEmptyError());
 
 /**
  * Attempts to resolve a custom program error from the provided error code.

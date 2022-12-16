@@ -41,10 +41,10 @@
       "name": "Validate",
       "accounts": [
         {
-          "name": "payer",
+          "name": "owner",
           "isMut": true,
-          "isSigner": true,
-          "desc": "Payer and creator of the RuleSet"
+          "isSigner": false,
+          "desc": "Owner (creator) of the RuleSet"
         },
         {
           "name": "ruleSet",
@@ -495,12 +495,17 @@
     {
       "code": 14,
       "name": "BorshSerializationError",
-      "msg": "Borsh Serialization Error"
+      "msg": "Borsh serialization error"
     },
     {
       "code": 15,
       "name": "PayloadValueOccupied",
       "msg": "Value in Payload is occupied"
+    },
+    {
+      "code": 16,
+      "name": "DataIsEmpty",
+      "msg": "Account data is empty"
     }
   ],
   "metadata": {
