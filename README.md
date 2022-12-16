@@ -18,7 +18,7 @@ There are **Primitive Rules** and **Composed Rules** that are created by combini
 **Note: Additional Rust examples can be found in the [program/tests](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/main/program/tests) directory.**
 ```rust
 use mpl_token_auth_rules::{
-    payload::{Payload, PayloadKey, PayloadTyp},
+    payload::{Payload, PayloadKey, PayloadType},
     state::{Operation, Rule, RuleSet},
 };
 use rmp_serde::Serializer;
