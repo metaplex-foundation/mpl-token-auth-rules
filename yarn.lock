@@ -786,9 +786,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metaplex-foundation/solita@npm:^0.19.0":
-  version: 0.19.0
-  resolution: "@metaplex-foundation/solita@npm:0.19.0"
+"@metaplex-foundation/solita@npm:^0.19.3":
+  version: 0.19.3
+  resolution: "@metaplex-foundation/solita@npm:0.19.3"
   dependencies:
     "@metaplex-foundation/beet": ^0.7.1
     "@metaplex-foundation/beet-solana": ^0.3.1
@@ -803,7 +803,7 @@ __metadata:
     spok: ^1.4.3
   bin:
     solita: dist/src/cli/solita.js
-  checksum: 198553c68193ac20006da870b11215828ba22d2263bdc7edc09d5583eac78a928b959acf22bbba23c04b46a41a2fb0598299c1db4a5a30f1275144adc4b72117
+  checksum: d149aff3e352a5dac0c7c505908ad490bce033298f4ce7994057959e0972df48bd80aa53b1db472a4131a756197ef69e3b7baca23326b31368894edeea6b497c
   languageName: node
   linkType: hard
 
@@ -4182,7 +4182,7 @@ __metadata:
   resolution: "mpl-token-auth-rules-workspace@workspace:."
   dependencies:
     "@metaplex-foundation/amman": ^0.12.1
-    "@metaplex-foundation/solita": ^0.19.0
+    "@metaplex-foundation/solita": ^0.19.3
     "@typescript-eslint/eslint-plugin": ^5.43.0
     "@typescript-eslint/parser": ^5.43.0
     esbuild-runner: ^2.2.2
