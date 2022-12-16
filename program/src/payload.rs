@@ -70,10 +70,11 @@ impl Payload {
     /// Tries to insert a key-value pair into a `Payload`.  If this key is already in the `Payload`
     /// nothing is updated and an error is returned.
     pub fn try_insert(&mut self, key: PayloadKey, value: PayloadType) -> ProgramResult {
-        if self.map.get(&key).is_none() && self.map.insert(key, value).is_none() {
+        if self.map.get(&key).is_none() {
+            self.map.insert(key, value);
             Ok(())
         } else {
-            Err(RuleSetError::PayloadValueOccupied.into())
+            Err(RuleSetError::ValueOccupied.into())
         }
     }
 

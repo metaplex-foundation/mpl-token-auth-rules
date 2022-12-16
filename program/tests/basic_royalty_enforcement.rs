@@ -47,10 +47,19 @@ async fn basic_royalty_enforcement() {
     };
 
     // Create Basic Royalty Enforcement RuleSet.
-    let mut basic_royalty_enforcement_rule_set = RuleSet::new();
-    basic_royalty_enforcement_rule_set.add(Operation::Transfer, owned_by_token_metadata);
-    basic_royalty_enforcement_rule_set.add(Operation::Delegate, leaf_in_marketplace_tree.clone());
-    basic_royalty_enforcement_rule_set.add(Operation::SaleTransfer, leaf_in_marketplace_tree);
+    let mut basic_royalty_enforcement_rule_set = RuleSet::new(
+        "basic_royalty_enforcement".to_string(),
+        context.payer.pubkey(),
+    );
+    basic_royalty_enforcement_rule_set
+        .add(Operation::Transfer, owned_by_token_metadata)
+        .unwrap();
+    basic_royalty_enforcement_rule_set
+        .add(Operation::Delegate, leaf_in_marketplace_tree.clone())
+        .unwrap();
+    basic_royalty_enforcement_rule_set
+        .add(Operation::SaleTransfer, leaf_in_marketplace_tree)
+        .unwrap();
 
     println!(
         "{}",
@@ -68,7 +77,6 @@ async fn basic_royalty_enforcement() {
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         rule_set_addr,
-        "basic_royalty_enforcement".to_string(),
         serialized_data,
     );
 
@@ -119,9 +127,7 @@ async fn basic_royalty_enforcement() {
     // Create a `validate` instruction for a `Transfer` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
-        context.payer.pubkey(),
         rule_set_addr,
-        "basic_royalty_enforcement".to_string(),
         Operation::Transfer,
         payload,
         vec![],
@@ -177,9 +183,7 @@ async fn basic_royalty_enforcement() {
     // Create a `validate` instruction for a `Delegate` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
-        context.payer.pubkey(),
         rule_set_addr,
-        "basic_royalty_enforcement".to_string(),
         Operation::Delegate,
         payload.clone(),
         vec![],
@@ -207,9 +211,7 @@ async fn basic_royalty_enforcement() {
     // Create a `validate` instruction for a `SaleTransfer` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
-        context.payer.pubkey(),
         rule_set_addr,
-        "basic_royalty_enforcement".to_string(),
         Operation::SaleTransfer,
         payload,
         vec![],

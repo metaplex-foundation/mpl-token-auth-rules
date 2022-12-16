@@ -35,6 +35,10 @@ impl Processor {
                     return Err(RuleSetError::PayerIsNotSigner.into());
                 }
 
+                // Deserialize RuleSet.
+                let rule_set: RuleSet = rmp_serde::from_slice(&args.serialized_rule_set)
+                    .map_err(|_| RuleSetError::MessagePackDeserializationError)?;
+
                 // Check RuleSet account info derivation.
                 let bump = assert_derivation(
                     program_id,
@@ -42,24 +46,20 @@ impl Processor {
                     &[
                         PREFIX.as_bytes(),
                         payer_info.key.as_ref(),
-                        args.rule_set_name.as_bytes(),
+                        rule_set.name().as_bytes(),
                     ],
                 )?;
 
                 let rule_set_seeds = &[
                     PREFIX.as_ref(),
                     payer_info.key.as_ref(),
-                    args.rule_set_name.as_ref(),
+                    rule_set.name().as_ref(),
                     &[bump],
                 ];
 
-                // Deserialize RuleSet.
-                let rule_set: RuleSet = rmp_serde::from_slice(&args.serialized_rule_set)
-                    .map_err(|_| RuleSetError::DataTypeMismatch)?;
-
                 // Validate any PDA derivations present in the RuleSet.
-                for (_operation, rule) in rule_set.operations {
-                    rule.assert_rule_pda_derivations(payer_info.key, &args.rule_set_name)?;
+                for rule in rule_set.operations.values() {
+                    rule.assert_rule_pda_derivations(payer_info.key, &rule_set.name().to_string())?;
                 }
 
                 // Create or allocate RuleSet PDA account.
@@ -83,7 +83,6 @@ impl Processor {
             }
             RuleSetInstruction::Validate(args) => {
                 let account_info_iter = &mut accounts.iter();
-                let rule_set_owner_info = next_account_info(account_info_iter)?;
                 let rule_set_pda_info = next_account_info(account_info_iter)?;
                 let _system_program_info = next_account_info(account_info_iter)?;
 
@@ -97,14 +96,24 @@ impl Processor {
                     return Err(RuleSetError::DataIsEmpty.into());
                 }
 
+                // Borrow the RuleSet PDA data.
+                let data = rule_set_pda_info
+                    .data
+                    .try_borrow()
+                    .map_err(|_| RuleSetError::DataTypeMismatch)?;
+
+                // Deserialize RuleSet.
+                let rule_set: RuleSet = rmp_serde::from_slice(&data)
+                    .map_err(|_| RuleSetError::MessagePackDeserializationError)?;
+
                 // Check RuleSet account info derivation.
                 let _bump = assert_derivation(
                     program_id,
                     rule_set_pda_info.key,
                     &[
                         PREFIX.as_bytes(),
-                        rule_set_owner_info.key.as_ref(),
-                        args.rule_set_name.as_bytes(),
+                        rule_set.owner().as_ref(),
+                        rule_set.name().as_bytes(),
                     ],
                 )?;
 
@@ -114,16 +123,6 @@ impl Processor {
                     .iter()
                     .map(|account| (*account.key, account))
                     .collect::<HashMap<Pubkey, &AccountInfo>>();
-
-                // Borrow the RuleSet PDA data.
-                let data = rule_set_pda_info
-                    .data
-                    .try_borrow()
-                    .map_err(|_| RuleSetError::DataTypeMismatch)?;
-
-                // Deserialize RuleSet.
-                let rule_set: RuleSet =
-                    rmp_serde::from_slice(&data).map_err(|_| RuleSetError::DataTypeMismatch)?;
 
                 // Get the Rule from the RuleSet based on the caller-specified Operation.
                 let rule = rule_set
