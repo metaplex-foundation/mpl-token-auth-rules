@@ -7,7 +7,6 @@ pub mod processor;
 pub mod state;
 pub mod utils;
 
-pub use payload::{LeafInfo, Payload};
 pub use solana_program;
 
 solana_program::declare_id!("auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg");

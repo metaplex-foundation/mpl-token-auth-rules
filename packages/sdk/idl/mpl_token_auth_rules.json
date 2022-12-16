@@ -315,32 +315,73 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "target",
+            "name": "map",
             "type": {
-              "option": "publicKey"
+              "hashMap": [
+                {
+                  "defined": "PayloadKey"
+                },
+                {
+                  "defined": "PayloadType"
+                }
+              ]
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PayloadType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Pubkey",
+            "fields": [
+              "publicKey"
+            ]
           },
           {
-            "name": "derivedKeySeeds",
-            "type": {
-              "option": {
+            "name": "Seeds",
+            "fields": [
+              {
                 "defined": "SeedsVec"
               }
-            }
+            ]
           },
           {
-            "name": "amount",
-            "type": {
-              "option": "u64"
-            }
-          },
-          {
-            "name": "treeMatchLeaf",
-            "type": {
-              "option": {
+            "name": "MerkleProof",
+            "fields": [
+              {
                 "defined": "LeafInfo"
               }
-            }
+            ]
+          },
+          {
+            "name": "Number",
+            "fields": [
+              "u64"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "PayloadKey",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Target"
+          },
+          {
+            "name": "Holder"
+          },
+          {
+            "name": "Authority"
+          },
+          {
+            "name": "Amount"
           }
         ]
       }

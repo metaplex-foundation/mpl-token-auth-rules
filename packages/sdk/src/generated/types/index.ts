@@ -4,5 +4,7 @@ export * from './Key';
 export * from './LeafInfo';
 export * from './Operation';
 export * from './Payload';
+export * from './PayloadKey';
+export * from './PayloadType';
 export * from './SeedsVec';
 export * from './ValidateArgs';

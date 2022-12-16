@@ -1,10 +1,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
+use serde::{Deserialize, Serialize};
 use solana_program::pubkey::Pubkey;
-#[cfg(feature = "serde-feature")]
-use {
-    serde::{Deserialize, Serialize},
-    serde_with::{As, DisplayFromStr},
-};
+use std::collections::HashMap;
 
 #[repr(C)]
 #[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
@@ -29,30 +26,94 @@ impl LeafInfo {
 
 #[repr(C)]
 #[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
+#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+pub enum PayloadType {
+    Pubkey(Pubkey),
+    Seeds(SeedsVec),
+    MerkleProof(LeafInfo),
+    Number(u64),
+}
+
+#[repr(C)]
+#[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Default)]
 pub struct Payload {
-    #[cfg_attr(
-        feature = "serde-feature",
-        serde(with = "As::<Option<DisplayFromStr>>")
-    )]
-    pub target: Option<Pubkey>,
-    pub derived_key_seeds: Option<SeedsVec>,
-    pub amount: Option<u64>,
-    pub tree_match_leaf: Option<LeafInfo>,
+    map: HashMap<PayloadKey, PayloadType>,
 }
 
 impl Payload {
-    pub fn new(
-        target: Option<Pubkey>,
-        derived_key_seeds: Option<SeedsVec>,
-        amount: Option<u64>,
-        tree_match_leaf: Option<LeafInfo>,
-    ) -> Self {
+    pub fn new() -> Self {
         Self {
-            target,
-            derived_key_seeds,
-            amount,
-            tree_match_leaf,
+            map: HashMap::new(),
         }
     }
+
+    pub fn from(map: HashMap<PayloadKey, PayloadType>) -> Self {
+        Self { map }
+    }
+
+    pub fn get_pubkey(&self, key: &PayloadKey) -> Option<Pubkey> {
+        if let Some(val) = self.map.get(key) {
+            match val {
+                PayloadType::Pubkey(pubkey) => Some(*pubkey),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn get_seeds(&self, key: &PayloadKey) -> Option<SeedsVec> {
+        if let Some(val) = self.map.get(key) {
+            match val {
+                PayloadType::Seeds(seeds) => Some(seeds.clone()),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn get_merkle_proof(&self, key: &PayloadKey) -> Option<LeafInfo> {
+        if let Some(val) = self.map.get(key) {
+            match val {
+                PayloadType::MerkleProof(leaf_info) => Some(leaf_info.clone()),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn get_amount(&self, key: &PayloadKey) -> Option<u64> {
+        if let Some(val) = self.map.get(key) {
+            match val {
+                PayloadType::Number(number) => Some(*number),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(
+    BorshSerialize,
+    BorshDeserialize,
+    Serialize,
+    Deserialize,
+    PartialOrd,
+    Hash,
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Copy,
+)]
+pub enum PayloadKey {
+    Target,
+    Holder,
+    Authority,
+    Amount,
 }

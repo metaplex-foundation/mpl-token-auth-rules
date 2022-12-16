@@ -119,7 +119,6 @@ export function createValidateInstruction(
       isSigner: true,
     });
   }
-
   if (accounts.optRuleSigner2 != null) {
     if (accounts.optRuleSigner1 == null) {
       throw new Error(
@@ -132,7 +131,6 @@ export function createValidateInstruction(
       isSigner: true,
     });
   }
-
   if (accounts.optRuleSigner3 != null) {
     if (accounts.optRuleSigner1 == null || accounts.optRuleSigner2 == null) {
       throw new Error(
@@ -145,7 +143,6 @@ export function createValidateInstruction(
       isSigner: true,
     });
   }
-
   if (accounts.optRuleSigner4 != null) {
     if (
       accounts.optRuleSigner1 == null ||
@@ -162,7 +159,6 @@ export function createValidateInstruction(
       isSigner: true,
     });
   }
-
   if (accounts.optRuleSigner5 != null) {
     if (
       accounts.optRuleSigner1 == null ||
@@ -180,7 +176,6 @@ export function createValidateInstruction(
       isSigner: true,
     });
   }
-
   if (accounts.optRuleNonsigner1 != null) {
     if (
       accounts.optRuleSigner1 == null ||
@@ -199,7 +194,6 @@ export function createValidateInstruction(
       isSigner: false,
     });
   }
-
   if (accounts.optRuleNonsigner2 != null) {
     if (
       accounts.optRuleSigner1 == null ||
@@ -219,7 +213,6 @@ export function createValidateInstruction(
       isSigner: false,
     });
   }
-
   if (accounts.optRuleNonsigner3 != null) {
     if (
       accounts.optRuleSigner1 == null ||
@@ -240,7 +233,6 @@ export function createValidateInstruction(
       isSigner: false,
     });
   }
-
   if (accounts.optRuleNonsigner4 != null) {
     if (
       accounts.optRuleSigner1 == null ||
@@ -262,7 +254,6 @@ export function createValidateInstruction(
       isSigner: false,
     });
   }
-
   if (accounts.optRuleNonsigner5 != null) {
     if (
       accounts.optRuleSigner1 == null ||

@@ -5,16 +5,11 @@
  * See: https://github.com/metaplex-foundation/solita
  */
 
-import * as web3 from '@solana/web3.js';
 import * as beet from '@metaplex-foundation/beet';
-import * as beetSolana from '@metaplex-foundation/beet-solana';
-import { SeedsVec, seedsVecBeet } from './SeedsVec';
-import { LeafInfo, leafInfoBeet } from './LeafInfo';
+import { PayloadKey, payloadKeyBeet } from './PayloadKey';
+import { PayloadType, payloadTypeBeet } from './PayloadType';
 export type Payload = {
-  target: beet.COption<web3.PublicKey>;
-  derivedKeySeeds: beet.COption<SeedsVec>;
-  amount: beet.COption<beet.bignum>;
-  treeMatchLeaf: beet.COption<LeafInfo>;
+  map: Map<PayloadKey, PayloadType>;
 };
 
 /**
@@ -22,11 +17,6 @@ export type Payload = {
  * @category generated
  */
 export const payloadBeet = new beet.FixableBeetArgsStruct<Payload>(
-  [
-    ['target', beet.coption(beetSolana.publicKey)],
-    ['derivedKeySeeds', beet.coption(seedsVecBeet)],
-    ['amount', beet.coption(beet.u64)],
-    ['treeMatchLeaf', beet.coption(leafInfoBeet)],
-  ],
+  [['map', beet.map(payloadKeyBeet, payloadTypeBeet)]],
   'Payload',
 );
