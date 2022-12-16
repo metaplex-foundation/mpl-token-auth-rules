@@ -79,6 +79,14 @@ pub enum RuleSetError {
     /// 17 - MessagePack deserialization error
     #[error("MessagePack deserialization error")]
     MessagePackDeserializationError,
+
+    /// 18 - Missing account
+    #[error("Missing account")]
+    MissingAccount,
+
+    /// 19 - Missing Payload value
+    #[error("Missing Payload value")]
+    MissingPayloadValue,
 }
 
 impl PrintProgramError for RuleSetError {

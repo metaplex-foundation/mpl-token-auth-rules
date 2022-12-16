@@ -105,7 +105,7 @@ impl Rule {
                 if let Some(signer) = accounts.get(account) {
                     (signer.is_signer, self.to_error())
                 } else {
-                    (false, self.to_error())
+                    (false, RuleSetError::MissingAccount)
                 }
             }
             Rule::PubkeyMatch { pubkey, field } => {
@@ -113,7 +113,7 @@ impl Rule {
 
                 let key = match payload.get_pubkey(field) {
                     Some(pubkey) => pubkey,
-                    _ => return (false, self.to_error()),
+                    _ => return (false, RuleSetError::MissingPayloadValue),
                 };
 
                 if key == pubkey {
@@ -127,7 +127,7 @@ impl Rule {
 
                 let seeds = match payload.get_seeds(field) {
                     Some(seeds) => seeds,
-                    _ => return (false, self.to_error()),
+                    _ => return (false, RuleSetError::MissingPayloadValue),
                 };
 
                 let vec_of_slices = seeds
@@ -147,13 +147,15 @@ impl Rule {
 
                 let key = match payload.get_pubkey(field) {
                     Some(pubkey) => pubkey,
-                    _ => return (false, self.to_error()),
+                    _ => return (false, RuleSetError::MissingPayloadValue),
                 };
 
                 if let Some(account) = accounts.get(key) {
                     if *account.owner == *program {
                         return (true, self.to_error());
                     }
+                } else {
+                    return (false, RuleSetError::MissingAccount);
                 }
 
                 (false, self.to_error())
@@ -167,7 +169,7 @@ impl Rule {
                         (false, self.to_error())
                     }
                 } else {
-                    (false, self.to_error())
+                    (false, RuleSetError::MissingPayloadValue)
                 }
             }
             Rule::Frequency {
@@ -200,7 +202,7 @@ impl Rule {
                         (false, self.to_error())
                     }
                 } else {
-                    (false, self.to_error())
+                    (false, RuleSetError::MissingAccount)
                 }
             }
             Rule::PubkeyTreeMatch { root, field } => {
@@ -208,7 +210,7 @@ impl Rule {
 
                 let merkle_proof = match payload.get_merkle_proof(field) {
                     Some(merkle_proof) => merkle_proof,
-                    _ => return (false, self.to_error()),
+                    _ => return (false, RuleSetError::MissingPayloadValue),
                 };
 
                 let mut computed_hash = merkle_proof.leaf;
