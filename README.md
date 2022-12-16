@@ -18,8 +18,8 @@ There are **Primitive Rules** and **Composed Rules** that are created by combini
 **Note: Additional Rust examples can be found in the [program/tests](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/main/program/tests) directory.**
 ```rust
 use mpl_token_auth_rules::{
+    payload::{PayloadKey, PayloadType},
     state::{Operation, Rule, RuleSet},
-    Payload,
 };
 use rmp_serde::Serializer;
 use serde::Serialize;
@@ -28,9 +28,11 @@ use solana_sdk::{
     native_token::LAMPORTS_PER_SOL, signature::Signer, signer::keypair::Keypair,
     transaction::Transaction,
 };
+use std::collections::HashMap;
 
 fn main() {
     let url = "https://api.devnet.solana.com".to_string();
+
     let rpc_client = RpcClient::new(url);
 
     let payer = Keypair::new();
@@ -47,15 +49,20 @@ fn main() {
     }
 
     // Find RuleSet PDA.
-    let (rule_set_addr, _rule_set_bump) =
-        mpl_token_auth_rules::pda::find_rule_set_address(payer.pubkey(), "test rule_set".to_string());
+    let (ruleset_addr, _ruleset_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
+        payer.pubkey(),
+        "test ruleset".to_string(),
+    );
+
+    // Second signer.
+    let second_signer = Keypair::new();
 
     // Create some rules.
     let adtl_signer = Rule::AdditionalSigner {
         account: payer.pubkey(),
     };
     let adtl_signer2 = Rule::AdditionalSigner {
-        account: payer.pubkey(),
+        account: second_signer.pubkey(),
     };
     let amount_check = Rule::Amount { amount: 2 };
 
@@ -83,8 +90,8 @@ fn main() {
     let create_ix = mpl_token_auth_rules::instruction::create(
         mpl_token_auth_rules::id(),
         payer.pubkey(),
-        rule_set_addr,
-        "test rule_set".to_string(),
+        ruleset_addr,
+        "test ruleset".to_string(),
         serialized_data,
     );
 
@@ -103,17 +110,17 @@ fn main() {
     println!("Create tx signature: {}", signature);
 
     // Store the payload of data to validate against the rule definition.
-    let payload = Payload::new(None, None, Some(2), None);
+    let payload = HashMap::from([(PayloadKey::Amount, PayloadType::Number(2))]);
 
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         payer.pubkey(),
-        rule_set_addr,
-        "test rule_set".to_string(),
+        ruleset_addr,
+        "test ruleset".to_string(),
         Operation::Transfer,
         payload,
-        vec![],
+        vec![second_signer.pubkey()],
         vec![],
     );
 
@@ -122,7 +129,7 @@ fn main() {
     let validate_tx = Transaction::new_signed_with_payer(
         &[validate_ix],
         Some(&payer.pubkey()),
-        &[&payer],
+        &[&payer, &second_signer],
         latest_blockhash,
     );
 
