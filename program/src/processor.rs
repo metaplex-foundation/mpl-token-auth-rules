@@ -50,17 +50,28 @@ impl Processor {
                     ],
                 )?;
 
+                // Convert the accounts into a map of Pubkeys to the corresponding account infos.
+                // This makes it easy to pass the account infos into validation functions since they store the Pubkeys.
+                let accounts_map = accounts
+                    .iter()
+                    .map(|account| (*account.key, account))
+                    .collect::<HashMap<Pubkey, &AccountInfo>>();
+
+                // Validate any PDA derivations present in the RuleSet.
+                for rule in rule_set.operations.values() {
+                    rule.assert_rule_pda_derivations(
+                        payer_info.key,
+                        &rule_set.name().to_string(),
+                        &accounts_map,
+                    )?;
+                }
+
                 let rule_set_seeds = &[
                     PREFIX.as_ref(),
                     payer_info.key.as_ref(),
                     rule_set.name().as_ref(),
                     &[bump],
                 ];
-
-                // Validate any PDA derivations present in the RuleSet.
-                for rule in rule_set.operations.values() {
-                    rule.assert_rule_pda_derivations(payer_info.key, &rule_set.name().to_string())?;
-                }
 
                 // Create or allocate RuleSet PDA account.
                 create_or_allocate_account_raw(

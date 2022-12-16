@@ -35,6 +35,7 @@ async fn test_payer_not_signer_fails() {
         context.payer.pubkey(),
         rule_set_addr,
         vec![],
+        vec![],
     );
 
     // Add it to a non-signed transaction.
@@ -131,6 +132,7 @@ async fn test_additional_signer_and_amount() {
         context.payer.pubkey(),
         rule_set_addr,
         serialized_data,
+        vec![],
     );
 
     // Add it to a transaction.
@@ -183,7 +185,7 @@ async fn test_additional_signer_and_amount() {
             InstructionError::Custom(val),
         )) => {
             let rule_set_error = RuleSetError::from_u32(val).unwrap();
-            assert_eq!(rule_set_error, RuleSetError::AdditionalSignerCheckFailed);
+            assert_eq!(rule_set_error, RuleSetError::MissingAccount);
         }
         _ => panic!("Unexpected error {:?}", err),
     }
@@ -327,6 +329,7 @@ async fn test_frequency() {
         context.payer.pubkey(),
         rule_set_addr,
         serialized_data,
+        vec![freq_account],
     );
 
     // Add it to a transaction.

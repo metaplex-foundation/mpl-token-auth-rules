@@ -78,6 +78,7 @@ async fn basic_royalty_enforcement() {
         context.payer.pubkey(),
         rule_set_addr,
         serialized_data,
+        vec![],
     );
 
     // Add it to a transaction.

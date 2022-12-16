@@ -245,20 +245,21 @@ impl Rule {
 
     pub fn assert_rule_pda_derivations(
         &self,
-        payer: &Pubkey,
+        owner: &Pubkey,
         rule_set_name: &String,
+        accounts: &HashMap<Pubkey, &AccountInfo>,
     ) -> ProgramResult {
         match self {
             Rule::All { rules } => {
                 for rule in rules {
-                    rule.assert_rule_pda_derivations(payer, rule_set_name)?;
+                    rule.assert_rule_pda_derivations(owner, rule_set_name, accounts)?;
                 }
                 Ok(())
             }
             Rule::Any { rules } => {
                 let mut error: Option<ProgramResult> = None;
                 for rule in rules {
-                    match rule.assert_rule_pda_derivations(payer, rule_set_name) {
+                    match rule.assert_rule_pda_derivations(owner, rule_set_name, accounts) {
                         Ok(_) => return Ok(()),
                         Err(e) => error = Some(Err(e)),
                     }
@@ -270,17 +271,31 @@ impl Rule {
                 freq_account,
             } => {
                 msg!("Assert Frequency PDA deriviation");
-                // Check Frequency account info derivation.
-                let _bump = assert_derivation(
-                    &crate::id(),
-                    freq_account,
-                    &[
-                        FREQ_PDA.as_bytes(),
-                        payer.as_ref(),
-                        rule_set_name.as_bytes(),
-                        freq_name.as_bytes(),
-                    ],
-                )?;
+                if let Some(freq_pda_account_info) = accounts.get(freq_account) {
+                    // Frequency PDA account must be owned by this program.
+                    if *freq_pda_account_info.owner != crate::ID {
+                        return Err(RuleSetError::IncorrectOwner.into());
+                    }
+
+                    // Frequency PDA account must not be empty.
+                    if freq_pda_account_info.data_is_empty() {
+                        return Err(RuleSetError::DataIsEmpty.into());
+                    }
+
+                    // Check Frequency account info derivation.
+                    let _bump = assert_derivation(
+                        &crate::id(),
+                        freq_account,
+                        &[
+                            FREQ_PDA.as_bytes(),
+                            owner.as_ref(),
+                            rule_set_name.as_bytes(),
+                            freq_name.as_bytes(),
+                        ],
+                    )?;
+                } else {
+                    return Err(RuleSetError::MissingAccount.into());
+                }
 
                 Ok(())
             }

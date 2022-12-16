@@ -46,6 +46,11 @@ pub enum RuleSetInstruction {
     #[account(0, writable, signer, name="payer", desc="Payer and creator of the RuleSet")]
     #[account(1, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
     #[account(2, name = "system_program", desc = "System program")]
+    #[account(3, optional, name = "opt_rule_pda_1", desc = "Optional rule PDA non-signer 1")]
+    #[account(4, optional, name = "opt_rule_pda_2", desc = "Optional rule PDA non-signer 2")]
+    #[account(5, optional, name = "opt_rule_pda_3", desc = "Optional rule PDA non-signer 3")]
+    #[account(6, optional, name = "opt_rule_pda_4", desc = "Optional rule PDA non-signer 4")]
+    #[account(7, optional, name = "opt_rule_pda_5", desc = "Optional rule PDA non-signer 5")]
     Create(CreateArgs),
 
     /// This instruction executes the RuleSet stored in the rule_set PDA account by sending
@@ -76,12 +81,23 @@ pub fn create(
     payer: Pubkey,
     rule_set_pda: Pubkey,
     serialized_rule_set: Vec<u8>,
+    rule_nonsigner_accounts: Vec<Pubkey>,
 ) -> Instruction {
-    let accounts = vec![
+    let mut accounts = vec![
         AccountMeta::new(payer, true),
         AccountMeta::new(rule_set_pda, false),
         AccountMeta::new_readonly(solana_program::system_program::id(), false),
     ];
+
+    for i in 0..5 {
+        if let Some(account) = rule_nonsigner_accounts.get(i) {
+            accounts.push(AccountMeta::new_readonly(*account, false));
+        }
+    }
+
+    if rule_nonsigner_accounts.get(5).is_some() {
+        panic!("Too many rule PDA non-signer accounts");
+    }
 
     Instruction {
         program_id,
