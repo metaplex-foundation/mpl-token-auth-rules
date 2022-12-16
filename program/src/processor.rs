@@ -88,7 +88,7 @@ impl Processor {
                 let _system_program_info = next_account_info(account_info_iter)?;
 
                 // RuleSet must be owned by this program.
-                if rule_set_pda_info.owner != program_id {
+                if *rule_set_pda_info.owner != crate::ID {
                     return Err(RuleSetError::IncorrectOwner.into());
                 }
 

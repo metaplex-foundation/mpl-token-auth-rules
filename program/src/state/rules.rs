@@ -150,7 +150,7 @@ impl Rule {
                     _ => return (false, self.to_error()),
                 };
 
-                if let Some(account) = accounts.get(&key) {
+                if let Some(account) = accounts.get(key) {
                     if *account.owner == *program {
                         return (true, self.to_error());
                     }
