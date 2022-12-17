@@ -1,5 +1,5 @@
 {
-  "version": "0.1.2",
+  "version": "0.1.3",
   "name": "mpl_token_auth_rules",
   "instructions": [
     {
@@ -542,6 +542,16 @@
       "code": 19,
       "name": "MissingPayloadValue",
       "msg": "Missing Payload value"
+    },
+    {
+      "code": 20,
+      "name": "RuleSetOwnerMismatch",
+      "msg": "RuleSet owner must be payer"
+    },
+    {
+      "code": 21,
+      "name": "NameTooLong",
+      "msg": "Name too long"
     }
   ],
   "metadata": {

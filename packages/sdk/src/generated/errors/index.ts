@@ -424,6 +424,46 @@ createErrorFromCodeLookup.set(0x13, () => new MissingPayloadValueError());
 createErrorFromNameLookup.set('MissingPayloadValue', () => new MissingPayloadValueError());
 
 /**
+ * RuleSetOwnerMismatch: 'RuleSet owner must be payer'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class RuleSetOwnerMismatchError extends Error {
+  readonly code: number = 0x14;
+  readonly name: string = 'RuleSetOwnerMismatch';
+  constructor() {
+    super('RuleSet owner must be payer');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, RuleSetOwnerMismatchError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x14, () => new RuleSetOwnerMismatchError());
+createErrorFromNameLookup.set('RuleSetOwnerMismatch', () => new RuleSetOwnerMismatchError());
+
+/**
+ * NameTooLong: 'Name too long'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class NameTooLongError extends Error {
+  readonly code: number = 0x15;
+  readonly name: string = 'NameTooLong';
+  constructor() {
+    super('Name too long');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, NameTooLongError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x15, () => new NameTooLongError());
+createErrorFromNameLookup.set('NameTooLong', () => new NameTooLongError());
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated
