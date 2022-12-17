@@ -87,6 +87,14 @@ pub enum RuleSetError {
     /// 19 - Missing Payload value
     #[error("Missing Payload value")]
     MissingPayloadValue,
+
+    /// 20 - RuleSet owner must be payer
+    #[error("RuleSet owner must be payer")]
+    RuleSetOwnerMismatch,
+
+    /// 21 - Name too long
+    #[error("Name too long")]
+    NameTooLong,
 }
 
 impl PrintProgramError for RuleSetError {

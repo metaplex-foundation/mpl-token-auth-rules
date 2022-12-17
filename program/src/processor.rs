@@ -6,6 +6,7 @@ use crate::{
     pda::{FREQ_PDA, PREFIX},
     state::{FrequencyAccount, RuleSet},
     utils::{assert_derivation, create_or_allocate_account_raw},
+    MAX_NAME_LENGTH,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
@@ -38,6 +39,15 @@ impl Processor {
                 // Deserialize RuleSet.
                 let rule_set: RuleSet = rmp_serde::from_slice(&args.serialized_rule_set)
                     .map_err(|_| RuleSetError::MessagePackDeserializationError)?;
+
+                if rule_set.name().len() > MAX_NAME_LENGTH {
+                    return Err(RuleSetError::NameTooLong.into());
+                }
+
+                // The payer/signer must be the RuleSet owner.
+                if payer_info.key != rule_set.owner() {
+                    return Err(RuleSetError::RuleSetOwnerMismatch.into());
+                }
 
                 // Check RuleSet account info derivation.
                 let bump = assert_derivation(
@@ -156,6 +166,12 @@ impl Processor {
 
                 if !payer_info.is_signer {
                     return Err(RuleSetError::PayerIsNotSigner.into());
+                }
+
+                if args.rule_set_name.len() > MAX_NAME_LENGTH
+                    || args.freq_rule_name.len() > MAX_NAME_LENGTH
+                {
+                    return Err(RuleSetError::NameTooLong.into());
                 }
 
                 // Check Frequency PDA account info derivation.

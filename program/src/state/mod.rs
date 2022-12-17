@@ -79,7 +79,7 @@ where {
             .map_err(|_| RuleSetError::DataTypeMismatch)?;
 
         // Check that this account is owned by this program.
-        assert_owned_by(a, &crate::id())?;
+        assert_owned_by(a, &crate::ID)?;
 
         Ok(ua)
     }

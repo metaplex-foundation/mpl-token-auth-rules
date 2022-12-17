@@ -10,7 +10,7 @@ pub fn find_rule_set_address(creator: Pubkey, rule_set_name: String) -> (Pubkey,
             creator.as_ref(),
             rule_set_name.as_bytes(),
         ],
-        &crate::id(),
+        &crate::ID,
     )
 }
 
@@ -26,6 +26,6 @@ pub fn find_frequency_pda_address(
             rule_set_name.as_bytes(),
             freq_rule_name.as_bytes(),
         ],
-        &crate::id(),
+        &crate::ID,
     )
 }

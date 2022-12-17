@@ -136,7 +136,7 @@ impl Rule {
                     .map(Vec::as_slice)
                     .collect::<Vec<&[u8]>>();
                 let seeds = &vec_of_slices[..];
-                if let Ok(_bump) = assert_derivation(&crate::id(), account, seeds) {
+                if let Ok(_bump) = assert_derivation(&crate::ID, account, seeds) {
                     (true, self.to_error())
                 } else {
                     (false, self.to_error())
@@ -284,7 +284,7 @@ impl Rule {
 
                     // Check Frequency account info derivation.
                     let _bump = assert_derivation(
-                        &crate::id(),
+                        &crate::ID,
                         freq_account,
                         &[
                             FREQ_PDA.as_bytes(),
