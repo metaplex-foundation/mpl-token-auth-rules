@@ -38,6 +38,11 @@ export const CreateStruct = new beet.FixableBeetArgsStruct<
  *
  * @property [_writable_, **signer**] payer Payer and creator of the RuleSet
  * @property [_writable_] ruleSetPda The PDA account where the RuleSet is stored
+ * @property [] optRulePda1 (optional) Optional rule PDA non-signer 1
+ * @property [] optRulePda2 (optional) Optional rule PDA non-signer 2
+ * @property [] optRulePda3 (optional) Optional rule PDA non-signer 3
+ * @property [] optRulePda4 (optional) Optional rule PDA non-signer 4
+ * @property [] optRulePda5 (optional) Optional rule PDA non-signer 5
  * @category Instructions
  * @category Create
  * @category generated
@@ -46,12 +51,22 @@ export type CreateInstructionAccounts = {
   payer: web3.PublicKey;
   ruleSetPda: web3.PublicKey;
   systemProgram?: web3.PublicKey;
+  optRulePda1?: web3.PublicKey;
+  optRulePda2?: web3.PublicKey;
+  optRulePda3?: web3.PublicKey;
+  optRulePda4?: web3.PublicKey;
+  optRulePda5?: web3.PublicKey;
 };
 
 export const createInstructionDiscriminator = 0;
 
 /**
  * Creates a _Create_ instruction.
+ *
+ * Optional accounts that are not provided will be omitted from the accounts
+ * array passed with the instruction.
+ * An optional account that is set cannot follow an optional account that is unset.
+ * Otherwise an Error is raised.
  *
  * @param accounts that will be accessed while the instruction is processed
  * @param args to provide as instruction data to the program
@@ -86,6 +101,71 @@ export function createCreateInstruction(
       isSigner: false,
     },
   ];
+
+  if (accounts.optRulePda1 != null) {
+    keys.push({
+      pubkey: accounts.optRulePda1,
+      isWritable: false,
+      isSigner: false,
+    });
+  }
+  if (accounts.optRulePda2 != null) {
+    if (accounts.optRulePda1 == null) {
+      throw new Error(
+        "When providing 'optRulePda2' then 'accounts.optRulePda1' need(s) to be provided as well.",
+      );
+    }
+    keys.push({
+      pubkey: accounts.optRulePda2,
+      isWritable: false,
+      isSigner: false,
+    });
+  }
+  if (accounts.optRulePda3 != null) {
+    if (accounts.optRulePda1 == null || accounts.optRulePda2 == null) {
+      throw new Error(
+        "When providing 'optRulePda3' then 'accounts.optRulePda1', 'accounts.optRulePda2' need(s) to be provided as well.",
+      );
+    }
+    keys.push({
+      pubkey: accounts.optRulePda3,
+      isWritable: false,
+      isSigner: false,
+    });
+  }
+  if (accounts.optRulePda4 != null) {
+    if (
+      accounts.optRulePda1 == null ||
+      accounts.optRulePda2 == null ||
+      accounts.optRulePda3 == null
+    ) {
+      throw new Error(
+        "When providing 'optRulePda4' then 'accounts.optRulePda1', 'accounts.optRulePda2', 'accounts.optRulePda3' need(s) to be provided as well.",
+      );
+    }
+    keys.push({
+      pubkey: accounts.optRulePda4,
+      isWritable: false,
+      isSigner: false,
+    });
+  }
+  if (accounts.optRulePda5 != null) {
+    if (
+      accounts.optRulePda1 == null ||
+      accounts.optRulePda2 == null ||
+      accounts.optRulePda3 == null ||
+      accounts.optRulePda4 == null
+    ) {
+      throw new Error(
+        "When providing 'optRulePda5' then 'accounts.optRulePda1', 'accounts.optRulePda2', 'accounts.optRulePda3', 'accounts.optRulePda4' need(s) to be provided as well.",
+      );
+    }
+    keys.push({
+      pubkey: accounts.optRulePda5,
+      isWritable: false,
+      isSigner: false,
+    });
+  }
 
   const ix = new web3.TransactionInstruction({
     programId,

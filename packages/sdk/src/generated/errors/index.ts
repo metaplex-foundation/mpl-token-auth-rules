@@ -321,24 +321,24 @@ createErrorFromCodeLookup.set(0xe, () => new BorshSerializationErrorError());
 createErrorFromNameLookup.set('BorshSerializationError', () => new BorshSerializationErrorError());
 
 /**
- * PayloadValueOccupied: 'Value in Payload is occupied'
+ * ValueOccupied: 'Value in Payload or RuleSet is occupied'
  *
  * @category Errors
  * @category generated
  */
-export class PayloadValueOccupiedError extends Error {
+export class ValueOccupiedError extends Error {
   readonly code: number = 0xf;
-  readonly name: string = 'PayloadValueOccupied';
+  readonly name: string = 'ValueOccupied';
   constructor() {
-    super('Value in Payload is occupied');
+    super('Value in Payload or RuleSet is occupied');
     if (typeof Error.captureStackTrace === 'function') {
-      Error.captureStackTrace(this, PayloadValueOccupiedError);
+      Error.captureStackTrace(this, ValueOccupiedError);
     }
   }
 }
 
-createErrorFromCodeLookup.set(0xf, () => new PayloadValueOccupiedError());
-createErrorFromNameLookup.set('PayloadValueOccupied', () => new PayloadValueOccupiedError());
+createErrorFromCodeLookup.set(0xf, () => new ValueOccupiedError());
+createErrorFromNameLookup.set('ValueOccupied', () => new ValueOccupiedError());
 
 /**
  * DataIsEmpty: 'Account data is empty'
@@ -359,6 +359,69 @@ export class DataIsEmptyError extends Error {
 
 createErrorFromCodeLookup.set(0x10, () => new DataIsEmptyError());
 createErrorFromNameLookup.set('DataIsEmpty', () => new DataIsEmptyError());
+
+/**
+ * MessagePackDeserializationError: 'MessagePack deserialization error'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class MessagePackDeserializationErrorError extends Error {
+  readonly code: number = 0x11;
+  readonly name: string = 'MessagePackDeserializationError';
+  constructor() {
+    super('MessagePack deserialization error');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, MessagePackDeserializationErrorError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x11, () => new MessagePackDeserializationErrorError());
+createErrorFromNameLookup.set(
+  'MessagePackDeserializationError',
+  () => new MessagePackDeserializationErrorError(),
+);
+
+/**
+ * MissingAccount: 'Missing account'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class MissingAccountError extends Error {
+  readonly code: number = 0x12;
+  readonly name: string = 'MissingAccount';
+  constructor() {
+    super('Missing account');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, MissingAccountError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x12, () => new MissingAccountError());
+createErrorFromNameLookup.set('MissingAccount', () => new MissingAccountError());
+
+/**
+ * MissingPayloadValue: 'Missing Payload value'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class MissingPayloadValueError extends Error {
+  readonly code: number = 0x13;
+  readonly name: string = 'MissingPayloadValue';
+  constructor() {
+    super('Missing Payload value');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, MissingPayloadValueError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x13, () => new MissingPayloadValueError());
+createErrorFromNameLookup.set('MissingPayloadValue', () => new MissingPayloadValueError());
 
 /**
  * Attempts to resolve a custom program error from the provided error code.

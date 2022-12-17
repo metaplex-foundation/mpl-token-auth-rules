@@ -36,7 +36,6 @@ export const ValidateStruct = new beet.FixableBeetArgsStruct<
 /**
  * Accounts required by the _Validate_ instruction
  *
- * @property [_writable_] owner Owner (creator) of the RuleSet
  * @property [_writable_] ruleSet The PDA account where the RuleSet is stored
  * @property [**signer**] optRuleSigner1 (optional) Optional rule validation signer 1
  * @property [**signer**] optRuleSigner2 (optional) Optional rule validation signer 2
@@ -53,7 +52,6 @@ export const ValidateStruct = new beet.FixableBeetArgsStruct<
  * @category generated
  */
 export type ValidateInstructionAccounts = {
-  owner: web3.PublicKey;
   ruleSet: web3.PublicKey;
   systemProgram?: web3.PublicKey;
   optRuleSigner1?: web3.PublicKey;
@@ -95,11 +93,6 @@ export function createValidateInstruction(
     ...args,
   });
   const keys: web3.AccountMeta[] = [
-    {
-      pubkey: accounts.owner,
-      isWritable: true,
-      isSigner: false,
-    },
     {
       pubkey: accounts.ruleSet,
       isWritable: true,
