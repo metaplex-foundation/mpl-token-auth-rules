@@ -1,5 +1,5 @@
 {
-  "version": "0.1.2",
+  "version": "0.1.3",
   "name": "mpl_token_auth_rules",
   "instructions": [
     {
@@ -22,6 +22,41 @@
           "isMut": false,
           "isSigner": false,
           "desc": "System program"
+        },
+        {
+          "name": "optRulePda1",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Optional rule PDA non-signer 1",
+          "optional": true
+        },
+        {
+          "name": "optRulePda2",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Optional rule PDA non-signer 2",
+          "optional": true
+        },
+        {
+          "name": "optRulePda3",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Optional rule PDA non-signer 3",
+          "optional": true
+        },
+        {
+          "name": "optRulePda4",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Optional rule PDA non-signer 4",
+          "optional": true
+        },
+        {
+          "name": "optRulePda5",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Optional rule PDA non-signer 5",
+          "optional": true
         }
       ],
       "args": [
@@ -40,12 +75,6 @@
     {
       "name": "Validate",
       "accounts": [
-        {
-          "name": "payer",
-          "isMut": true,
-          "isSigner": true,
-          "desc": "Payer and creator of the RuleSet"
-        },
         {
           "name": "ruleSet",
           "isMut": true,
@@ -209,10 +238,6 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "ruleSetName",
-            "type": "string"
-          },
-          {
             "name": "serializedRuleSet",
             "type": "bytes"
           }
@@ -224,10 +249,6 @@
       "type": {
         "kind": "struct",
         "fields": [
-          {
-            "name": "ruleSetName",
-            "type": "string"
-          },
           {
             "name": "operation",
             "type": {
@@ -495,12 +516,42 @@
     {
       "code": 14,
       "name": "BorshSerializationError",
-      "msg": "Borsh Serialization Error"
+      "msg": "Borsh serialization error"
     },
     {
       "code": 15,
-      "name": "PayloadValueOccupied",
-      "msg": "Value in Payload is occupied"
+      "name": "ValueOccupied",
+      "msg": "Value in Payload or RuleSet is occupied"
+    },
+    {
+      "code": 16,
+      "name": "DataIsEmpty",
+      "msg": "Account data is empty"
+    },
+    {
+      "code": 17,
+      "name": "MessagePackDeserializationError",
+      "msg": "MessagePack deserialization error"
+    },
+    {
+      "code": 18,
+      "name": "MissingAccount",
+      "msg": "Missing account"
+    },
+    {
+      "code": 19,
+      "name": "MissingPayloadValue",
+      "msg": "Missing Payload value"
+    },
+    {
+      "code": 20,
+      "name": "RuleSetOwnerMismatch",
+      "msg": "RuleSet owner must be payer"
+    },
+    {
+      "code": 21,
+      "name": "NameTooLong",
+      "msg": "Name too long"
     }
   ],
   "metadata": {

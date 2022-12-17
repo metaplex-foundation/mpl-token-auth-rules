@@ -34,7 +34,7 @@ async fn test_payer_not_signer_fails() {
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         rule_set_addr,
-        "test rule_set".to_string(),
+        vec![],
         vec![],
     );
 
@@ -57,9 +57,7 @@ async fn test_payer_not_signer_fails() {
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
-        context.payer.pubkey(),
         rule_set_addr,
-        "test rule_set".to_string(),
         Operation::Transfer,
         Payload::default(),
         vec![],
@@ -117,8 +115,8 @@ async fn test_additional_signer_and_amount() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new();
-    rule_set.add(Operation::Transfer, overall_rule);
+    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    rule_set.add(Operation::Transfer, overall_rule).unwrap();
 
     println!("{:#?}", rule_set);
 
@@ -133,8 +131,8 @@ async fn test_additional_signer_and_amount() {
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         rule_set_addr,
-        "test rule_set".to_string(),
         serialized_data,
+        vec![],
     );
 
     // Add it to a transaction.
@@ -158,12 +156,10 @@ async fn test_additional_signer_and_amount() {
     // Create a `validate` instruction WITHOUT the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
-        context.payer.pubkey(),
         rule_set_addr,
-        "test rule_set".to_string(),
         Operation::Transfer,
         payload.clone(),
-        vec![],
+        vec![context.payer.pubkey()],
         vec![],
     );
 
@@ -189,7 +185,7 @@ async fn test_additional_signer_and_amount() {
             InstructionError::Custom(val),
         )) => {
             let rule_set_error = RuleSetError::from_u32(val).unwrap();
-            assert_eq!(rule_set_error, RuleSetError::AdditionalSignerCheckFailed);
+            assert_eq!(rule_set_error, RuleSetError::MissingAccount);
         }
         _ => panic!("Unexpected error {:?}", err),
     }
@@ -197,12 +193,10 @@ async fn test_additional_signer_and_amount() {
     // Create a `validate` instruction WITH the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
-        context.payer.pubkey(),
         rule_set_addr,
-        "test rule_set".to_string(),
         Operation::Transfer,
         payload,
-        vec![second_signer.pubkey()],
+        vec![context.payer.pubkey(), second_signer.pubkey()],
         vec![],
     );
 
@@ -227,12 +221,10 @@ async fn test_additional_signer_and_amount() {
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
-        context.payer.pubkey(),
         rule_set_addr,
-        "test rule_set".to_string(),
         Operation::Transfer,
         payload,
-        vec![second_signer.pubkey()],
+        vec![context.payer.pubkey(), second_signer.pubkey()],
         vec![],
     );
 
@@ -320,8 +312,8 @@ async fn test_frequency() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new();
-    rule_set.add(Operation::Transfer, freq_rule);
+    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    rule_set.add(Operation::Transfer, freq_rule).unwrap();
 
     println!("{:#?}", rule_set);
 
@@ -336,8 +328,8 @@ async fn test_frequency() {
         mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         rule_set_addr,
-        "test rule_set".to_string(),
         serialized_data,
+        vec![freq_account],
     );
 
     // Add it to a transaction.
@@ -364,9 +356,7 @@ async fn test_frequency() {
     // Create a `validate` instruction passing in the Frequency Rule account.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
-        context.payer.pubkey(),
         rule_set_addr,
-        "test rule_set".to_string(),
         Operation::Transfer,
         Payload::default(),
         vec![],

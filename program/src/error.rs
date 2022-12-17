@@ -64,13 +64,37 @@ pub enum RuleSetError {
     #[error("Not implemented")]
     NotImplemented,
 
-    /// 14 - Borsh Serialization Error
-    #[error("Borsh Serialization Error")]
+    /// 14 - Borsh serialization error
+    #[error("Borsh serialization error")]
     BorshSerializationError,
 
-    /// 15 - Value in Payload is occupied
-    #[error("Value in Payload is occupied")]
-    PayloadValueOccupied,
+    /// 15 - Value in Payload or RuleSet is occupied
+    #[error("Value in Payload or RuleSet is occupied")]
+    ValueOccupied,
+
+    /// 16 - Account data is empty
+    #[error("Account data is empty")]
+    DataIsEmpty,
+
+    /// 17 - MessagePack deserialization error
+    #[error("MessagePack deserialization error")]
+    MessagePackDeserializationError,
+
+    /// 18 - Missing account
+    #[error("Missing account")]
+    MissingAccount,
+
+    /// 19 - Missing Payload value
+    #[error("Missing Payload value")]
+    MissingPayloadValue,
+
+    /// 20 - RuleSet owner must be payer
+    #[error("RuleSet owner must be payer")]
+    RuleSetOwnerMismatch,
+
+    /// 21 - Name too long
+    #[error("Name too long")]
+    NameTooLong,
 }
 
 impl PrintProgramError for RuleSetError {

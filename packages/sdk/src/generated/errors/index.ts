@@ -301,7 +301,7 @@ createErrorFromCodeLookup.set(0xd, () => new NotImplementedError());
 createErrorFromNameLookup.set('NotImplemented', () => new NotImplementedError());
 
 /**
- * BorshSerializationError: 'Borsh Serialization Error'
+ * BorshSerializationError: 'Borsh serialization error'
  *
  * @category Errors
  * @category generated
@@ -310,7 +310,7 @@ export class BorshSerializationErrorError extends Error {
   readonly code: number = 0xe;
   readonly name: string = 'BorshSerializationError';
   constructor() {
-    super('Borsh Serialization Error');
+    super('Borsh serialization error');
     if (typeof Error.captureStackTrace === 'function') {
       Error.captureStackTrace(this, BorshSerializationErrorError);
     }
@@ -321,24 +321,147 @@ createErrorFromCodeLookup.set(0xe, () => new BorshSerializationErrorError());
 createErrorFromNameLookup.set('BorshSerializationError', () => new BorshSerializationErrorError());
 
 /**
- * PayloadValueOccupied: 'Value in Payload is occupied'
+ * ValueOccupied: 'Value in Payload or RuleSet is occupied'
  *
  * @category Errors
  * @category generated
  */
-export class PayloadValueOccupiedError extends Error {
+export class ValueOccupiedError extends Error {
   readonly code: number = 0xf;
-  readonly name: string = 'PayloadValueOccupied';
+  readonly name: string = 'ValueOccupied';
   constructor() {
-    super('Value in Payload is occupied');
+    super('Value in Payload or RuleSet is occupied');
     if (typeof Error.captureStackTrace === 'function') {
-      Error.captureStackTrace(this, PayloadValueOccupiedError);
+      Error.captureStackTrace(this, ValueOccupiedError);
     }
   }
 }
 
-createErrorFromCodeLookup.set(0xf, () => new PayloadValueOccupiedError());
-createErrorFromNameLookup.set('PayloadValueOccupied', () => new PayloadValueOccupiedError());
+createErrorFromCodeLookup.set(0xf, () => new ValueOccupiedError());
+createErrorFromNameLookup.set('ValueOccupied', () => new ValueOccupiedError());
+
+/**
+ * DataIsEmpty: 'Account data is empty'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class DataIsEmptyError extends Error {
+  readonly code: number = 0x10;
+  readonly name: string = 'DataIsEmpty';
+  constructor() {
+    super('Account data is empty');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, DataIsEmptyError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x10, () => new DataIsEmptyError());
+createErrorFromNameLookup.set('DataIsEmpty', () => new DataIsEmptyError());
+
+/**
+ * MessagePackDeserializationError: 'MessagePack deserialization error'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class MessagePackDeserializationErrorError extends Error {
+  readonly code: number = 0x11;
+  readonly name: string = 'MessagePackDeserializationError';
+  constructor() {
+    super('MessagePack deserialization error');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, MessagePackDeserializationErrorError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x11, () => new MessagePackDeserializationErrorError());
+createErrorFromNameLookup.set(
+  'MessagePackDeserializationError',
+  () => new MessagePackDeserializationErrorError(),
+);
+
+/**
+ * MissingAccount: 'Missing account'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class MissingAccountError extends Error {
+  readonly code: number = 0x12;
+  readonly name: string = 'MissingAccount';
+  constructor() {
+    super('Missing account');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, MissingAccountError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x12, () => new MissingAccountError());
+createErrorFromNameLookup.set('MissingAccount', () => new MissingAccountError());
+
+/**
+ * MissingPayloadValue: 'Missing Payload value'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class MissingPayloadValueError extends Error {
+  readonly code: number = 0x13;
+  readonly name: string = 'MissingPayloadValue';
+  constructor() {
+    super('Missing Payload value');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, MissingPayloadValueError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x13, () => new MissingPayloadValueError());
+createErrorFromNameLookup.set('MissingPayloadValue', () => new MissingPayloadValueError());
+
+/**
+ * RuleSetOwnerMismatch: 'RuleSet owner must be payer'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class RuleSetOwnerMismatchError extends Error {
+  readonly code: number = 0x14;
+  readonly name: string = 'RuleSetOwnerMismatch';
+  constructor() {
+    super('RuleSet owner must be payer');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, RuleSetOwnerMismatchError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x14, () => new RuleSetOwnerMismatchError());
+createErrorFromNameLookup.set('RuleSetOwnerMismatch', () => new RuleSetOwnerMismatchError());
+
+/**
+ * NameTooLong: 'Name too long'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class NameTooLongError extends Error {
+  readonly code: number = 0x15;
+  readonly name: string = 'NameTooLong';
+  constructor() {
+    super('Name too long');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, NameTooLongError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x15, () => new NameTooLongError());
+createErrorFromNameLookup.set('NameTooLong', () => new NameTooLongError());
 
 /**
  * Attempts to resolve a custom program error from the provided error code.

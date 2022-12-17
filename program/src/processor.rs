@@ -6,6 +6,7 @@ use crate::{
     pda::{FREQ_PDA, PREFIX},
     state::{FrequencyAccount, RuleSet},
     utils::{assert_derivation, create_or_allocate_account_raw},
+    MAX_NAME_LENGTH,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
@@ -35,6 +36,19 @@ impl Processor {
                     return Err(RuleSetError::PayerIsNotSigner.into());
                 }
 
+                // Deserialize RuleSet.
+                let rule_set: RuleSet = rmp_serde::from_slice(&args.serialized_rule_set)
+                    .map_err(|_| RuleSetError::MessagePackDeserializationError)?;
+
+                if rule_set.name().len() > MAX_NAME_LENGTH {
+                    return Err(RuleSetError::NameTooLong.into());
+                }
+
+                // The payer/signer must be the RuleSet owner.
+                if payer_info.key != rule_set.owner() {
+                    return Err(RuleSetError::RuleSetOwnerMismatch.into());
+                }
+
                 // Check RuleSet account info derivation.
                 let bump = assert_derivation(
                     program_id,
@@ -42,25 +56,32 @@ impl Processor {
                     &[
                         PREFIX.as_bytes(),
                         payer_info.key.as_ref(),
-                        args.rule_set_name.as_bytes(),
+                        rule_set.name().as_bytes(),
                     ],
                 )?;
+
+                // Convert the accounts into a map of Pubkeys to the corresponding account infos.
+                // This makes it easy to pass the account infos into validation functions since they store the Pubkeys.
+                let accounts_map = accounts
+                    .iter()
+                    .map(|account| (*account.key, account))
+                    .collect::<HashMap<Pubkey, &AccountInfo>>();
+
+                // Validate any PDA derivations present in the RuleSet.
+                for rule in rule_set.operations.values() {
+                    rule.assert_rule_pda_derivations(
+                        payer_info.key,
+                        &rule_set.name().to_string(),
+                        &accounts_map,
+                    )?;
+                }
 
                 let rule_set_seeds = &[
                     PREFIX.as_ref(),
                     payer_info.key.as_ref(),
-                    args.rule_set_name.as_ref(),
+                    rule_set.name().as_ref(),
                     &[bump],
                 ];
-
-                // Deserialize RuleSet.
-                let rule_set: RuleSet = rmp_serde::from_slice(&args.serialized_rule_set)
-                    .map_err(|_| RuleSetError::DataTypeMismatch)?;
-
-                // Validate any PDA derivations present in the RuleSet.
-                for (_operation, rule) in rule_set.operations {
-                    rule.assert_rule_pda_derivations(payer_info.key, &args.rule_set_name)?;
-                }
 
                 // Create or allocate RuleSet PDA account.
                 create_or_allocate_account_raw(
@@ -83,13 +104,28 @@ impl Processor {
             }
             RuleSetInstruction::Validate(args) => {
                 let account_info_iter = &mut accounts.iter();
-                let payer_info = next_account_info(account_info_iter)?;
                 let rule_set_pda_info = next_account_info(account_info_iter)?;
                 let _system_program_info = next_account_info(account_info_iter)?;
 
-                if !payer_info.is_signer {
-                    return Err(RuleSetError::PayerIsNotSigner.into());
+                // RuleSet must be owned by this program.
+                if *rule_set_pda_info.owner != crate::ID {
+                    return Err(RuleSetError::IncorrectOwner.into());
                 }
+
+                // RuleSet must not be empty.
+                if rule_set_pda_info.data_is_empty() {
+                    return Err(RuleSetError::DataIsEmpty.into());
+                }
+
+                // Borrow the RuleSet PDA data.
+                let data = rule_set_pda_info
+                    .data
+                    .try_borrow()
+                    .map_err(|_| RuleSetError::DataTypeMismatch)?;
+
+                // Deserialize RuleSet.
+                let rule_set: RuleSet = rmp_serde::from_slice(&data)
+                    .map_err(|_| RuleSetError::MessagePackDeserializationError)?;
 
                 // Check RuleSet account info derivation.
                 let _bump = assert_derivation(
@@ -97,8 +133,8 @@ impl Processor {
                     rule_set_pda_info.key,
                     &[
                         PREFIX.as_bytes(),
-                        payer_info.key.as_ref(),
-                        args.rule_set_name.as_bytes(),
+                        rule_set.owner().as_ref(),
+                        rule_set.name().as_bytes(),
                     ],
                 )?;
 
@@ -108,19 +144,6 @@ impl Processor {
                     .iter()
                     .map(|account| (*account.key, account))
                     .collect::<HashMap<Pubkey, &AccountInfo>>();
-
-                // Borrow the RuleSet PDA data.
-                let data = rule_set_pda_info
-                    .data
-                    .try_borrow()
-                    .map_err(|_| RuleSetError::DataTypeMismatch)?;
-
-                // Deserialize RuleSet.
-                let rule_set: RuleSet =
-                    rmp_serde::from_slice(&data).map_err(|_| RuleSetError::DataTypeMismatch)?;
-
-                // Debug.
-                msg!("{:#?}", rule_set);
 
                 // Get the Rule from the RuleSet based on the caller-specified Operation.
                 let rule = rule_set
@@ -143,6 +166,12 @@ impl Processor {
 
                 if !payer_info.is_signer {
                     return Err(RuleSetError::PayerIsNotSigner.into());
+                }
+
+                if args.rule_set_name.len() > MAX_NAME_LENGTH
+                    || args.freq_rule_name.len() > MAX_NAME_LENGTH
+                {
+                    return Err(RuleSetError::NameTooLong.into());
                 }
 
                 // Check Frequency PDA account info derivation.
