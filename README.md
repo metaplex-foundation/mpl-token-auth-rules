@@ -48,9 +48,9 @@ fn main() {
     }
 
     // Find RuleSet PDA.
-    let (ruleset_addr, _ruleset_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
+    let (rule_set_addr, _ruleset_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
         payer.pubkey(),
-        "test ruleset".to_string(),
+        "test rule_set".to_string(),
     );
 
     // Second signer.
@@ -74,8 +74,8 @@ fn main() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new();
-    rule_set.add(Operation::Transfer, overall_rule);
+    let mut rule_set = RuleSet::new("test rule_set".to_string(), payer.pubkey());
+    rule_set.add(Operation::Transfer, overall_rule).unwrap();
 
     println!("{:#?}", rule_set);
 
@@ -87,11 +87,11 @@ fn main() {
 
     // Create a `create` instruction.
     let create_ix = mpl_token_auth_rules::instruction::create(
-        mpl_token_auth_rules::id(),
+        mpl_token_auth_rules::ID,
         payer.pubkey(),
-        ruleset_addr,
-        "test ruleset".to_string(),
+        rule_set_addr,
         serialized_data,
+        vec![],
     );
 
     // Add it to a transaction.
@@ -113,13 +113,11 @@ fn main() {
 
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        mpl_token_auth_rules::id(),
-        payer.pubkey(),
-        ruleset_addr,
-        "test ruleset".to_string(),
+        mpl_token_auth_rules::ID,
+        rule_set_addr,
         Operation::Transfer,
         payload,
-        vec![second_signer.pubkey()],
+        vec![payer.pubkey(), second_signer.pubkey()],
         vec![],
     );
 
