@@ -6,7 +6,8 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey, sysvar::Sysvar,
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey, sysvar::Sysvar,
 };
 use std::collections::HashMap;
 
@@ -62,7 +63,7 @@ impl Rule {
         if status {
             ProgramResult::Ok(())
         } else {
-            ProgramResult::Err(rollup_err.into())
+            ProgramResult::Err(rollup_err)
         }
     }
 
@@ -70,7 +71,7 @@ impl Rule {
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
-    ) -> (bool, RuleSetError) {
+    ) -> (bool, ProgramError) {
         match self {
             Rule::All { rules } => {
                 msg!("Validating All");
@@ -105,7 +106,7 @@ impl Rule {
                 if let Some(signer) = accounts.get(account) {
                     (signer.is_signer, self.to_error())
                 } else {
-                    (false, RuleSetError::MissingAccount)
+                    (false, RuleSetError::MissingAccount.into())
                 }
             }
             Rule::PubkeyMatch { pubkey, field } => {
@@ -113,7 +114,7 @@ impl Rule {
 
                 let key = match payload.get_pubkey(field) {
                     Some(pubkey) => pubkey,
-                    _ => return (false, RuleSetError::MissingPayloadValue),
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
                 };
 
                 if key == pubkey {
@@ -127,7 +128,7 @@ impl Rule {
 
                 let seeds = match payload.get_seeds(field) {
                     Some(seeds) => seeds,
-                    _ => return (false, RuleSetError::MissingPayloadValue),
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
                 };
 
                 let vec_of_slices = seeds
@@ -147,7 +148,7 @@ impl Rule {
 
                 let key = match payload.get_pubkey(field) {
                     Some(pubkey) => pubkey,
-                    _ => return (false, RuleSetError::MissingPayloadValue),
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
                 };
 
                 if let Some(account) = accounts.get(key) {
@@ -155,7 +156,7 @@ impl Rule {
                         return (true, self.to_error());
                     }
                 } else {
-                    return (false, RuleSetError::MissingAccount);
+                    return (false, RuleSetError::MissingAccount.into());
                 }
 
                 (false, self.to_error())
@@ -169,7 +170,7 @@ impl Rule {
                         (false, self.to_error())
                     }
                 } else {
-                    (false, RuleSetError::MissingPayloadValue)
+                    (false, RuleSetError::MissingPayloadValue.into())
                 }
             }
             Rule::Frequency {
@@ -178,22 +179,31 @@ impl Rule {
             } => {
                 msg!("Validating Frequency");
                 // Deserialize the frequency account
-                if let Some(account) = accounts.get(freq_account) {
+                if let Some(freq_account_info) = accounts.get(freq_account) {
                     if let Ok(current_time) = solana_program::clock::Clock::get() {
-                        let freq_account = FrequencyAccount::from_account_info(account);
-                        if let Ok(freq_account) = freq_account {
+                        let freq_account_data =
+                            FrequencyAccount::from_account_info(freq_account_info);
+                        if let Ok(mut freq_account_data) = freq_account_data {
                             // Grab the current time
-                            // Compare  last time + period to current time
-                            if let Some(freq_check) =
-                                freq_account.last_update.checked_add(freq_account.period)
+                            // Compare last time + period to current time
+                            if let Some(freq_check) = freq_account_data
+                                .last_update
+                                .checked_add(freq_account_data.period)
                             {
                                 if freq_check < current_time.unix_timestamp {
-                                    (true, self.to_error())
+                                    // Update last update time in Frequency rule to current time.
+                                    freq_account_data.last_update = current_time.unix_timestamp;
+
+                                    // Serialize the Frequency Rule.
+                                    match freq_account_data.to_account_data(freq_account_info) {
+                                        Ok(_) => (true, self.to_error()),
+                                        Err(err) => (false, err),
+                                    }
                                 } else {
                                     (false, self.to_error())
                                 }
                             } else {
-                                (false, RuleSetError::NumericalOverflow)
+                                (false, RuleSetError::NumericalOverflow.into())
                             }
                         } else {
                             (false, self.to_error())
@@ -202,7 +212,7 @@ impl Rule {
                         (false, self.to_error())
                     }
                 } else {
-                    (false, RuleSetError::MissingAccount)
+                    (false, RuleSetError::MissingAccount.into())
                 }
             }
             Rule::PubkeyTreeMatch { root, field } => {
@@ -210,7 +220,7 @@ impl Rule {
 
                 let merkle_proof = match payload.get_merkle_proof(field) {
                     Some(merkle_proof) => merkle_proof,
-                    _ => return (false, RuleSetError::MissingPayloadValue),
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
                 };
 
                 let mut computed_hash = merkle_proof.leaf;
@@ -303,16 +313,16 @@ impl Rule {
         }
     }
 
-    pub fn to_error(&self) -> RuleSetError {
+    pub fn to_error(&self) -> ProgramError {
         match self {
-            Rule::AdditionalSigner { .. } => RuleSetError::AdditionalSignerCheckFailed,
-            Rule::PubkeyMatch { .. } => RuleSetError::PubkeyMatchCheckFailed,
-            Rule::DerivedKeyMatch { .. } => RuleSetError::DerivedKeyMatchCheckFailed,
-            Rule::ProgramOwned { .. } => RuleSetError::ProgramOwnedCheckFailed,
-            Rule::Amount { .. } => RuleSetError::AmountCheckFailed,
-            Rule::Frequency { .. } => RuleSetError::FrequencyCheckFailed,
-            Rule::PubkeyTreeMatch { .. } => RuleSetError::PubkeyTreeMatchCheckFailed,
-            _ => RuleSetError::NotImplemented,
+            Rule::AdditionalSigner { .. } => RuleSetError::AdditionalSignerCheckFailed.into(),
+            Rule::PubkeyMatch { .. } => RuleSetError::PubkeyMatchCheckFailed.into(),
+            Rule::DerivedKeyMatch { .. } => RuleSetError::DerivedKeyMatchCheckFailed.into(),
+            Rule::ProgramOwned { .. } => RuleSetError::ProgramOwnedCheckFailed.into(),
+            Rule::Amount { .. } => RuleSetError::AmountCheckFailed.into(),
+            Rule::Frequency { .. } => RuleSetError::FrequencyCheckFailed.into(),
+            Rule::PubkeyTreeMatch { .. } => RuleSetError::PubkeyTreeMatchCheckFailed.into(),
+            _ => RuleSetError::NotImplemented.into(),
         }
     }
 }

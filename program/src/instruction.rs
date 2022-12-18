@@ -127,7 +127,7 @@ pub fn validate(
 
     for i in 0..5 {
         if let Some(account) = rule_signer_accounts.get(i) {
-            accounts.push(AccountMeta::new_readonly(*account, true));
+            accounts.push(AccountMeta::new(*account, true));
         }
     }
 
@@ -137,7 +137,7 @@ pub fn validate(
 
     for i in 0..5 {
         if let Some(account) = rule_nonsigner_accounts.get(i) {
-            accounts.push(AccountMeta::new_readonly(*account, false));
+            accounts.push(AccountMeta::new(*account, false));
         }
     }
 
