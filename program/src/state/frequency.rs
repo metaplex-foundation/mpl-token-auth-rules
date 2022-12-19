@@ -24,10 +24,4 @@ impl SolanaAccount for FrequencyAccount {
     fn key() -> Key {
         Key::Frequency
     }
-
-    fn size() -> usize {
-        1   // key
-        + 8 // last_update
-        + 8 // period
-    }
 }

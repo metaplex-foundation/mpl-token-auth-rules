@@ -27,9 +27,6 @@ pub trait SolanaAccount: BorshSerialize + BorshDeserialize {
     /// `Account` data.
     fn key() -> Key;
 
-    /// Get the size of the `Account` data.
-    fn size() -> usize;
-
     /// BorshDeserialize the `AccountInfo` into the Rust data structure.
     fn from_account_info(account: &AccountInfo) -> Result<Self, ProgramError> {
         let data = account
@@ -37,7 +34,7 @@ pub trait SolanaAccount: BorshSerialize + BorshDeserialize {
             .try_borrow()
             .map_err(|_| ProgramError::AccountBorrowFailed)?;
 
-        if !Self::is_correct_account_type_and_size(&data, Self::key(), Self::size()) {
+        if !Self::is_correct_account_type_and_size(&data, Self::key()) {
             return Err(RuleSetError::DataTypeMismatch.into());
         }
 
@@ -61,10 +58,10 @@ trait PrivateSolanaAccountMethods: SolanaAccount {
 
     // Check the `Key` byte and the data size to determine if this data represents the correct
     // account types.
-    fn is_correct_account_type_and_size(data: &[u8], data_type: Key, data_size: usize) -> bool {
+    fn is_correct_account_type_and_size(data: &[u8], data_type: Key) -> bool {
         let key: Option<Key> = Key::from_u8(data[Self::KEY_BYTE]);
         match key {
-            Some(key) => key == data_type && data.len() == data_size,
+            Some(key) => key == data_type,
             None => false,
         }
     }
