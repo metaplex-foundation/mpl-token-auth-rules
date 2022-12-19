@@ -55,7 +55,7 @@ pub enum RuleSetInstruction {
 
     /// This instruction executes the RuleSet stored in the rule_set PDA account by sending
     /// it an `AccountsMap` and a `PayloadMap` and calling the `RuleSet`'s `validate` method.
-    #[account(0, writable, name="rule_set", desc = "The PDA account where the RuleSet is stored")]
+    #[account(0, name="rule_set", desc = "The PDA account where the RuleSet is stored")]
     #[account(1, name = "system_program", desc = "System program")]
     #[account(2, optional, signer, name="opt_rule_signer_1", desc = "Optional rule validation signer 1")]
     #[account(3, optional, signer, name="opt_rule_signer_2", desc = "Optional rule validation signer 2")]
@@ -121,7 +121,7 @@ pub fn validate(
     rule_nonsigner_accounts: Vec<Pubkey>,
 ) -> Instruction {
     let mut accounts = vec![
-        AccountMeta::new(rule_set_pda, false),
+        AccountMeta::new_readonly(rule_set_pda, false),
         AccountMeta::new_readonly(solana_program::system_program::id(), false),
     ];
 
