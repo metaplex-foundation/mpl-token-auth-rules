@@ -36,63 +36,67 @@ pub enum RuleSetError {
     #[error("Pubkey Match check failed")]
     PubkeyMatchCheckFailed,
 
-    /// 7 - Derived Key Match check failed
-    #[error("Derived Key Match check failed")]
-    DerivedKeyMatchCheckFailed,
+    /// 7 - Pubkey List Match check failed
+    #[error("Pubkey List Match check failed")]
+    PubkeyListMatchCheckFailed,
 
-    /// 8 - Program Owned check failed
-    #[error("Program Owned check failed")]
-    ProgramOwnedCheckFailed,
-
-    /// 9 - Amount checked failed
-    #[error("Amount checked failed")]
-    AmountCheckFailed,
-
-    /// 10 - Frequency check failed
-    #[error("Frequency check failed")]
-    FrequencyCheckFailed,
-
-    /// 11 - Pubkey Tree Match check failed
+    /// 8 - Pubkey Tree Match check failed
     #[error("Pubkey Tree Match check failed")]
     PubkeyTreeMatchCheckFailed,
 
-    /// 12 - Payer is not a signer
+    /// 9 - Derived Key Match check failed
+    #[error("Derived Key Match check failed")]
+    DerivedKeyMatchCheckFailed,
+
+    /// 10 - Program Owned check failed
+    #[error("Program Owned check failed")]
+    ProgramOwnedCheckFailed,
+
+    /// 11 - Amount checked failed
+    #[error("Amount checked failed")]
+    AmountCheckFailed,
+
+    /// 12 - Frequency check failed
+    #[error("Frequency check failed")]
+    FrequencyCheckFailed,
+
+    /// 13 - Payer is not a signer
     #[error("Payer is not a signer")]
     PayerIsNotSigner,
 
-    /// 13 - Feature is not implemented yet
+    /// 14 - Feature is not implemented yet
     #[error("Not implemented")]
     NotImplemented,
 
-    /// 14 - Borsh serialization error
+    /// 15 - Borsh serialization error
     #[error("Borsh serialization error")]
     BorshSerializationError,
 
-    /// 15 - Value in Payload or RuleSet is occupied
+    /// 16 - Value in Payload or RuleSet is occupied
     #[error("Value in Payload or RuleSet is occupied")]
     ValueOccupied,
 
-    /// 16 - Account data is empty
+    /// 17 - Account data is empty
     #[error("Account data is empty")]
     DataIsEmpty,
 
-    /// 17 - MessagePack deserialization error
+    /// 18 - MessagePack deserialization error
     #[error("MessagePack deserialization error")]
     MessagePackDeserializationError,
 
-    /// 18 - Missing account
+    /// 19 - Missing account
     #[error("Missing account")]
     MissingAccount,
 
-    /// 19 - Missing Payload value
+    /// 20 - Missing Payload value
     #[error("Missing Payload value")]
     MissingPayloadValue,
 
-    /// 20 - RuleSet owner must be payer
+    /// 21 - RuleSet owner must be payer
     #[error("RuleSet owner must be payer")]
     RuleSetOwnerMismatch,
 
-    /// 21 - Name too long
+    /// 22 - Name too long
     #[error("Name too long")]
     NameTooLong,
 
