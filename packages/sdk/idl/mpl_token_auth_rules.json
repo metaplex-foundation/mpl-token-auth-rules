@@ -530,6 +530,11 @@
       "code": 21,
       "name": "NameTooLong",
       "msg": "Name too long"
+    },
+    {
+      "code": 22,
+      "name": "OperationNotFound",
+      "msg": "The operation retrieved is not in the selected RuleSet"
     }
   ],
   "metadata": {
