@@ -19,7 +19,7 @@ There are **Primitive Rules** and **Composed Rules** that are created by combini
 ```rust
 use mpl_token_auth_rules::{
     payload::{Payload, PayloadKey, PayloadType},
-    state::{Operation, Rule, RuleSet},
+    state::{Rule, RuleSet},
 };
 use rmp_serde::Serializer;
 use serde::Serialize;
@@ -75,7 +75,7 @@ fn main() {
 
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), payer.pubkey());
-    rule_set.add(Operation::Transfer, overall_rule).unwrap();
+    rule_set.add(Operation::Transfer.to_u16().unwrap(), overall_rule).unwrap();
 
     println!("{:#?}", rule_set);
 
@@ -115,7 +115,7 @@ fn main() {
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::ID,
         rule_set_addr,
-        Operation::Transfer,
+        Operation::Transfer.to_u16().unwrap(),
         payload,
         vec![payer.pubkey(), second_signer.pubkey()],
         vec![],

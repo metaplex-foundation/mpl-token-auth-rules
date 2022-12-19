@@ -251,9 +251,7 @@
         "fields": [
           {
             "name": "operation",
-            "type": {
-              "defined": "Operation"
-            }
+            "type": "u16"
           },
           {
             "name": "payload",
@@ -403,26 +401,6 @@
           },
           {
             "name": "Amount"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Operation",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Transfer"
-          },
-          {
-            "name": "Delegate"
-          },
-          {
-            "name": "SaleTransfer"
-          },
-          {
-            "name": "MigrateClass"
           }
         ]
       }

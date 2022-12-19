@@ -1,4 +1,4 @@
-use crate::{payload::Payload, state::Operation};
+use crate::payload::Payload;
 use borsh::{BorshDeserialize, BorshSerialize};
 use shank::ShankInstruction;
 use solana_program::{
@@ -19,7 +19,7 @@ pub struct CreateArgs {
 /// Args for `validate` instruction.
 pub struct ValidateArgs {
     /// `Operation` to validate.
-    pub operation: Operation,
+    pub operation: u16,
     /// `Payload` data used for rule validation.
     pub payload: Payload,
 }
@@ -115,7 +115,7 @@ pub fn create(
 pub fn validate(
     program_id: Pubkey,
     rule_set_pda: Pubkey,
-    operation: Operation,
+    operation: u16,
     payload: Payload,
     rule_signer_accounts: Vec<Pubkey>,
     rule_nonsigner_accounts: Vec<Pubkey>,
