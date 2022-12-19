@@ -3,7 +3,6 @@ use std::io::ErrorKind;
 use borsh::{maybestd::io::Error as BorshError, BorshDeserialize, BorshSerialize};
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
-use serde::{Deserialize, Serialize};
 use solana_program::{account_info::AccountInfo, program_error::ProgramError};
 
 mod frequency;
@@ -15,25 +14,6 @@ pub use rule_set::*;
 pub use rules::*;
 
 use crate::{error::RuleSetError, utils::assert_owned_by};
-
-#[derive(
-    BorshSerialize,
-    BorshDeserialize,
-    Serialize,
-    Deserialize,
-    PartialEq,
-    Eq,
-    Debug,
-    Clone,
-    Hash,
-    PartialOrd,
-)]
-pub enum Operation {
-    Transfer,
-    Delegate,
-    SaleTransfer,
-    MigrateClass,
-}
 
 #[repr(C)]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Copy, FromPrimitive)]

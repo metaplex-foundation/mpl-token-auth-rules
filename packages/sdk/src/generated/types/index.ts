@@ -2,7 +2,6 @@ export * from './CreateArgs';
 export * from './CreateFrequencyRuleArgs';
 export * from './Key';
 export * from './LeafInfo';
-export * from './Operation';
 export * from './Payload';
 export * from './PayloadKey';
 export * from './PayloadType';
