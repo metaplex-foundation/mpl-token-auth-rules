@@ -19,8 +19,10 @@ There are **Primitive Rules** and **Composed Rules** that are created by combini
 ```rust
 use mpl_token_auth_rules::{
     payload::{Payload, PayloadKey, PayloadType},
-    state::{Rule, RuleSet},
+    state::{CompareOp, Rule, RuleSet},
 };
+use num_derive::ToPrimitive;
+use num_traits::ToPrimitive;
 use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_client::rpc_client::RpcClient;
@@ -28,6 +30,14 @@ use solana_sdk::{
     native_token::LAMPORTS_PER_SOL, signature::Signer, signer::keypair::Keypair,
     transaction::Transaction,
 };
+
+#[repr(C)]
+#[derive(ToPrimitive)]
+pub enum Operation {
+    Transfer,
+    Delegate,
+    SaleTransfer,
+}
 
 fn main() {
     let url = "https://api.devnet.solana.com".to_string();
@@ -63,7 +73,10 @@ fn main() {
     let adtl_signer2 = Rule::AdditionalSigner {
         account: second_signer.pubkey(),
     };
-    let amount_check = Rule::Amount { amount: 2 };
+    let amount_check = Rule::Amount {
+        amount: 2,
+        operator: CompareOp::Eq,
+    };
 
     let first_rule = Rule::All {
         rules: vec![adtl_signer, adtl_signer2],
@@ -75,7 +88,9 @@ fn main() {
 
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), payer.pubkey());
-    rule_set.add(Operation::Transfer.to_u16().unwrap(), overall_rule).unwrap();
+    rule_set
+        .add(Operation::Transfer.to_u16().unwrap(), overall_rule)
+        .unwrap();
 
     println!("{:#?}", rule_set);
 
@@ -117,6 +132,7 @@ fn main() {
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         payload,
+        true,
         vec![payer.pubkey(), second_signer.pubkey()],
         vec![],
     );
