@@ -9,6 +9,7 @@ use mpl_token_auth_rules::{
 use num_traits::ToPrimitive;
 use rmp_serde::Serializer;
 use serde::Serialize;
+use solana_program::instruction::AccountMeta;
 use solana_program_test::tokio;
 use solana_sdk::{
     signature::Signer, signer::keypair::Keypair, system_instruction, transaction::Transaction,
@@ -84,7 +85,6 @@ async fn basic_royalty_enforcement() {
 
     // Create a `create` instruction.
     let create_ix = mpl_token_auth_rules::instruction::create(
-        mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         rule_set_addr,
         serialized_data,
@@ -137,13 +137,14 @@ async fn basic_royalty_enforcement() {
 
     // Create a `validate` instruction for a `Transfer` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        mpl_token_auth_rules::id(),
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         payload,
         true,
-        vec![],
-        vec![fake_token_metadata_owned_escrow.pubkey()],
+        vec![AccountMeta::new_readonly(
+            fake_token_metadata_owned_escrow.pubkey(),
+            false,
+        )],
     );
 
     // Add it to a transaction.
@@ -194,12 +195,10 @@ async fn basic_royalty_enforcement() {
 
     // Create a `validate` instruction for a `Delegate` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        mpl_token_auth_rules::id(),
         rule_set_addr,
         Operation::Delegate.to_u16().unwrap(),
         payload.clone(),
         true,
-        vec![],
         vec![],
     );
 
@@ -223,12 +222,10 @@ async fn basic_royalty_enforcement() {
     // --------------------------------
     // Create a `validate` instruction for a `SaleTransfer` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        mpl_token_auth_rules::id(),
         rule_set_addr,
         Operation::SaleTransfer.to_u16().unwrap(),
         payload,
         true,
-        vec![],
         vec![],
     );
 
