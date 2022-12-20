@@ -1,5 +1,5 @@
 {
-  "version": "0.1.4",
+  "version": "0.1.5",
   "name": "mpl_token_auth_rules",
   "instructions": [
     {
@@ -22,41 +22,6 @@
           "isMut": false,
           "isSigner": false,
           "desc": "System program"
-        },
-        {
-          "name": "optRulePda1",
-          "isMut": false,
-          "isSigner": false,
-          "desc": "Optional rule PDA non-signer 1",
-          "optional": true
-        },
-        {
-          "name": "optRulePda2",
-          "isMut": false,
-          "isSigner": false,
-          "desc": "Optional rule PDA non-signer 2",
-          "optional": true
-        },
-        {
-          "name": "optRulePda3",
-          "isMut": false,
-          "isSigner": false,
-          "desc": "Optional rule PDA non-signer 3",
-          "optional": true
-        },
-        {
-          "name": "optRulePda4",
-          "isMut": false,
-          "isSigner": false,
-          "desc": "Optional rule PDA non-signer 4",
-          "optional": true
-        },
-        {
-          "name": "optRulePda5",
-          "isMut": false,
-          "isSigner": false,
-          "desc": "Optional rule PDA non-signer 5",
-          "optional": true
         }
       ],
       "args": [
@@ -77,7 +42,7 @@
       "accounts": [
         {
           "name": "ruleSet",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false,
           "desc": "The PDA account where the RuleSet is stored"
         },
@@ -86,76 +51,6 @@
           "isMut": false,
           "isSigner": false,
           "desc": "System program"
-        },
-        {
-          "name": "optRuleSigner1",
-          "isMut": false,
-          "isSigner": true,
-          "desc": "Optional rule validation signer 1",
-          "optional": true
-        },
-        {
-          "name": "optRuleSigner2",
-          "isMut": false,
-          "isSigner": true,
-          "desc": "Optional rule validation signer 2",
-          "optional": true
-        },
-        {
-          "name": "optRuleSigner3",
-          "isMut": false,
-          "isSigner": true,
-          "desc": "Optional rule validation signer 3",
-          "optional": true
-        },
-        {
-          "name": "optRuleSigner4",
-          "isMut": false,
-          "isSigner": true,
-          "desc": "Optional rule validation signer 4",
-          "optional": true
-        },
-        {
-          "name": "optRuleSigner5",
-          "isMut": false,
-          "isSigner": true,
-          "desc": "Optional rule validation signer 5",
-          "optional": true
-        },
-        {
-          "name": "optRuleNonsigner1",
-          "isMut": false,
-          "isSigner": false,
-          "desc": "Optional rule validation non-signer 1",
-          "optional": true
-        },
-        {
-          "name": "optRuleNonsigner2",
-          "isMut": false,
-          "isSigner": false,
-          "desc": "Optional rule validation non-signer 2",
-          "optional": true
-        },
-        {
-          "name": "optRuleNonsigner3",
-          "isMut": false,
-          "isSigner": false,
-          "desc": "Optional rule validation non-signer 3",
-          "optional": true
-        },
-        {
-          "name": "optRuleNonsigner4",
-          "isMut": false,
-          "isSigner": false,
-          "desc": "Optional rule validation non-signer 4",
-          "optional": true
-        },
-        {
-          "name": "optRuleNonsigner5",
-          "isMut": false,
-          "isSigner": false,
-          "desc": "Optional rule validation non-signer 5",
-          "optional": true
         }
       ],
       "args": [
@@ -258,6 +153,10 @@
             "type": {
               "defined": "Payload"
             }
+          },
+          {
+            "name": "updateRuleState",
+            "type": "bool"
           }
         ]
       }
@@ -458,81 +357,86 @@
     },
     {
       "code": 7,
-      "name": "DerivedKeyMatchCheckFailed",
-      "msg": "Derived Key Match check failed"
+      "name": "PubkeyListMatchCheckFailed",
+      "msg": "Pubkey List Match check failed"
     },
     {
       "code": 8,
-      "name": "ProgramOwnedCheckFailed",
-      "msg": "Program Owned check failed"
-    },
-    {
-      "code": 9,
-      "name": "AmountCheckFailed",
-      "msg": "Amount checked failed"
-    },
-    {
-      "code": 10,
-      "name": "FrequencyCheckFailed",
-      "msg": "Frequency check failed"
-    },
-    {
-      "code": 11,
       "name": "PubkeyTreeMatchCheckFailed",
       "msg": "Pubkey Tree Match check failed"
     },
     {
+      "code": 9,
+      "name": "DerivedKeyMatchCheckFailed",
+      "msg": "Derived Key Match check failed"
+    },
+    {
+      "code": 10,
+      "name": "ProgramOwnedCheckFailed",
+      "msg": "Program Owned check failed"
+    },
+    {
+      "code": 11,
+      "name": "AmountCheckFailed",
+      "msg": "Amount checked failed"
+    },
+    {
       "code": 12,
+      "name": "FrequencyCheckFailed",
+      "msg": "Frequency check failed"
+    },
+    {
+      "code": 13,
       "name": "PayerIsNotSigner",
       "msg": "Payer is not a signer"
     },
     {
-      "code": 13,
+      "code": 14,
       "name": "NotImplemented",
       "msg": "Not implemented"
     },
     {
-      "code": 14,
+      "code": 15,
       "name": "BorshSerializationError",
       "msg": "Borsh serialization error"
     },
     {
-      "code": 15,
+      "code": 16,
       "name": "ValueOccupied",
       "msg": "Value in Payload or RuleSet is occupied"
     },
     {
-      "code": 16,
+      "code": 17,
       "name": "DataIsEmpty",
       "msg": "Account data is empty"
     },
     {
-      "code": 17,
+      "code": 18,
       "name": "MessagePackDeserializationError",
       "msg": "MessagePack deserialization error"
     },
     {
-      "code": 18,
+      "code": 19,
       "name": "MissingAccount",
       "msg": "Missing account"
     },
     {
-      "code": 19,
+      "code": 20,
       "name": "MissingPayloadValue",
       "msg": "Missing Payload value"
     },
     {
-      "code": 20,
+      "code": 21,
       "name": "RuleSetOwnerMismatch",
       "msg": "RuleSet owner must be payer"
     },
     {
-      "code": 21,
+      "code": 22,
       "name": "NameTooLong",
       "msg": "Name too long"
     },
     {
-      "code": 22,
+      "code": 23,
       "name": "OperationNotFound",
       "msg": "The operation retrieved is not in the selected RuleSet"
     }

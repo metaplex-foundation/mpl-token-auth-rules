@@ -155,13 +155,59 @@ createErrorFromCodeLookup.set(0x6, () => new PubkeyMatchCheckFailedError());
 createErrorFromNameLookup.set('PubkeyMatchCheckFailed', () => new PubkeyMatchCheckFailedError());
 
 /**
+ * PubkeyListMatchCheckFailed: 'Pubkey List Match check failed'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class PubkeyListMatchCheckFailedError extends Error {
+  readonly code: number = 0x7;
+  readonly name: string = 'PubkeyListMatchCheckFailed';
+  constructor() {
+    super('Pubkey List Match check failed');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, PubkeyListMatchCheckFailedError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x7, () => new PubkeyListMatchCheckFailedError());
+createErrorFromNameLookup.set(
+  'PubkeyListMatchCheckFailed',
+  () => new PubkeyListMatchCheckFailedError(),
+);
+
+/**
+ * PubkeyTreeMatchCheckFailed: 'Pubkey Tree Match check failed'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class PubkeyTreeMatchCheckFailedError extends Error {
+  readonly code: number = 0x8;
+  readonly name: string = 'PubkeyTreeMatchCheckFailed';
+  constructor() {
+    super('Pubkey Tree Match check failed');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, PubkeyTreeMatchCheckFailedError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x8, () => new PubkeyTreeMatchCheckFailedError());
+createErrorFromNameLookup.set(
+  'PubkeyTreeMatchCheckFailed',
+  () => new PubkeyTreeMatchCheckFailedError(),
+);
+
+/**
  * DerivedKeyMatchCheckFailed: 'Derived Key Match check failed'
  *
  * @category Errors
  * @category generated
  */
 export class DerivedKeyMatchCheckFailedError extends Error {
-  readonly code: number = 0x7;
+  readonly code: number = 0x9;
   readonly name: string = 'DerivedKeyMatchCheckFailed';
   constructor() {
     super('Derived Key Match check failed');
@@ -171,7 +217,7 @@ export class DerivedKeyMatchCheckFailedError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x7, () => new DerivedKeyMatchCheckFailedError());
+createErrorFromCodeLookup.set(0x9, () => new DerivedKeyMatchCheckFailedError());
 createErrorFromNameLookup.set(
   'DerivedKeyMatchCheckFailed',
   () => new DerivedKeyMatchCheckFailedError(),
@@ -184,7 +230,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class ProgramOwnedCheckFailedError extends Error {
-  readonly code: number = 0x8;
+  readonly code: number = 0xa;
   readonly name: string = 'ProgramOwnedCheckFailed';
   constructor() {
     super('Program Owned check failed');
@@ -194,7 +240,7 @@ export class ProgramOwnedCheckFailedError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x8, () => new ProgramOwnedCheckFailedError());
+createErrorFromCodeLookup.set(0xa, () => new ProgramOwnedCheckFailedError());
 createErrorFromNameLookup.set('ProgramOwnedCheckFailed', () => new ProgramOwnedCheckFailedError());
 
 /**
@@ -204,7 +250,7 @@ createErrorFromNameLookup.set('ProgramOwnedCheckFailed', () => new ProgramOwnedC
  * @category generated
  */
 export class AmountCheckFailedError extends Error {
-  readonly code: number = 0x9;
+  readonly code: number = 0xb;
   readonly name: string = 'AmountCheckFailed';
   constructor() {
     super('Amount checked failed');
@@ -214,7 +260,7 @@ export class AmountCheckFailedError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x9, () => new AmountCheckFailedError());
+createErrorFromCodeLookup.set(0xb, () => new AmountCheckFailedError());
 createErrorFromNameLookup.set('AmountCheckFailed', () => new AmountCheckFailedError());
 
 /**
@@ -224,7 +270,7 @@ createErrorFromNameLookup.set('AmountCheckFailed', () => new AmountCheckFailedEr
  * @category generated
  */
 export class FrequencyCheckFailedError extends Error {
-  readonly code: number = 0xa;
+  readonly code: number = 0xc;
   readonly name: string = 'FrequencyCheckFailed';
   constructor() {
     super('Frequency check failed');
@@ -234,31 +280,8 @@ export class FrequencyCheckFailedError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0xa, () => new FrequencyCheckFailedError());
+createErrorFromCodeLookup.set(0xc, () => new FrequencyCheckFailedError());
 createErrorFromNameLookup.set('FrequencyCheckFailed', () => new FrequencyCheckFailedError());
-
-/**
- * PubkeyTreeMatchCheckFailed: 'Pubkey Tree Match check failed'
- *
- * @category Errors
- * @category generated
- */
-export class PubkeyTreeMatchCheckFailedError extends Error {
-  readonly code: number = 0xb;
-  readonly name: string = 'PubkeyTreeMatchCheckFailed';
-  constructor() {
-    super('Pubkey Tree Match check failed');
-    if (typeof Error.captureStackTrace === 'function') {
-      Error.captureStackTrace(this, PubkeyTreeMatchCheckFailedError);
-    }
-  }
-}
-
-createErrorFromCodeLookup.set(0xb, () => new PubkeyTreeMatchCheckFailedError());
-createErrorFromNameLookup.set(
-  'PubkeyTreeMatchCheckFailed',
-  () => new PubkeyTreeMatchCheckFailedError(),
-);
 
 /**
  * PayerIsNotSigner: 'Payer is not a signer'
@@ -267,7 +290,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class PayerIsNotSignerError extends Error {
-  readonly code: number = 0xc;
+  readonly code: number = 0xd;
   readonly name: string = 'PayerIsNotSigner';
   constructor() {
     super('Payer is not a signer');
@@ -277,7 +300,7 @@ export class PayerIsNotSignerError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0xc, () => new PayerIsNotSignerError());
+createErrorFromCodeLookup.set(0xd, () => new PayerIsNotSignerError());
 createErrorFromNameLookup.set('PayerIsNotSigner', () => new PayerIsNotSignerError());
 
 /**
@@ -287,7 +310,7 @@ createErrorFromNameLookup.set('PayerIsNotSigner', () => new PayerIsNotSignerErro
  * @category generated
  */
 export class NotImplementedError extends Error {
-  readonly code: number = 0xd;
+  readonly code: number = 0xe;
   readonly name: string = 'NotImplemented';
   constructor() {
     super('Not implemented');
@@ -297,7 +320,7 @@ export class NotImplementedError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0xd, () => new NotImplementedError());
+createErrorFromCodeLookup.set(0xe, () => new NotImplementedError());
 createErrorFromNameLookup.set('NotImplemented', () => new NotImplementedError());
 
 /**
@@ -307,7 +330,7 @@ createErrorFromNameLookup.set('NotImplemented', () => new NotImplementedError())
  * @category generated
  */
 export class BorshSerializationErrorError extends Error {
-  readonly code: number = 0xe;
+  readonly code: number = 0xf;
   readonly name: string = 'BorshSerializationError';
   constructor() {
     super('Borsh serialization error');
@@ -317,7 +340,7 @@ export class BorshSerializationErrorError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0xe, () => new BorshSerializationErrorError());
+createErrorFromCodeLookup.set(0xf, () => new BorshSerializationErrorError());
 createErrorFromNameLookup.set('BorshSerializationError', () => new BorshSerializationErrorError());
 
 /**
@@ -327,7 +350,7 @@ createErrorFromNameLookup.set('BorshSerializationError', () => new BorshSerializ
  * @category generated
  */
 export class ValueOccupiedError extends Error {
-  readonly code: number = 0xf;
+  readonly code: number = 0x10;
   readonly name: string = 'ValueOccupied';
   constructor() {
     super('Value in Payload or RuleSet is occupied');
@@ -337,7 +360,7 @@ export class ValueOccupiedError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0xf, () => new ValueOccupiedError());
+createErrorFromCodeLookup.set(0x10, () => new ValueOccupiedError());
 createErrorFromNameLookup.set('ValueOccupied', () => new ValueOccupiedError());
 
 /**
@@ -347,7 +370,7 @@ createErrorFromNameLookup.set('ValueOccupied', () => new ValueOccupiedError());
  * @category generated
  */
 export class DataIsEmptyError extends Error {
-  readonly code: number = 0x10;
+  readonly code: number = 0x11;
   readonly name: string = 'DataIsEmpty';
   constructor() {
     super('Account data is empty');
@@ -357,7 +380,7 @@ export class DataIsEmptyError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x10, () => new DataIsEmptyError());
+createErrorFromCodeLookup.set(0x11, () => new DataIsEmptyError());
 createErrorFromNameLookup.set('DataIsEmpty', () => new DataIsEmptyError());
 
 /**
@@ -367,7 +390,7 @@ createErrorFromNameLookup.set('DataIsEmpty', () => new DataIsEmptyError());
  * @category generated
  */
 export class MessagePackDeserializationErrorError extends Error {
-  readonly code: number = 0x11;
+  readonly code: number = 0x12;
   readonly name: string = 'MessagePackDeserializationError';
   constructor() {
     super('MessagePack deserialization error');
@@ -377,7 +400,7 @@ export class MessagePackDeserializationErrorError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x11, () => new MessagePackDeserializationErrorError());
+createErrorFromCodeLookup.set(0x12, () => new MessagePackDeserializationErrorError());
 createErrorFromNameLookup.set(
   'MessagePackDeserializationError',
   () => new MessagePackDeserializationErrorError(),
@@ -390,7 +413,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class MissingAccountError extends Error {
-  readonly code: number = 0x12;
+  readonly code: number = 0x13;
   readonly name: string = 'MissingAccount';
   constructor() {
     super('Missing account');
@@ -400,7 +423,7 @@ export class MissingAccountError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x12, () => new MissingAccountError());
+createErrorFromCodeLookup.set(0x13, () => new MissingAccountError());
 createErrorFromNameLookup.set('MissingAccount', () => new MissingAccountError());
 
 /**
@@ -410,7 +433,7 @@ createErrorFromNameLookup.set('MissingAccount', () => new MissingAccountError())
  * @category generated
  */
 export class MissingPayloadValueError extends Error {
-  readonly code: number = 0x13;
+  readonly code: number = 0x14;
   readonly name: string = 'MissingPayloadValue';
   constructor() {
     super('Missing Payload value');
@@ -420,7 +443,7 @@ export class MissingPayloadValueError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x13, () => new MissingPayloadValueError());
+createErrorFromCodeLookup.set(0x14, () => new MissingPayloadValueError());
 createErrorFromNameLookup.set('MissingPayloadValue', () => new MissingPayloadValueError());
 
 /**
@@ -430,7 +453,7 @@ createErrorFromNameLookup.set('MissingPayloadValue', () => new MissingPayloadVal
  * @category generated
  */
 export class RuleSetOwnerMismatchError extends Error {
-  readonly code: number = 0x14;
+  readonly code: number = 0x15;
   readonly name: string = 'RuleSetOwnerMismatch';
   constructor() {
     super('RuleSet owner must be payer');
@@ -440,7 +463,7 @@ export class RuleSetOwnerMismatchError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x14, () => new RuleSetOwnerMismatchError());
+createErrorFromCodeLookup.set(0x15, () => new RuleSetOwnerMismatchError());
 createErrorFromNameLookup.set('RuleSetOwnerMismatch', () => new RuleSetOwnerMismatchError());
 
 /**
@@ -450,7 +473,7 @@ createErrorFromNameLookup.set('RuleSetOwnerMismatch', () => new RuleSetOwnerMism
  * @category generated
  */
 export class NameTooLongError extends Error {
-  readonly code: number = 0x15;
+  readonly code: number = 0x16;
   readonly name: string = 'NameTooLong';
   constructor() {
     super('Name too long');
@@ -460,7 +483,7 @@ export class NameTooLongError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x15, () => new NameTooLongError());
+createErrorFromCodeLookup.set(0x16, () => new NameTooLongError());
 createErrorFromNameLookup.set('NameTooLong', () => new NameTooLongError());
 
 /**
@@ -470,7 +493,7 @@ createErrorFromNameLookup.set('NameTooLong', () => new NameTooLongError());
  * @category generated
  */
 export class OperationNotFoundError extends Error {
-  readonly code: number = 0x16;
+  readonly code: number = 0x17;
   readonly name: string = 'OperationNotFound';
   constructor() {
     super('The operation retrieved is not in the selected RuleSet');
@@ -480,7 +503,7 @@ export class OperationNotFoundError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x16, () => new OperationNotFoundError());
+createErrorFromCodeLookup.set(0x17, () => new OperationNotFoundError());
 createErrorFromNameLookup.set('OperationNotFound', () => new OperationNotFoundError());
 
 /**
