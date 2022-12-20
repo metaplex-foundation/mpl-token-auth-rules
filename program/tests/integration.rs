@@ -5,7 +5,7 @@ pub mod utils;
 use mpl_token_auth_rules::{
     error::RuleSetError,
     payload::{Payload, PayloadKey, PayloadType},
-    state::{Rule, RuleSet},
+    state::{CompareOp, Rule, RuleSet},
 };
 use num_traits::cast::FromPrimitive;
 use num_traits::ToPrimitive;
@@ -103,7 +103,10 @@ async fn test_additional_signer_and_amount() {
     let adtl_signer2 = Rule::AdditionalSigner {
         account: second_signer.pubkey(),
     };
-    let amount_check = Rule::Amount { amount: 1 };
+    let amount_check = Rule::Amount {
+        amount: 1,
+        operator: CompareOp::Eq,
+    };
     let not_amount_check = Rule::Not {
         rule: Box::new(amount_check),
     };
