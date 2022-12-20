@@ -36,17 +36,7 @@ export const ValidateStruct = new beet.FixableBeetArgsStruct<
 /**
  * Accounts required by the _Validate_ instruction
  *
- * @property [_writable_] ruleSet The PDA account where the RuleSet is stored
- * @property [**signer**] optRuleSigner1 (optional) Optional rule validation signer 1
- * @property [**signer**] optRuleSigner2 (optional) Optional rule validation signer 2
- * @property [**signer**] optRuleSigner3 (optional) Optional rule validation signer 3
- * @property [**signer**] optRuleSigner4 (optional) Optional rule validation signer 4
- * @property [**signer**] optRuleSigner5 (optional) Optional rule validation signer 5
- * @property [] optRuleNonsigner1 (optional) Optional rule validation non-signer 1
- * @property [] optRuleNonsigner2 (optional) Optional rule validation non-signer 2
- * @property [] optRuleNonsigner3 (optional) Optional rule validation non-signer 3
- * @property [] optRuleNonsigner4 (optional) Optional rule validation non-signer 4
- * @property [] optRuleNonsigner5 (optional) Optional rule validation non-signer 5
+ * @property [] ruleSet The PDA account where the RuleSet is stored
  * @category Instructions
  * @category Validate
  * @category generated
@@ -54,27 +44,12 @@ export const ValidateStruct = new beet.FixableBeetArgsStruct<
 export type ValidateInstructionAccounts = {
   ruleSet: web3.PublicKey;
   systemProgram?: web3.PublicKey;
-  optRuleSigner1?: web3.PublicKey;
-  optRuleSigner2?: web3.PublicKey;
-  optRuleSigner3?: web3.PublicKey;
-  optRuleSigner4?: web3.PublicKey;
-  optRuleSigner5?: web3.PublicKey;
-  optRuleNonsigner1?: web3.PublicKey;
-  optRuleNonsigner2?: web3.PublicKey;
-  optRuleNonsigner3?: web3.PublicKey;
-  optRuleNonsigner4?: web3.PublicKey;
-  optRuleNonsigner5?: web3.PublicKey;
 };
 
 export const validateInstructionDiscriminator = 1;
 
 /**
  * Creates a _Validate_ instruction.
- *
- * Optional accounts that are not provided will be omitted from the accounts
- * array passed with the instruction.
- * An optional account that is set cannot follow an optional account that is unset.
- * Otherwise an Error is raised.
  *
  * @param accounts that will be accessed while the instruction is processed
  * @param args to provide as instruction data to the program
@@ -95,7 +70,7 @@ export function createValidateInstruction(
   const keys: web3.AccountMeta[] = [
     {
       pubkey: accounts.ruleSet,
-      isWritable: true,
+      isWritable: false,
       isSigner: false,
     },
     {
@@ -104,171 +79,6 @@ export function createValidateInstruction(
       isSigner: false,
     },
   ];
-
-  if (accounts.optRuleSigner1 != null) {
-    keys.push({
-      pubkey: accounts.optRuleSigner1,
-      isWritable: false,
-      isSigner: true,
-    });
-  }
-  if (accounts.optRuleSigner2 != null) {
-    if (accounts.optRuleSigner1 == null) {
-      throw new Error(
-        "When providing 'optRuleSigner2' then 'accounts.optRuleSigner1' need(s) to be provided as well.",
-      );
-    }
-    keys.push({
-      pubkey: accounts.optRuleSigner2,
-      isWritable: false,
-      isSigner: true,
-    });
-  }
-  if (accounts.optRuleSigner3 != null) {
-    if (accounts.optRuleSigner1 == null || accounts.optRuleSigner2 == null) {
-      throw new Error(
-        "When providing 'optRuleSigner3' then 'accounts.optRuleSigner1', 'accounts.optRuleSigner2' need(s) to be provided as well.",
-      );
-    }
-    keys.push({
-      pubkey: accounts.optRuleSigner3,
-      isWritable: false,
-      isSigner: true,
-    });
-  }
-  if (accounts.optRuleSigner4 != null) {
-    if (
-      accounts.optRuleSigner1 == null ||
-      accounts.optRuleSigner2 == null ||
-      accounts.optRuleSigner3 == null
-    ) {
-      throw new Error(
-        "When providing 'optRuleSigner4' then 'accounts.optRuleSigner1', 'accounts.optRuleSigner2', 'accounts.optRuleSigner3' need(s) to be provided as well.",
-      );
-    }
-    keys.push({
-      pubkey: accounts.optRuleSigner4,
-      isWritable: false,
-      isSigner: true,
-    });
-  }
-  if (accounts.optRuleSigner5 != null) {
-    if (
-      accounts.optRuleSigner1 == null ||
-      accounts.optRuleSigner2 == null ||
-      accounts.optRuleSigner3 == null ||
-      accounts.optRuleSigner4 == null
-    ) {
-      throw new Error(
-        "When providing 'optRuleSigner5' then 'accounts.optRuleSigner1', 'accounts.optRuleSigner2', 'accounts.optRuleSigner3', 'accounts.optRuleSigner4' need(s) to be provided as well.",
-      );
-    }
-    keys.push({
-      pubkey: accounts.optRuleSigner5,
-      isWritable: false,
-      isSigner: true,
-    });
-  }
-  if (accounts.optRuleNonsigner1 != null) {
-    if (
-      accounts.optRuleSigner1 == null ||
-      accounts.optRuleSigner2 == null ||
-      accounts.optRuleSigner3 == null ||
-      accounts.optRuleSigner4 == null ||
-      accounts.optRuleSigner5 == null
-    ) {
-      throw new Error(
-        "When providing 'optRuleNonsigner1' then 'accounts.optRuleSigner1', 'accounts.optRuleSigner2', 'accounts.optRuleSigner3', 'accounts.optRuleSigner4', 'accounts.optRuleSigner5' need(s) to be provided as well.",
-      );
-    }
-    keys.push({
-      pubkey: accounts.optRuleNonsigner1,
-      isWritable: false,
-      isSigner: false,
-    });
-  }
-  if (accounts.optRuleNonsigner2 != null) {
-    if (
-      accounts.optRuleSigner1 == null ||
-      accounts.optRuleSigner2 == null ||
-      accounts.optRuleSigner3 == null ||
-      accounts.optRuleSigner4 == null ||
-      accounts.optRuleSigner5 == null ||
-      accounts.optRuleNonsigner1 == null
-    ) {
-      throw new Error(
-        "When providing 'optRuleNonsigner2' then 'accounts.optRuleSigner1', 'accounts.optRuleSigner2', 'accounts.optRuleSigner3', 'accounts.optRuleSigner4', 'accounts.optRuleSigner5', 'accounts.optRuleNonsigner1' need(s) to be provided as well.",
-      );
-    }
-    keys.push({
-      pubkey: accounts.optRuleNonsigner2,
-      isWritable: false,
-      isSigner: false,
-    });
-  }
-  if (accounts.optRuleNonsigner3 != null) {
-    if (
-      accounts.optRuleSigner1 == null ||
-      accounts.optRuleSigner2 == null ||
-      accounts.optRuleSigner3 == null ||
-      accounts.optRuleSigner4 == null ||
-      accounts.optRuleSigner5 == null ||
-      accounts.optRuleNonsigner1 == null ||
-      accounts.optRuleNonsigner2 == null
-    ) {
-      throw new Error(
-        "When providing 'optRuleNonsigner3' then 'accounts.optRuleSigner1', 'accounts.optRuleSigner2', 'accounts.optRuleSigner3', 'accounts.optRuleSigner4', 'accounts.optRuleSigner5', 'accounts.optRuleNonsigner1', 'accounts.optRuleNonsigner2' need(s) to be provided as well.",
-      );
-    }
-    keys.push({
-      pubkey: accounts.optRuleNonsigner3,
-      isWritable: false,
-      isSigner: false,
-    });
-  }
-  if (accounts.optRuleNonsigner4 != null) {
-    if (
-      accounts.optRuleSigner1 == null ||
-      accounts.optRuleSigner2 == null ||
-      accounts.optRuleSigner3 == null ||
-      accounts.optRuleSigner4 == null ||
-      accounts.optRuleSigner5 == null ||
-      accounts.optRuleNonsigner1 == null ||
-      accounts.optRuleNonsigner2 == null ||
-      accounts.optRuleNonsigner3 == null
-    ) {
-      throw new Error(
-        "When providing 'optRuleNonsigner4' then 'accounts.optRuleSigner1', 'accounts.optRuleSigner2', 'accounts.optRuleSigner3', 'accounts.optRuleSigner4', 'accounts.optRuleSigner5', 'accounts.optRuleNonsigner1', 'accounts.optRuleNonsigner2', 'accounts.optRuleNonsigner3' need(s) to be provided as well.",
-      );
-    }
-    keys.push({
-      pubkey: accounts.optRuleNonsigner4,
-      isWritable: false,
-      isSigner: false,
-    });
-  }
-  if (accounts.optRuleNonsigner5 != null) {
-    if (
-      accounts.optRuleSigner1 == null ||
-      accounts.optRuleSigner2 == null ||
-      accounts.optRuleSigner3 == null ||
-      accounts.optRuleSigner4 == null ||
-      accounts.optRuleSigner5 == null ||
-      accounts.optRuleNonsigner1 == null ||
-      accounts.optRuleNonsigner2 == null ||
-      accounts.optRuleNonsigner3 == null ||
-      accounts.optRuleNonsigner4 == null
-    ) {
-      throw new Error(
-        "When providing 'optRuleNonsigner5' then 'accounts.optRuleSigner1', 'accounts.optRuleSigner2', 'accounts.optRuleSigner3', 'accounts.optRuleSigner4', 'accounts.optRuleSigner5', 'accounts.optRuleNonsigner1', 'accounts.optRuleNonsigner2', 'accounts.optRuleNonsigner3', 'accounts.optRuleNonsigner4' need(s) to be provided as well.",
-      );
-    }
-    keys.push({
-      pubkey: accounts.optRuleNonsigner5,
-      isWritable: false,
-      isSigner: false,
-    });
-  }
 
   const ix = new web3.TransactionInstruction({
     programId,

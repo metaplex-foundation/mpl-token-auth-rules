@@ -11,7 +11,7 @@ use num_traits::cast::FromPrimitive;
 use num_traits::ToPrimitive;
 use rmp_serde::Serializer;
 use serde::Serialize;
-use solana_program::instruction::InstructionError;
+use solana_program::instruction::{AccountMeta, InstructionError};
 use solana_program_test::{tokio, BanksClientError};
 use solana_sdk::{
     signature::Signer,
@@ -32,7 +32,6 @@ async fn test_payer_not_signer_fails() {
 
     // Create a `create` instruction.
     let create_ix = mpl_token_auth_rules::instruction::create(
-        mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         rule_set_addr,
         vec![],
@@ -57,12 +56,10 @@ async fn test_payer_not_signer_fails() {
 
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        mpl_token_auth_rules::id(),
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         Payload::default(),
         true,
-        vec![],
         vec![],
     );
 
@@ -135,7 +132,6 @@ async fn test_additional_signer_and_amount() {
 
     // Create a `create` instruction.
     let create_ix = mpl_token_auth_rules::instruction::create(
-        mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         rule_set_addr,
         serialized_data,
@@ -162,13 +158,11 @@ async fn test_additional_signer_and_amount() {
 
     // Create a `validate` instruction WITHOUT the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        mpl_token_auth_rules::id(),
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         payload.clone(),
         true,
-        vec![context.payer.pubkey()],
-        vec![],
+        vec![AccountMeta::new_readonly(context.payer.pubkey(), true)],
     );
 
     // Add it to a transaction.
@@ -200,13 +194,14 @@ async fn test_additional_signer_and_amount() {
 
     // Create a `validate` instruction WITH the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        mpl_token_auth_rules::id(),
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         payload,
         true,
-        vec![context.payer.pubkey(), second_signer.pubkey()],
-        vec![],
+        vec![
+            AccountMeta::new_readonly(context.payer.pubkey(), true),
+            AccountMeta::new_readonly(second_signer.pubkey(), true),
+        ],
     );
 
     // Add it to a transaction.
@@ -227,15 +222,16 @@ async fn test_additional_signer_and_amount() {
     // Store a payload of data with the WRONG amount.
     let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(1))]);
 
-    // Create a `validate` instruction.
+    // Create a `validate` instruction WITH the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        mpl_token_auth_rules::id(),
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         payload,
         true,
-        vec![context.payer.pubkey(), second_signer.pubkey()],
-        vec![],
+        vec![
+            AccountMeta::new_readonly(context.payer.pubkey(), true),
+            AccountMeta::new_readonly(second_signer.pubkey(), true),
+        ],
     );
 
     // Add it to a transaction.
@@ -282,7 +278,6 @@ async fn test_frequency() {
 
     // Create a `create_frequency_rule` instruction.
     let freq_rule_ix = mpl_token_auth_rules::instruction::create_frequency_rule(
-        mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         freq_account,
         "test rule_set".to_string(),
@@ -337,7 +332,6 @@ async fn test_frequency() {
 
     // Create a `create` instruction.
     let create_ix = mpl_token_auth_rules::instruction::create(
-        mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         rule_set_addr,
         serialized_data,
@@ -362,18 +356,16 @@ async fn test_frequency() {
     // --------------------------------
     // Validate Frequency Rule
     // --------------------------------
-    // We need several slots between unverifying and running set_and_verify_collection.
+    // Warp some slots before validating.
     context.warp_to_slot(2).unwrap();
 
     // Create a `validate` instruction passing in the Frequency Rule account.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        mpl_token_auth_rules::id(),
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         Payload::default(),
         true,
-        vec![],
-        vec![freq_account],
+        vec![AccountMeta::new(freq_account, false)],
     );
 
     // Add it to a transaction.
@@ -405,13 +397,13 @@ async fn test_pass() {
         "test rule_set".to_string(),
     );
 
-    // Create a Frequency Rule.
-    let freq_rule = Rule::Pass;
+    // Create a Pass Rule.
+    let pass_rule = Rule::Pass;
 
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_u16().unwrap(), freq_rule)
+        .add(Operation::Transfer.to_u16().unwrap(), pass_rule)
         .unwrap();
 
     println!("{:#?}", rule_set);
@@ -424,7 +416,6 @@ async fn test_pass() {
 
     // Create a `create` instruction.
     let create_ix = mpl_token_auth_rules::instruction::create(
-        mpl_token_auth_rules::id(),
         context.payer.pubkey(),
         rule_set_addr,
         serialized_data,
@@ -447,19 +438,17 @@ async fn test_pass() {
         .expect("creation should succeed");
 
     // --------------------------------
-    // Validate Frequency Rule
+    // Validate Pass Rule
     // --------------------------------
-    // We need several slots between unverifying and running set_and_verify_collection.
+    // Warp some slots before validating.
     context.warp_to_slot(2).unwrap();
 
-    // Create a `validate` instruction passing in the Frequency Rule account.
+    // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        mpl_token_auth_rules::id(),
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         Payload::default(),
         true,
-        vec![],
         vec![],
     );
 

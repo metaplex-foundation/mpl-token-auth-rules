@@ -48,27 +48,12 @@ pub enum RuleSetInstruction {
     #[account(0, writable, signer, name="payer", desc="Payer and creator of the RuleSet")]
     #[account(1, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
     #[account(2, name = "system_program", desc = "System program")]
-    #[account(3, optional, name = "opt_rule_pda_1", desc = "Optional rule PDA non-signer 1")]
-    #[account(4, optional, name = "opt_rule_pda_2", desc = "Optional rule PDA non-signer 2")]
-    #[account(5, optional, name = "opt_rule_pda_3", desc = "Optional rule PDA non-signer 3")]
-    #[account(6, optional, name = "opt_rule_pda_4", desc = "Optional rule PDA non-signer 4")]
-    #[account(7, optional, name = "opt_rule_pda_5", desc = "Optional rule PDA non-signer 5")]
     Create(CreateArgs),
 
     /// This instruction executes the RuleSet stored in the rule_set PDA account by sending
     /// it an `AccountsMap` and a `PayloadMap` and calling the `RuleSet`'s `validate` method.
     #[account(0, name="rule_set", desc = "The PDA account where the RuleSet is stored")]
     #[account(1, name = "system_program", desc = "System program")]
-    #[account(2, optional, writable, signer, name="opt_rule_signer_1", desc = "Optional rule validation signer 1")]
-    #[account(3, optional, writable, signer, name="opt_rule_signer_2", desc = "Optional rule validation signer 2")]
-    #[account(4, optional, writable, signer, name="opt_rule_signer_3", desc = "Optional rule validation signer 3")]
-    #[account(5, optional, writable, signer, name="opt_rule_signer_4", desc = "Optional rule validation signer 4")]
-    #[account(6, optional, writable, signer, name="opt_rule_signer_5", desc = "Optional rule validation signer 5")]
-    #[account(7, optional, writable, name = "opt_rule_nonsigner_1", desc = "Optional rule validation non-signer 1")]
-    #[account(8, optional, writable, name = "opt_rule_nonsigner_2", desc = "Optional rule validation non-signer 2")]
-    #[account(9, optional, writable, name = "opt_rule_nonsigner_3", desc = "Optional rule validation non-signer 3")]
-    #[account(10, optional, writable, name = "opt_rule_nonsigner_4", desc = "Optional rule validation non-signer 4")]
-    #[account(11, optional, writable, name = "opt_rule_nonsigner_5", desc = "Optional rule validation non-signer 5")]
     Validate(ValidateArgs),
 
     /// This instruction stores a Frequency Rule into a Frequency Rule PDA account.
@@ -79,11 +64,10 @@ pub enum RuleSetInstruction {
 }
 /// Builds a `create` instruction.
 pub fn create(
-    program_id: Pubkey,
     payer: Pubkey,
     rule_set_pda: Pubkey,
     serialized_rule_set: Vec<u8>,
-    rule_nonsigner_accounts: Vec<Pubkey>,
+    additional_rule_accounts: Vec<Pubkey>,
 ) -> Instruction {
     let mut accounts = vec![
         AccountMeta::new(payer, true),
@@ -91,18 +75,12 @@ pub fn create(
         AccountMeta::new_readonly(solana_program::system_program::id(), false),
     ];
 
-    for i in 0..5 {
-        if let Some(account) = rule_nonsigner_accounts.get(i) {
-            accounts.push(AccountMeta::new_readonly(*account, false));
-        }
-    }
-
-    if rule_nonsigner_accounts.get(5).is_some() {
-        panic!("Too many rule PDA non-signer accounts");
+    for account in additional_rule_accounts {
+        accounts.push(AccountMeta::new_readonly(account, false));
     }
 
     Instruction {
-        program_id,
+        program_id: crate::ID,
         accounts,
         data: RuleSetInstruction::Create(CreateArgs {
             serialized_rule_set,
@@ -115,41 +93,21 @@ pub fn create(
 /// Builds a `validate` instruction.
 #[allow(clippy::too_many_arguments)]
 pub fn validate(
-    program_id: Pubkey,
     rule_set_pda: Pubkey,
     operation: u16,
     payload: Payload,
     update_rule_state: bool,
-    rule_signer_accounts: Vec<Pubkey>,
-    rule_nonsigner_accounts: Vec<Pubkey>,
+    additional_rule_accounts: Vec<AccountMeta>,
 ) -> Instruction {
     let mut accounts = vec![
         AccountMeta::new_readonly(rule_set_pda, false),
         AccountMeta::new_readonly(solana_program::system_program::id(), false),
     ];
 
-    for i in 0..5 {
-        if let Some(account) = rule_signer_accounts.get(i) {
-            accounts.push(AccountMeta::new(*account, true));
-        }
-    }
-
-    if rule_signer_accounts.get(5).is_some() {
-        panic!("Too many rule validation signer accounts");
-    }
-
-    for i in 0..5 {
-        if let Some(account) = rule_nonsigner_accounts.get(i) {
-            accounts.push(AccountMeta::new(*account, false));
-        }
-    }
-
-    if rule_nonsigner_accounts.get(5).is_some() {
-        panic!("Too many rule validation non-signer accounts");
-    }
+    accounts.extend(additional_rule_accounts);
 
     Instruction {
-        program_id,
+        program_id: crate::ID,
         accounts,
         data: RuleSetInstruction::Validate(ValidateArgs {
             operation,
@@ -163,7 +121,6 @@ pub fn validate(
 
 /// Builds a `create_frequency_rule` instruction.
 pub fn create_frequency_rule(
-    program_id: Pubkey,
     payer: Pubkey,
     freq_rule_pda: Pubkey,
     rule_set_name: String,
@@ -178,7 +135,7 @@ pub fn create_frequency_rule(
     ];
 
     Instruction {
-        program_id,
+        program_id: crate::ID,
         accounts,
         data: RuleSetInstruction::CreateFrequencyRule(CreateFrequencyRuleArgs {
             rule_set_name,

@@ -10,6 +10,7 @@ import { Payload, payloadBeet } from './Payload';
 export type ValidateArgs = {
   operation: number;
   payload: Payload;
+  updateRuleState: boolean;
 };
 
 /**
@@ -20,6 +21,7 @@ export const validateArgsBeet = new beet.FixableBeetArgsStruct<ValidateArgs>(
   [
     ['operation', beet.u16],
     ['payload', payloadBeet],
+    ['updateRuleState', beet.bool],
   ],
   'ValidateArgs',
 );
