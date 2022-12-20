@@ -61,6 +61,7 @@ async fn test_payer_not_signer_fails() {
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         Payload::default(),
+        true,
         vec![],
         vec![],
     );
@@ -162,6 +163,7 @@ async fn test_additional_signer_and_amount() {
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         payload.clone(),
+        true,
         vec![context.payer.pubkey()],
         vec![],
     );
@@ -199,6 +201,7 @@ async fn test_additional_signer_and_amount() {
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         payload,
+        true,
         vec![context.payer.pubkey(), second_signer.pubkey()],
         vec![],
     );
@@ -227,6 +230,7 @@ async fn test_additional_signer_and_amount() {
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         payload,
+        true,
         vec![context.payer.pubkey(), second_signer.pubkey()],
         vec![],
     );
@@ -364,6 +368,7 @@ async fn test_frequency() {
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         Payload::default(),
+        true,
         vec![],
         vec![freq_account],
     );
