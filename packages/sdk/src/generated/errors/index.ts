@@ -464,6 +464,26 @@ createErrorFromCodeLookup.set(0x15, () => new NameTooLongError());
 createErrorFromNameLookup.set('NameTooLong', () => new NameTooLongError());
 
 /**
+ * OperationNotFound: 'The operation retrieved is not in the selected RuleSet'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class OperationNotFoundError extends Error {
+  readonly code: number = 0x16;
+  readonly name: string = 'OperationNotFound';
+  constructor() {
+    super('The operation retrieved is not in the selected RuleSet');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, OperationNotFoundError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x16, () => new OperationNotFoundError());
+createErrorFromNameLookup.set('OperationNotFound', () => new OperationNotFoundError());
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

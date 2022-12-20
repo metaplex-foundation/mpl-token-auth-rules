@@ -1,10 +1,9 @@
-use std::io::ErrorKind;
-
-use borsh::{maybestd::io::Error as BorshError, BorshDeserialize, BorshSerialize};
+use borsh::{BorshDeserialize, BorshSerialize};
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
-use serde::{Deserialize, Serialize};
-use solana_program::{account_info::AccountInfo, program_error::ProgramError};
+use solana_program::{
+    account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
+};
 
 mod frequency;
 mod rule_set;
@@ -16,25 +15,6 @@ pub use rules::*;
 
 use crate::{error::RuleSetError, utils::assert_owned_by};
 
-#[derive(
-    BorshSerialize,
-    BorshDeserialize,
-    Serialize,
-    Deserialize,
-    PartialEq,
-    Eq,
-    Debug,
-    Clone,
-    Hash,
-    PartialOrd,
-)]
-pub enum Operation {
-    Transfer,
-    Delegate,
-    SaleTransfer,
-    MigrateClass,
-}
-
 #[repr(C)]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Copy, FromPrimitive)]
 pub enum Key {
@@ -42,45 +22,49 @@ pub enum Key {
     Frequency,
 }
 
-pub trait SolanaAccount: BorshDeserialize {
+pub trait SolanaAccount: BorshSerialize + BorshDeserialize {
+    /// Get the `Key` for this `Account`.  This key is to be stored in the first byte of the
+    /// `Account` data.
     fn key() -> Key;
 
-    fn size() -> usize;
+    /// BorshDeserialize the `AccountInfo` into the Rust data structure.
+    fn from_account_info(account: &AccountInfo) -> Result<Self, ProgramError> {
+        let data = account
+            .data
+            .try_borrow()
+            .map_err(|_| ProgramError::AccountBorrowFailed)?;
 
-    fn is_correct_account_type(data: &[u8], data_type: Key) -> bool {
-        let key: Option<Key> = Key::from_u8(data[0]);
+        if !Self::is_correct_account_type_and_size(&data, Self::key()) {
+            return Err(RuleSetError::DataTypeMismatch.into());
+        }
+
+        let data = Self::try_from_slice(&data)?;
+
+        // Check that this account is owned by this program.
+        assert_owned_by(account, &crate::ID)?;
+
+        Ok(data)
+    }
+
+    /// BorshSerialize the Rust data structure into the `Account` data.
+    fn to_account_data(&self, account: &AccountInfo) -> ProgramResult {
+        let mut data = account.try_borrow_mut_data()?;
+        self.serialize(&mut *data).map_err(Into::into)
+    }
+}
+
+trait PrivateSolanaAccountMethods: SolanaAccount {
+    const KEY_BYTE: usize = 0;
+
+    // Check the `Key` byte and the data size to determine if this data represents the correct
+    // account types.
+    fn is_correct_account_type_and_size(data: &[u8], data_type: Key) -> bool {
+        let key: Option<Key> = Key::from_u8(data[Self::KEY_BYTE]);
         match key {
-            Some(key) => key == data_type || key == Key::Uninitialized,
+            Some(key) => key == data_type,
             None => false,
         }
     }
-
-    fn pad_length(buf: &mut Vec<u8>) -> Result<(), RuleSetError> {
-        let padding_length = Self::size()
-            .checked_sub(buf.len())
-            .ok_or(RuleSetError::NumericalOverflow)?;
-        buf.extend(vec![0; padding_length]);
-        Ok(())
-    }
-
-    fn safe_deserialize(mut data: &[u8]) -> Result<Self, BorshError> {
-        if !Self::is_correct_account_type(data, Self::key()) {
-            return Err(BorshError::new(ErrorKind::Other, "DataTypeMismatch"));
-        }
-
-        let result = Self::deserialize(&mut data)?;
-
-        Ok(result)
-    }
-
-    fn from_account_info(a: &AccountInfo) -> Result<Self, ProgramError>
-where {
-        let ua = Self::safe_deserialize(&a.data.borrow_mut())
-            .map_err(|_| RuleSetError::DataTypeMismatch)?;
-
-        // Check that this account is owned by this program.
-        assert_owned_by(a, &crate::ID)?;
-
-        Ok(ua)
-    }
 }
+
+impl<T: SolanaAccount> PrivateSolanaAccountMethods for T {}

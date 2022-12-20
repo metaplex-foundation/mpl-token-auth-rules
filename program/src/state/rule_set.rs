@@ -1,7 +1,4 @@
-use crate::{
-    error::RuleSetError,
-    state::{Operation, Rule},
-};
+use crate::{error::RuleSetError, state::Rule};
 use serde::{Deserialize, Serialize};
 use solana_program::{entrypoint::ProgramResult, pubkey::Pubkey};
 use std::collections::HashMap;
@@ -13,7 +10,7 @@ pub struct RuleSet {
     /// Owner (creator) of the RuleSet.
     owner: Pubkey,
     /// A map to determine the `Rule` that belongs to a given `Operation`.
-    pub operations: HashMap<Operation, Rule>,
+    pub operations: HashMap<u16, Rule>,
 }
 
 impl RuleSet {
@@ -38,7 +35,7 @@ impl RuleSet {
 
     /// Add a key-value pair into a `RuleSet`.  If this key is already in the `RuleSet`
     /// nothing is updated and an error is returned.
-    pub fn add(&mut self, operation: Operation, rules: Rule) -> ProgramResult {
+    pub fn add(&mut self, operation: u16, rules: Rule) -> ProgramResult {
         if self.operations.get(&operation).is_none() {
             self.operations.insert(operation, rules);
             Ok(())
@@ -47,7 +44,7 @@ impl RuleSet {
         }
     }
 
-    pub fn get(&self, operation: Operation) -> Option<&Rule> {
+    pub fn get(&self, operation: u16) -> Option<&Rule> {
         self.operations.get(&operation)
     }
 }

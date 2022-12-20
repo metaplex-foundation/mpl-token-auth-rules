@@ -95,6 +95,10 @@ pub enum RuleSetError {
     /// 21 - Name too long
     #[error("Name too long")]
     NameTooLong,
+
+    /// 22 - Name too long
+    #[error("The operation retrieved is not in the selected RuleSet")]
+    OperationNotFound,
 }
 
 impl PrintProgramError for RuleSetError {

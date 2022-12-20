@@ -4,15 +4,16 @@ pub mod utils;
 
 use mpl_token_auth_rules::{
     payload::{LeafInfo, Payload, PayloadKey, PayloadType},
-    state::{Operation, Rule, RuleSet},
+    state::{Rule, RuleSet},
 };
+use num_traits::ToPrimitive;
 use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_program_test::tokio;
 use solana_sdk::{
     signature::Signer, signer::keypair::Keypair, system_instruction, transaction::Transaction,
 };
-use utils::program_test;
+use utils::{program_test, Operation};
 
 #[tokio::test]
 async fn basic_royalty_enforcement() {
@@ -52,13 +53,22 @@ async fn basic_royalty_enforcement() {
         context.payer.pubkey(),
     );
     basic_royalty_enforcement_rule_set
-        .add(Operation::Transfer, owned_by_token_metadata)
+        .add(
+            Operation::Transfer.to_u16().unwrap(),
+            owned_by_token_metadata,
+        )
         .unwrap();
     basic_royalty_enforcement_rule_set
-        .add(Operation::Delegate, leaf_in_marketplace_tree.clone())
+        .add(
+            Operation::Delegate.to_u16().unwrap(),
+            leaf_in_marketplace_tree.clone(),
+        )
         .unwrap();
     basic_royalty_enforcement_rule_set
-        .add(Operation::SaleTransfer, leaf_in_marketplace_tree)
+        .add(
+            Operation::SaleTransfer.to_u16().unwrap(),
+            leaf_in_marketplace_tree,
+        )
         .unwrap();
 
     println!(
@@ -129,8 +139,9 @@ async fn basic_royalty_enforcement() {
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         rule_set_addr,
-        Operation::Transfer,
+        Operation::Transfer.to_u16().unwrap(),
         payload,
+        true,
         vec![],
         vec![fake_token_metadata_owned_escrow.pubkey()],
     );
@@ -185,8 +196,9 @@ async fn basic_royalty_enforcement() {
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         rule_set_addr,
-        Operation::Delegate,
+        Operation::Delegate.to_u16().unwrap(),
         payload.clone(),
+        true,
         vec![],
         vec![],
     );
@@ -213,8 +225,9 @@ async fn basic_royalty_enforcement() {
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         rule_set_addr,
-        Operation::SaleTransfer,
+        Operation::SaleTransfer.to_u16().unwrap(),
         payload,
+        true,
         vec![],
         vec![],
     );

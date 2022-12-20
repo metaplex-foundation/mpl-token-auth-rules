@@ -6,10 +6,9 @@
  */
 
 import * as beet from '@metaplex-foundation/beet';
-import { Operation, operationBeet } from './Operation';
 import { Payload, payloadBeet } from './Payload';
 export type ValidateArgs = {
-  operation: Operation;
+  operation: number;
   payload: Payload;
 };
 
@@ -19,7 +18,7 @@ export type ValidateArgs = {
  */
 export const validateArgsBeet = new beet.FixableBeetArgsStruct<ValidateArgs>(
   [
-    ['operation', operationBeet],
+    ['operation', beet.u16],
     ['payload', payloadBeet],
   ],
   'ValidateArgs',
