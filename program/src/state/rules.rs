@@ -13,6 +13,15 @@ use std::collections::HashMap;
 use super::{FrequencyAccount, SolanaAccount};
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+pub enum CompareOp {
+    Lt,
+    LtEq,
+    Eq,
+    GtEq,
+    Gt,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub enum Rule {
     All {
         rules: Vec<Rule>,
@@ -40,6 +49,7 @@ pub enum Rule {
     },
     Amount {
         amount: u64,
+        operator: CompareOp,
     },
     Frequency {
         freq_name: String,
@@ -160,10 +170,18 @@ impl Rule {
 
                 (false, self.to_error())
             }
-            Rule::Amount { amount } => {
+            Rule::Amount { amount, operator } => {
                 msg!("Validating Amount");
                 if let Some(payload_amount) = &payload.get_amount(&PayloadKey::Amount) {
-                    if amount == payload_amount {
+                    let operator_fn = match operator {
+                        CompareOp::Lt => PartialOrd::lt,
+                        CompareOp::LtEq => PartialOrd::le,
+                        CompareOp::Eq => PartialEq::eq,
+                        CompareOp::Gt => PartialOrd::gt,
+                        CompareOp::GtEq => PartialOrd::ge,
+                    };
+
+                    if operator_fn(payload_amount, amount) {
                         (true, self.to_error())
                     } else {
                         (false, self.to_error())
