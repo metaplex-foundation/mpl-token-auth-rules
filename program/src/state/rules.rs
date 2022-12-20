@@ -60,6 +60,7 @@ pub enum Rule {
         root: [u8; 32],
         field: PayloadKey,
     },
+    Pass,
 }
 
 impl Rule {
@@ -282,6 +283,10 @@ impl Rule {
                 } else {
                     (false, self.to_error())
                 }
+            }
+            Rule::Pass => {
+                msg!("Validating Pass");
+                (true, self.to_error())
             }
         }
     }

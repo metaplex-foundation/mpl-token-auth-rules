@@ -391,3 +391,90 @@ async fn test_frequency() {
         .await
         .expect("validation should succeed");
 }
+
+#[tokio::test]
+async fn test_pass() {
+    let mut context = program_test().start_with_context().await;
+
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
+    // Find RuleSet PDA.
+    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
+        context.payer.pubkey(),
+        "test rule_set".to_string(),
+    );
+
+    // Create a Frequency Rule.
+    let freq_rule = Rule::Pass;
+
+    // Create a RuleSet.
+    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    rule_set
+        .add(Operation::Transfer.to_u16().unwrap(), freq_rule)
+        .unwrap();
+
+    println!("{:#?}", rule_set);
+
+    // Serialize the RuleSet using RMP serde.
+    let mut serialized_data = Vec::new();
+    rule_set
+        .serialize(&mut Serializer::new(&mut serialized_data))
+        .unwrap();
+
+    // Create a `create` instruction.
+    let create_ix = mpl_token_auth_rules::instruction::create(
+        mpl_token_auth_rules::id(),
+        context.payer.pubkey(),
+        rule_set_addr,
+        serialized_data,
+        vec![],
+    );
+
+    // Add it to a transaction.
+    let create_tx = Transaction::new_signed_with_payer(
+        &[create_ix],
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        context.last_blockhash,
+    );
+
+    // Process the transaction.
+    context
+        .banks_client
+        .process_transaction(create_tx)
+        .await
+        .expect("creation should succeed");
+
+    // --------------------------------
+    // Validate Frequency Rule
+    // --------------------------------
+    // We need several slots between unverifying and running set_and_verify_collection.
+    context.warp_to_slot(2).unwrap();
+
+    // Create a `validate` instruction passing in the Frequency Rule account.
+    let validate_ix = mpl_token_auth_rules::instruction::validate(
+        mpl_token_auth_rules::id(),
+        rule_set_addr,
+        Operation::Transfer.to_u16().unwrap(),
+        Payload::default(),
+        true,
+        vec![],
+        vec![],
+    );
+
+    // Add it to a transaction.
+    let validate_tx = Transaction::new_signed_with_payer(
+        &[validate_ix],
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        context.last_blockhash,
+    );
+
+    // Process the transaction.
+    context
+        .banks_client
+        .process_transaction(validate_tx)
+        .await
+        .expect("validation should succeed");
+}
