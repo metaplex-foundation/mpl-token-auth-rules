@@ -59,16 +59,16 @@ pub enum RuleSetInstruction {
     /// it an `AccountsMap` and a `PayloadMap` and calling the `RuleSet`'s `validate` method.
     #[account(0, name="rule_set", desc = "The PDA account where the RuleSet is stored")]
     #[account(1, name = "system_program", desc = "System program")]
-    #[account(2, optional, signer, name="opt_rule_signer_1", desc = "Optional rule validation signer 1")]
-    #[account(3, optional, signer, name="opt_rule_signer_2", desc = "Optional rule validation signer 2")]
-    #[account(4, optional, signer, name="opt_rule_signer_3", desc = "Optional rule validation signer 3")]
-    #[account(5, optional, signer, name="opt_rule_signer_4", desc = "Optional rule validation signer 4")]
-    #[account(6, optional, signer, name="opt_rule_signer_5", desc = "Optional rule validation signer 5")]
-    #[account(7, optional, name = "opt_rule_nonsigner_1", desc = "Optional rule validation non-signer 1")]
-    #[account(8, optional, name = "opt_rule_nonsigner_2", desc = "Optional rule validation non-signer 2")]
-    #[account(9, optional, name = "opt_rule_nonsigner_3", desc = "Optional rule validation non-signer 3")]
-    #[account(10, optional, name = "opt_rule_nonsigner_4", desc = "Optional rule validation non-signer 4")]
-    #[account(11, optional, name = "opt_rule_nonsigner_5", desc = "Optional rule validation non-signer 5")]
+    #[account(2, optional, writable, signer, name="opt_rule_signer_1", desc = "Optional rule validation signer 1")]
+    #[account(3, optional, writable, signer, name="opt_rule_signer_2", desc = "Optional rule validation signer 2")]
+    #[account(4, optional, writable, signer, name="opt_rule_signer_3", desc = "Optional rule validation signer 3")]
+    #[account(5, optional, writable, signer, name="opt_rule_signer_4", desc = "Optional rule validation signer 4")]
+    #[account(6, optional, writable, signer, name="opt_rule_signer_5", desc = "Optional rule validation signer 5")]
+    #[account(7, optional, writable, name = "opt_rule_nonsigner_1", desc = "Optional rule validation non-signer 1")]
+    #[account(8, optional, writable, name = "opt_rule_nonsigner_2", desc = "Optional rule validation non-signer 2")]
+    #[account(9, optional, writable, name = "opt_rule_nonsigner_3", desc = "Optional rule validation non-signer 3")]
+    #[account(10, optional, writable, name = "opt_rule_nonsigner_4", desc = "Optional rule validation non-signer 4")]
+    #[account(11, optional, writable, name = "opt_rule_nonsigner_5", desc = "Optional rule validation non-signer 5")]
     Validate(ValidateArgs),
 
     /// This instruction stores a Frequency Rule into a Frequency Rule PDA account.
