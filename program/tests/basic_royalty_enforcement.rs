@@ -141,6 +141,7 @@ async fn basic_royalty_enforcement() {
         rule_set_addr,
         Operation::Transfer.to_u16().unwrap(),
         payload,
+        true,
         vec![],
         vec![fake_token_metadata_owned_escrow.pubkey()],
     );
@@ -197,6 +198,7 @@ async fn basic_royalty_enforcement() {
         rule_set_addr,
         Operation::Delegate.to_u16().unwrap(),
         payload.clone(),
+        true,
         vec![],
         vec![],
     );
@@ -225,6 +227,7 @@ async fn basic_royalty_enforcement() {
         rule_set_addr,
         Operation::SaleTransfer.to_u16().unwrap(),
         payload,
+        true,
         vec![],
         vec![],
     );

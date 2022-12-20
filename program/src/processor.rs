@@ -151,7 +151,9 @@ impl Processor {
                     .ok_or(RuleSetError::OperationNotFound)?;
 
                 // Validate the Rule.
-                if let Err(err) = rule.validate(&accounts_map, &args.payload) {
+                if let Err(err) =
+                    rule.validate(&accounts_map, &args.payload, args.update_rule_state)
+                {
                     msg!("Failed to validate: {}", err);
                     return Err(err);
                 }

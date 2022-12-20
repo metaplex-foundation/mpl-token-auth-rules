@@ -22,6 +22,8 @@ pub struct ValidateArgs {
     pub operation: u16,
     /// `Payload` data used for rule validation.
     pub payload: Payload,
+    /// Update any relevant state stored in Rule, such as the Frequency `last_update` time value.
+    pub update_rule_state: bool,
 }
 
 #[repr(C)]
@@ -117,6 +119,7 @@ pub fn validate(
     rule_set_pda: Pubkey,
     operation: u16,
     payload: Payload,
+    update_rule_state: bool,
     rule_signer_accounts: Vec<Pubkey>,
     rule_nonsigner_accounts: Vec<Pubkey>,
 ) -> Instruction {
@@ -148,9 +151,13 @@ pub fn validate(
     Instruction {
         program_id,
         accounts,
-        data: RuleSetInstruction::Validate(ValidateArgs { operation, payload })
-            .try_to_vec()
-            .unwrap(),
+        data: RuleSetInstruction::Validate(ValidateArgs {
+            operation,
+            payload,
+            update_rule_state,
+        })
+        .try_to_vec()
+        .unwrap(),
     }
 }
 

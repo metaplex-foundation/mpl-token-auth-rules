@@ -57,8 +57,9 @@ impl Rule {
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
+        update_rule_state: bool,
     ) -> ProgramResult {
-        let (status, rollup_err) = self.low_level_validate(accounts, payload);
+        let (status, rollup_err) = self.low_level_validate(accounts, payload, update_rule_state);
 
         if status {
             ProgramResult::Ok(())
@@ -71,6 +72,7 @@ impl Rule {
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
+        update_rule_state: bool,
     ) -> (bool, ProgramError) {
         match self {
             Rule::All { rules } => {
@@ -78,7 +80,7 @@ impl Rule {
                 let mut last = self.to_error();
                 for rule in rules {
                     last = rule.to_error();
-                    let result = rule.low_level_validate(accounts, payload);
+                    let result = rule.low_level_validate(accounts, payload, update_rule_state);
                     if !result.0 {
                         return result;
                     }
@@ -90,7 +92,7 @@ impl Rule {
                 let mut last = self.to_error();
                 for rule in rules {
                     last = rule.to_error();
-                    let result = rule.low_level_validate(accounts, payload);
+                    let result = rule.low_level_validate(accounts, payload, update_rule_state);
                     if result.0 {
                         return result;
                     }
@@ -98,7 +100,7 @@ impl Rule {
                 (false, last)
             }
             Rule::Not { rule } => {
-                let result = rule.low_level_validate(accounts, payload);
+                let result = rule.low_level_validate(accounts, payload, update_rule_state);
                 (!result.0, result.1)
             }
             Rule::AdditionalSigner { account } => {
@@ -178,26 +180,27 @@ impl Rule {
                 freq_account,
             } => {
                 msg!("Validating Frequency");
-                // Deserialize the frequency account
+                // Get the Frequency Rule `AccountInfo`.
                 let freq_account_info = if let Some(account_info) = accounts.get(freq_account) {
                     account_info
                 } else {
                     return (false, RuleSetError::MissingAccount.into());
                 };
 
+                // Grab the current time.
                 let current_time = match solana_program::clock::Clock::get() {
                     Ok(clock) => clock,
                     Err(err) => return (false, err),
                 };
 
+                // Deserialize the Frequency Rule account data.
                 let mut freq_account_data =
                     match FrequencyAccount::from_account_info(freq_account_info) {
                         Ok(freq_account_data) => freq_account_data,
                         Err(err) => return (false, err),
                     };
 
-                // Grab the current time
-                // Compare last time + period to current time
+                // Calculate last time + period.
                 let freq_check = if let Some(val) = freq_account_data
                     .last_update
                     .checked_add(freq_account_data.period)
@@ -207,17 +210,21 @@ impl Rule {
                     return (false, RuleSetError::NumericalOverflow.into());
                 };
 
-                if freq_check < current_time.unix_timestamp {
-                    // Update last update time in Frequency rule to current time.
-                    freq_account_data.last_update = current_time.unix_timestamp;
+                // Compare current time to last time + period.
+                if current_time.unix_timestamp < freq_check {
+                    return (false, self.to_error());
+                }
 
+                // If requested, update `last_update` time in Frequency rule to current time.
+                if update_rule_state {
+                    freq_account_data.last_update = current_time.unix_timestamp;
                     // Serialize the Frequency Rule.
                     match freq_account_data.to_account_data(freq_account_info) {
                         Ok(_) => (true, self.to_error()),
                         Err(err) => (false, err),
                     }
                 } else {
-                    (false, self.to_error())
+                    (true, self.to_error())
                 }
             }
             Rule::PubkeyTreeMatch { root, field } => {
