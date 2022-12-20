@@ -410,7 +410,9 @@ async fn test_pass() {
 
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
-    rule_set.add(Operation::Transfer, freq_rule).unwrap();
+    rule_set
+        .add(Operation::Transfer.to_u16().unwrap(), freq_rule)
+        .unwrap();
 
     println!("{:#?}", rule_set);
 
@@ -454,8 +456,9 @@ async fn test_pass() {
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         mpl_token_auth_rules::id(),
         rule_set_addr,
-        Operation::Transfer,
+        Operation::Transfer.to_u16().unwrap(),
         Payload::default(),
+        true,
         vec![],
         vec![],
     );
