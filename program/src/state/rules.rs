@@ -40,6 +40,14 @@ pub enum Rule {
         pubkey: Pubkey,
         field: PayloadKey,
     },
+    PubkeyListMatch {
+        pubkeys: Vec<Pubkey>,
+        field: PayloadKey,
+    },
+    PubkeyTreeMatch {
+        root: [u8; 32],
+        field: PayloadKey,
+    },
     DerivedKeyMatch {
         account: Pubkey,
         field: PayloadKey,
@@ -55,10 +63,6 @@ pub enum Rule {
     Frequency {
         freq_name: String,
         freq_account: Pubkey,
-    },
-    PubkeyTreeMatch {
-        root: [u8; 32],
-        field: PayloadKey,
     },
     Pass,
 }
@@ -131,6 +135,55 @@ impl Rule {
                 };
 
                 if key == pubkey {
+                    (true, self.to_error())
+                } else {
+                    (false, self.to_error())
+                }
+            }
+            Rule::PubkeyListMatch { pubkeys, field } => {
+                msg!("Validating PubkeyListMatch");
+
+                let key = match payload.get_pubkey(field) {
+                    Some(pubkey) => pubkey,
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                };
+
+                if pubkeys.iter().any(|pubkey| pubkey == key) {
+                    (true, self.to_error())
+                } else {
+                    (false, self.to_error())
+                }
+            }
+            Rule::PubkeyTreeMatch { root, field } => {
+                msg!("Validating PubkeyTreeMatch");
+
+                let merkle_proof = match payload.get_merkle_proof(field) {
+                    Some(merkle_proof) => merkle_proof,
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                };
+
+                let mut computed_hash = merkle_proof.leaf;
+                for proof_element in merkle_proof.proof.iter() {
+                    if computed_hash <= *proof_element {
+                        // Hash(current computed hash + current element of the proof)
+                        computed_hash = solana_program::keccak::hashv(&[
+                            &[0x01],
+                            &computed_hash,
+                            proof_element,
+                        ])
+                        .0;
+                    } else {
+                        // Hash(current element of the proof + current computed hash)
+                        computed_hash = solana_program::keccak::hashv(&[
+                            &[0x01],
+                            proof_element,
+                            &computed_hash,
+                        ])
+                        .0;
+                    }
+                }
+                // Check if the computed hash (root) is equal to the provided root
+                if computed_hash == *root {
                     (true, self.to_error())
                 } else {
                     (false, self.to_error())
@@ -249,41 +302,6 @@ impl Rule {
                     (true, self.to_error())
                 }
             }
-            Rule::PubkeyTreeMatch { root, field } => {
-                msg!("Validating PubkeyTreeMatch");
-
-                let merkle_proof = match payload.get_merkle_proof(field) {
-                    Some(merkle_proof) => merkle_proof,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
-                };
-
-                let mut computed_hash = merkle_proof.leaf;
-                for proof_element in merkle_proof.proof.iter() {
-                    if computed_hash <= *proof_element {
-                        // Hash(current computed hash + current element of the proof)
-                        computed_hash = solana_program::keccak::hashv(&[
-                            &[0x01],
-                            &computed_hash,
-                            proof_element,
-                        ])
-                        .0;
-                    } else {
-                        // Hash(current element of the proof + current computed hash)
-                        computed_hash = solana_program::keccak::hashv(&[
-                            &[0x01],
-                            proof_element,
-                            &computed_hash,
-                        ])
-                        .0;
-                    }
-                }
-                // Check if the computed hash (root) is equal to the provided root
-                if computed_hash == *root {
-                    (true, self.to_error())
-                } else {
-                    (false, self.to_error())
-                }
-            }
             Rule::Pass => {
                 msg!("Validating Pass");
                 (true, self.to_error())
@@ -353,14 +371,17 @@ impl Rule {
 
     pub fn to_error(&self) -> ProgramError {
         match self {
+            Rule::All { .. } | Rule::Any { .. } | Rule::Not { .. } | Rule::Pass => {
+                RuleSetError::NotImplemented.into()
+            }
             Rule::AdditionalSigner { .. } => RuleSetError::AdditionalSignerCheckFailed.into(),
             Rule::PubkeyMatch { .. } => RuleSetError::PubkeyMatchCheckFailed.into(),
+            Rule::PubkeyListMatch { .. } => RuleSetError::PubkeyListMatchCheckFailed.into(),
+            Rule::PubkeyTreeMatch { .. } => RuleSetError::PubkeyTreeMatchCheckFailed.into(),
             Rule::DerivedKeyMatch { .. } => RuleSetError::DerivedKeyMatchCheckFailed.into(),
             Rule::ProgramOwned { .. } => RuleSetError::ProgramOwnedCheckFailed.into(),
             Rule::Amount { .. } => RuleSetError::AmountCheckFailed.into(),
             Rule::Frequency { .. } => RuleSetError::FrequencyCheckFailed.into(),
-            Rule::PubkeyTreeMatch { .. } => RuleSetError::PubkeyTreeMatchCheckFailed.into(),
-            _ => RuleSetError::NotImplemented.into(),
         }
     }
 }
