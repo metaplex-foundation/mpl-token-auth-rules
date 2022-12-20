@@ -170,7 +170,10 @@ impl Rule {
 
                 (false, self.to_error())
             }
-            Rule::Amount { amount, operator } => {
+            Rule::Amount {
+                amount: rule_amount,
+                operator,
+            } => {
                 msg!("Validating Amount");
                 if let Some(payload_amount) = &payload.get_amount(&PayloadKey::Amount) {
                     let operator_fn = match operator {
@@ -181,7 +184,7 @@ impl Rule {
                         CompareOp::GtEq => PartialOrd::ge,
                     };
 
-                    if operator_fn(payload_amount, amount) {
+                    if operator_fn(payload_amount, rule_amount) {
                         (true, self.to_error())
                     } else {
                         (false, self.to_error())
