@@ -123,6 +123,17 @@ async fn basic_royalty_enforcement() {
 
     context.banks_client.process_transaction(tx).await.unwrap();
 
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new().pubkey();
+
+    // Find RuleSet state PDA.
+    let (rule_set_state_addr, _rule_set_bump) =
+        mpl_token_auth_rules::pda::find_rule_set_state_address(
+            context.payer.pubkey(),
+            "basic_royalty_enforcement".to_string(),
+            mint,
+        );
+
     // Store the payload of data to validate against the rule definition.
     // In this case the Target will be used to look up the `AccountInfo`
     // and see who the owner is.
@@ -134,6 +145,8 @@ async fn basic_royalty_enforcement() {
     // Create a `validate` instruction for a `Transfer` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
+        rule_set_state_addr,
+        mint,
         Operation::Transfer.to_string(),
         payload,
         true,
@@ -192,6 +205,8 @@ async fn basic_royalty_enforcement() {
     // Create a `validate` instruction for a `Delegate` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
+        rule_set_state_addr,
+        mint,
         Operation::Delegate.to_string(),
         payload.clone(),
         true,
@@ -219,6 +234,8 @@ async fn basic_royalty_enforcement() {
     // Create a `validate` instruction for a `SaleTransfer` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
+        rule_set_state_addr,
+        mint,
         Operation::SaleTransfer.to_string(),
         payload,
         true,

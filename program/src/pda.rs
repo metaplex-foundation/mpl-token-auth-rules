@@ -1,7 +1,7 @@
 use solana_program::pubkey::Pubkey;
 
 pub const PREFIX: &str = "rule_set";
-pub const FREQ_PDA: &str = "frequency";
+pub const STATE_PDA: &str = "rule_set_state";
 
 pub fn find_rule_set_address(creator: Pubkey, rule_set_name: String) -> (Pubkey, u8) {
     Pubkey::find_program_address(
@@ -14,17 +14,17 @@ pub fn find_rule_set_address(creator: Pubkey, rule_set_name: String) -> (Pubkey,
     )
 }
 
-pub fn find_frequency_pda_address(
+pub fn find_rule_set_state_address(
     creator: Pubkey,
     rule_set_name: String,
-    freq_rule_name: String,
+    mint: Pubkey,
 ) -> (Pubkey, u8) {
     Pubkey::find_program_address(
         &[
-            FREQ_PDA.as_bytes(),
+            STATE_PDA.as_bytes(),
             creator.as_ref(),
             rule_set_name.as_bytes(),
-            freq_rule_name.as_bytes(),
+            mint.as_ref(),
         ],
         &crate::ID,
     )

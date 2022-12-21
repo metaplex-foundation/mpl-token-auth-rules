@@ -3,12 +3,12 @@ use std::collections::HashMap;
 use crate::{
     error::RuleSetError,
     instruction::RuleSetInstruction,
-    pda::{FREQ_PDA, PREFIX},
-    state::{FrequencyAccount, RuleSet},
+    pda::{PREFIX, STATE_PDA},
+    state::RuleSet,
     utils::{assert_derivation, create_or_allocate_account_raw},
     MAX_NAME_LENGTH,
 };
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::BorshDeserialize;
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
@@ -60,22 +60,6 @@ impl Processor {
                     ],
                 )?;
 
-                // Convert the accounts into a map of Pubkeys to the corresponding account infos.
-                // This makes it easy to pass the account infos into validation functions since they store the Pubkeys.
-                let accounts_map = accounts
-                    .iter()
-                    .map(|account| (*account.key, account))
-                    .collect::<HashMap<Pubkey, &AccountInfo>>();
-
-                // Validate any PDA derivations present in the RuleSet.
-                for rule in rule_set.operations.values() {
-                    rule.assert_rule_pda_derivations(
-                        payer_info.key,
-                        &rule_set.name().to_string(),
-                        &accounts_map,
-                    )?;
-                }
-
                 let rule_set_seeds = &[
                     PREFIX.as_ref(),
                     payer_info.key.as_ref(),
@@ -105,6 +89,8 @@ impl Processor {
             RuleSetInstruction::Validate(args) => {
                 let account_info_iter = &mut accounts.iter();
                 let rule_set_pda_info = next_account_info(account_info_iter)?;
+                let rule_set_state_pda_info = next_account_info(account_info_iter)?;
+                let mint_info = next_account_info(account_info_iter)?;
                 let _system_program_info = next_account_info(account_info_iter)?;
 
                 // RuleSet must be owned by this program.
@@ -138,6 +124,18 @@ impl Processor {
                     ],
                 )?;
 
+                // Check RuleSet state account info derivation.
+                let _bump = assert_derivation(
+                    program_id,
+                    rule_set_state_pda_info.key,
+                    &[
+                        STATE_PDA.as_bytes(),
+                        rule_set.owner().as_ref(),
+                        rule_set.name().as_bytes(),
+                        mint_info.key.as_ref(),
+                    ],
+                )?;
+
                 // Convert the accounts into a map of Pubkeys to the corresponding account infos.
                 // This makes it easy to pass the account infos into validation functions since they store the Pubkeys.
                 let accounts_map = accounts
@@ -151,74 +149,15 @@ impl Processor {
                     .ok_or(RuleSetError::OperationNotFound)?;
 
                 // Validate the Rule.
-                if let Err(err) =
-                    rule.validate(&accounts_map, &args.payload, args.update_rule_state)
-                {
+                if let Err(err) = rule.validate(
+                    &accounts_map,
+                    &args.payload,
+                    args.update_rule_state,
+                    rule_set_state_pda_info.key,
+                ) {
                     msg!("Failed to validate: {}", err);
                     return Err(err);
                 }
-
-                Ok(())
-            }
-            RuleSetInstruction::CreateFrequencyRule(args) => {
-                let account_info_iter = &mut accounts.iter();
-                let payer_info = next_account_info(account_info_iter)?;
-                let freq_rule_pda_info = next_account_info(account_info_iter)?;
-                let system_program_info = next_account_info(account_info_iter)?;
-
-                if !payer_info.is_signer {
-                    return Err(RuleSetError::PayerIsNotSigner.into());
-                }
-
-                if args.rule_set_name.len() > MAX_NAME_LENGTH
-                    || args.freq_rule_name.len() > MAX_NAME_LENGTH
-                {
-                    return Err(RuleSetError::NameTooLong.into());
-                }
-
-                // Check Frequency PDA account info derivation.
-                let bump = assert_derivation(
-                    program_id,
-                    freq_rule_pda_info.key,
-                    &[
-                        FREQ_PDA.as_bytes(),
-                        payer_info.key.as_ref(),
-                        args.rule_set_name.as_bytes(),
-                        args.freq_rule_name.as_bytes(),
-                    ],
-                )?;
-
-                let freq_pda_seeds = &[
-                    FREQ_PDA.as_bytes(),
-                    payer_info.key.as_ref(),
-                    args.rule_set_name.as_bytes(),
-                    args.freq_rule_name.as_bytes(),
-                    &[bump],
-                ];
-
-                let freq_data = FrequencyAccount::new(args.last_update, args.period);
-
-                // Serialize the Frequency Rule.
-                let serialized_rule = freq_data
-                    .try_to_vec()
-                    .map_err(|_| RuleSetError::BorshSerializationError)?;
-
-                // Create or allocate Frequency PDA account.
-                create_or_allocate_account_raw(
-                    *program_id,
-                    freq_rule_pda_info,
-                    system_program_info,
-                    payer_info,
-                    serialized_rule.len(),
-                    freq_pda_seeds,
-                )?;
-
-                // Copy Frequency Rule to PDA account.
-                sol_memcpy(
-                    &mut freq_rule_pda_info.try_borrow_mut_data().unwrap(),
-                    &serialized_rule,
-                    serialized_rule.len(),
-                );
 
                 Ok(())
             }
