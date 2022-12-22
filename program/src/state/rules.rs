@@ -259,6 +259,8 @@ impl Rule {
                     if !account.is_signer {
                         return (false, RuleSetError::RuleAuthorityIsNotSigner.into());
                     }
+                } else {
+                    return (false, RuleSetError::MissingAccount.into());
                 }
 
                 (false, RuleSetError::NotImplemented.into())
