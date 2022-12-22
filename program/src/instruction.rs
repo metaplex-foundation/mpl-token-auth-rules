@@ -9,21 +9,26 @@ use solana_program::{
 #[repr(C)]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 /// Args for `create` instruction.
-pub struct CreateArgs {
-    /// RuleSet pre-serialized by caller into the MessagePack format.
-    pub serialized_rule_set: Vec<u8>,
+pub enum CreateArgs {
+    V1 {
+        /// RuleSet pre-serialized by caller into the MessagePack format.
+        serialized_rule_set: Vec<u8>,
+    },
 }
 
 #[repr(C)]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 /// Args for `validate` instruction.
-pub struct ValidateArgs {
-    /// `Operation` to validate.
-    pub operation: String,
-    /// `Payload` data used for rule validation.
-    pub payload: Payload,
-    /// Update any relevant state stored in Rule, such as the Frequency `last_update` time value.
-    pub update_rule_state: bool,
+
+pub enum ValidateArgs {
+    V1 {
+        /// `Operation` to validate.
+        operation: String,
+        /// `Payload` data used for rule validation.
+        payload: Payload,
+        /// Update any relevant state stored in Rule, such as the Frequency `last_update` time value.
+        update_rule_state: bool,
+    },
 }
 
 #[derive(Debug, Clone, ShankInstruction, BorshSerialize, BorshDeserialize)]
@@ -70,7 +75,7 @@ pub fn create(
     Instruction {
         program_id: crate::ID,
         accounts,
-        data: RuleSetInstruction::Create(CreateArgs {
+        data: RuleSetInstruction::Create(CreateArgs::V1 {
             serialized_rule_set,
         })
         .try_to_vec()
@@ -114,7 +119,7 @@ pub fn validate(
     Instruction {
         program_id: crate::ID,
         accounts,
-        data: RuleSetInstruction::Validate(ValidateArgs {
+        data: RuleSetInstruction::Validate(ValidateArgs::V1 {
             operation,
             payload,
             update_rule_state,
