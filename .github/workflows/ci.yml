@@ -5,6 +5,8 @@ on:
   pull_request:
 
 name: Rust Checks
+
+jobs:
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
