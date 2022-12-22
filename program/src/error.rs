@@ -107,10 +107,6 @@ pub enum RuleSetError {
     /// 24 - Rule authority is not signer
     #[error("Rule authority is not signer")]
     RuleAuthorityIsNotSigner,
-
-    /// 25 - Too many accounts were provided
-    #[error("Too many accounts were provided")]
-    TooManyAccountKeys,
 }
 
 impl PrintProgramError for RuleSetError {
