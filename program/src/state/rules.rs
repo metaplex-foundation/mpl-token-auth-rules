@@ -69,7 +69,7 @@ impl Rule {
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
         update_rule_state: bool,
-        state_pda: &Pubkey,
+        state_pda: Option<&Pubkey>,
     ) -> ProgramResult {
         let (status, rollup_err) =
             self.low_level_validate(accounts, payload, update_rule_state, state_pda);
@@ -86,7 +86,7 @@ impl Rule {
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
         update_rule_state: bool,
-        state_pda: &Pubkey,
+        state_pda: Option<&Pubkey>,
     ) -> (bool, ProgramError) {
         match self {
             Rule::All { rules } => {

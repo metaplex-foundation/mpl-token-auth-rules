@@ -100,13 +100,17 @@ pub enum RuleSetError {
     #[error("Name too long")]
     NameTooLong,
 
-    /// 22 - Name too long
+    /// 23 - Name too long
     #[error("The operation retrieved is not in the selected RuleSet")]
     OperationNotFound,
 
-    /// 22 - Rule authority is not signer
+    /// 24 - Rule authority is not signer
     #[error("Rule authority is not signer")]
     RuleAuthorityIsNotSigner,
+
+    /// 25 - Too many accounts were provided
+    #[error("Too many accounts were provided")]
+    TooManyAccountKeys,
 }
 
 impl PrintProgramError for RuleSetError {

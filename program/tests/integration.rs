@@ -56,24 +56,16 @@ async fn test_payer_not_signer_fails() {
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
-    // Find RuleSet state PDA.
-    let (rule_set_state_addr, _rule_set_bump) =
-        mpl_token_auth_rules::pda::find_rule_set_state_address(
-            context.payer.pubkey(),
-            "test rule_set".to_string(),
-            mint,
-        );
-
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        context.payer.pubkey(),
-        context.payer.pubkey(),
         rule_set_addr,
-        rule_set_state_addr,
         mint,
+        None,
+        None,
+        None,
         Operation::Transfer.to_string(),
         Payload::default(),
-        true,
+        false,
         vec![],
     );
 
@@ -170,27 +162,19 @@ async fn test_additional_signer_and_amount() {
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
-    // Find RuleSet state PDA.
-    let (rule_set_state_addr, _rule_set_bump) =
-        mpl_token_auth_rules::pda::find_rule_set_state_address(
-            context.payer.pubkey(),
-            "test rule_set".to_string(),
-            mint,
-        );
-
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(2))]);
 
     // Create a `validate` instruction WITHOUT the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        context.payer.pubkey(),
-        context.payer.pubkey(),
         rule_set_addr,
-        rule_set_state_addr,
         mint,
+        None,
+        None,
+        None,
         Operation::Transfer.to_string(),
         payload.clone(),
-        true,
+        false,
         vec![AccountMeta::new_readonly(context.payer.pubkey(), true)],
     );
 
@@ -223,14 +207,14 @@ async fn test_additional_signer_and_amount() {
 
     // Create a `validate` instruction WITH the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        context.payer.pubkey(),
-        context.payer.pubkey(),
         rule_set_addr,
-        rule_set_state_addr,
         mint,
+        None,
+        None,
+        None,
         Operation::Transfer.to_string(),
         payload,
-        true,
+        false,
         vec![
             AccountMeta::new_readonly(context.payer.pubkey(), true),
             AccountMeta::new_readonly(second_signer.pubkey(), true),
@@ -257,14 +241,14 @@ async fn test_additional_signer_and_amount() {
 
     // Create a `validate` instruction WITH the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        context.payer.pubkey(),
-        context.payer.pubkey(),
         rule_set_addr,
-        rule_set_state_addr,
         mint,
+        None,
+        None,
+        None,
         Operation::Transfer.to_string(),
         payload,
-        true,
+        false,
         vec![
             AccountMeta::new_readonly(context.payer.pubkey(), true),
             AccountMeta::new_readonly(second_signer.pubkey(), true),
@@ -361,24 +345,16 @@ async fn test_pass() {
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
-    // Find RuleSet state PDA.
-    let (rule_set_state_addr, _rule_set_bump) =
-        mpl_token_auth_rules::pda::find_rule_set_state_address(
-            context.payer.pubkey(),
-            "test rule_set".to_string(),
-            mint,
-        );
-
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
-        context.payer.pubkey(),
-        context.payer.pubkey(),
         rule_set_addr,
-        rule_set_state_addr,
         mint,
+        None,
+        None,
+        None,
         Operation::Transfer.to_string(),
         Payload::default(),
-        true,
+        false,
         vec![],
     );
 

@@ -13,6 +13,7 @@ use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
     msg,
+    program_error::ProgramError,
     program_memory::sol_memcpy,
     pubkey::Pubkey,
 };
@@ -28,6 +29,8 @@ impl Processor {
         match instruction {
             RuleSetInstruction::Create(args) => {
                 let account_info_iter = &mut accounts.iter();
+
+                // Required accounts.
                 let payer_info = next_account_info(account_info_iter)?;
                 let rule_set_pda_info = next_account_info(account_info_iter)?;
                 let system_program_info = next_account_info(account_info_iter)?;
@@ -88,15 +91,34 @@ impl Processor {
             }
             RuleSetInstruction::Validate(args) => {
                 let account_info_iter = &mut accounts.iter();
-                let payer_info = next_account_info(account_info_iter)?;
-                let _rule_authority_info = next_account_info(account_info_iter)?;
+
+                // Required accounts.
                 let rule_set_pda_info = next_account_info(account_info_iter)?;
-                let rule_set_state_pda_info = next_account_info(account_info_iter)?;
                 let mint_info = next_account_info(account_info_iter)?;
                 let _system_program_info = next_account_info(account_info_iter)?;
 
-                if args.update_rule_state && !payer_info.is_signer {
-                    return Err(RuleSetError::PayerIsNotSigner.into());
+                // Optional accounts are required if we are updating any Rule state.  Note that
+                // `rule_authority_info is marked as unused here but this account is included below
+                // in the `accounts_map` that is passed to Rule `validate`.
+                let (payer_info, _rule_authority_info, rule_set_state_pda_info) =
+                    if args.update_rule_state {
+                        (
+                            Some(next_account_info(account_info_iter)?),
+                            Some(next_account_info(account_info_iter)?),
+                            Some(next_account_info(account_info_iter)?),
+                        )
+                    } else {
+                        (None, None, None)
+                    };
+
+                if args.update_rule_state {
+                    if let Some(payer_info) = payer_info {
+                        if !payer_info.is_signer {
+                            return Err(RuleSetError::PayerIsNotSigner.into());
+                        }
+                    } else {
+                        return Err(ProgramError::NotEnoughAccountKeys);
+                    }
                 }
 
                 // RuleSet must be owned by this program.
@@ -130,26 +152,33 @@ impl Processor {
                     ],
                 )?;
 
-                // Check RuleSet state account info derivation.
-                let _bump = assert_derivation(
-                    program_id,
-                    rule_set_state_pda_info.key,
-                    &[
-                        STATE_PDA.as_bytes(),
-                        rule_set.owner().as_ref(),
-                        rule_set.name().as_bytes(),
-                        mint_info.key.as_ref(),
-                    ],
-                )?;
+                // If RuleSet state is to be updated, check account info derivation.
+                if args.update_rule_state {
+                    if let Some(rule_set_state_pda_info) = rule_set_state_pda_info {
+                        let _bump = assert_derivation(
+                            program_id,
+                            rule_set_state_pda_info.key,
+                            &[
+                                STATE_PDA.as_bytes(),
+                                rule_set.owner().as_ref(),
+                                rule_set.name().as_bytes(),
+                                mint_info.key.as_ref(),
+                            ],
+                        )?;
+                    } else {
+                        return Err(ProgramError::NotEnoughAccountKeys);
+                    }
+                }
 
-                // Convert the accounts into a map of Pubkeys to the corresponding account infos.
-                // This makes it easy to pass the account infos into validation functions since they store the Pubkeys.
+                // Convert the accounts into a map of `Pubkey`s to the corresponding account infos.
+                // This makes it easy to pass the account infos into validation functions since
+                // they store the `Pubkey`s.
                 let accounts_map = accounts
                     .iter()
                     .map(|account| (*account.key, account))
                     .collect::<HashMap<Pubkey, &AccountInfo>>();
 
-                // Get the Rule from the RuleSet based on the caller-specified Operation.
+                // Get the Rule from the RuleSet based on the caller-specified operation.
                 let rule = rule_set
                     .get(args.operation)
                     .ok_or(RuleSetError::OperationNotFound)?;
@@ -159,7 +188,7 @@ impl Processor {
                     &accounts_map,
                     &args.payload,
                     args.update_rule_state,
-                    rule_set_state_pda_info.key,
+                    rule_set_state_pda_info.map(|account_info| account_info.key),
                 ) {
                     msg!("Failed to validate: {}", err);
                     return Err(err);
