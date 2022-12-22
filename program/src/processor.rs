@@ -4,7 +4,7 @@ use crate::{
     error::RuleSetError,
     instruction::{CreateArgs, RuleSetInstruction, ValidateArgs},
     pda::{PREFIX, STATE_PDA},
-    state::RuleSet,
+    state::{RuleSet, RULE_SET_VERSION},
     utils::{assert_derivation, create_or_allocate_account_raw},
     MAX_NAME_LENGTH,
 };
@@ -70,6 +70,11 @@ fn create_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: CreateArgs) ->
 
     if rule_set.name().len() > MAX_NAME_LENGTH {
         return Err(RuleSetError::NameTooLong.into());
+    }
+
+    // Make sure we know how to work with this RuleSet.
+    if rule_set.version() != RULE_SET_VERSION {
+        return Err(RuleSetError::UnsupportedRuleSetVersion.into());
     }
 
     // The payer/signer must be the RuleSet owner.
@@ -151,6 +156,8 @@ fn validate_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: ValidateArgs
         (None, None, None)
     };
 
+    // If state is being updated for any Rules, the payer must be present and must be a signer so
+    // that the RuleSet state PDA can be created or reallocated.
     if update_rule_state {
         if let Some(payer_info) = payer_info {
             if !payer_info.is_signer {

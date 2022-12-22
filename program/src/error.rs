@@ -107,6 +107,10 @@ pub enum RuleSetError {
     /// 24 - Rule authority is not signer
     #[error("Rule authority is not signer")]
     RuleAuthorityIsNotSigner,
+
+    /// 25 - Unsupported RuleSet version
+    #[error("Unsupported RuleSet version")]
+    UnsupportedRuleSetVersion,
 }
 
 impl PrintProgramError for RuleSetError {
