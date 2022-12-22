@@ -85,8 +85,8 @@ impl Rule {
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
-        update_rule_state: bool,
-        state_pda: Option<&Pubkey>,
+        _update_rule_state: bool,
+        _state_pda: Option<&Pubkey>,
     ) -> (bool, ProgramError) {
         match self {
             Rule::All { rules } => {
@@ -95,7 +95,7 @@ impl Rule {
                 for rule in rules {
                     last = rule.to_error();
                     let result =
-                        rule.low_level_validate(accounts, payload, update_rule_state, state_pda);
+                        rule.low_level_validate(accounts, payload, _update_rule_state, _state_pda);
                     if !result.0 {
                         return result;
                     }
@@ -108,7 +108,7 @@ impl Rule {
                 for rule in rules {
                     last = rule.to_error();
                     let result =
-                        rule.low_level_validate(accounts, payload, update_rule_state, state_pda);
+                        rule.low_level_validate(accounts, payload, _update_rule_state, _state_pda);
                     if result.0 {
                         return result;
                     }
@@ -117,7 +117,7 @@ impl Rule {
             }
             Rule::Not { rule } => {
                 let result =
-                    rule.low_level_validate(accounts, payload, update_rule_state, state_pda);
+                    rule.low_level_validate(accounts, payload, _update_rule_state, _state_pda);
                 (!result.0, result.1)
             }
             Rule::AdditionalSigner { account } => {
