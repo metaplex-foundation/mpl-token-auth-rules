@@ -50,12 +50,17 @@ pub enum RuleSetInstruction {
     #[account(2, name = "system_program", desc = "System program")]
     Create(CreateArgs),
 
-    /// This instruction executes the RuleSet stored in the rule_set PDA account by sending
-    /// it an `AccountsMap` and a `PayloadMap` and calling the `RuleSet`'s `validate` method.
-    #[account(0, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
-    #[account(1, writable, name="rule_set_state_pda", desc = "The PDA account where any RuleSet state is stored")]
-    #[account(2, name="mint", desc="Mint of token asset")]
-    #[account(3, name = "system_program", desc = "System program")]
+    /// This instruction executes the RuleSet stored in the rule_set PDA account by calling the
+    /// `RuleSet`'s `validate` method.  If any of the Rules contained in the RuleSet have state
+    /// information (such as the Frequency rule's `last_update` time value, it is saved in the
+    /// RuleSet state PDA as long as the `rule_authority` signer matches the Pubkey stored in the
+    /// Rule.
+    #[account(0, writable, signer, name="payer", desc="Payer for RuleSet state PDA account")]
+    #[account(1, signer, name="rule_authority", desc="Signing authority for any Rule state updates")]
+    #[account(2, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
+    #[account(3, writable, name="rule_set_state_pda", desc = "The PDA account where any RuleSet state is stored")]
+    #[account(4, name="mint", desc="Mint of token asset")]
+    #[account(5, name = "system_program", desc = "System program")]
     Validate(ValidateArgs),
 }
 /// Builds a `create` instruction.
@@ -89,6 +94,8 @@ pub fn create(
 /// Builds a `validate` instruction.
 #[allow(clippy::too_many_arguments)]
 pub fn validate(
+    payer: Pubkey,
+    rule_authority: Pubkey,
     rule_set_pda: Pubkey,
     rule_set_state_pda: Pubkey,
     mint: Pubkey,
@@ -98,9 +105,11 @@ pub fn validate(
     additional_rule_accounts: Vec<AccountMeta>,
 ) -> Instruction {
     let mut accounts = vec![
+        AccountMeta::new(payer, true),
+        AccountMeta::new_readonly(rule_authority, true),
         AccountMeta::new_readonly(rule_set_pda, false),
-        AccountMeta::new_readonly(rule_set_state_pda, false),
-        AccountMeta::new(mint, false),
+        AccountMeta::new(rule_set_state_pda, false),
+        AccountMeta::new_readonly(mint, false),
         AccountMeta::new_readonly(solana_program::system_program::id(), false),
     ];
 

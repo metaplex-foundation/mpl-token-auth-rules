@@ -103,6 +103,10 @@ pub enum RuleSetError {
     /// 22 - Name too long
     #[error("The operation retrieved is not in the selected RuleSet")]
     OperationNotFound,
+
+    /// 22 - Rule authority is not signer
+    #[error("Rule authority is not signer")]
+    RuleAuthorityIsNotSigner,
 }
 
 impl PrintProgramError for RuleSetError {

@@ -66,6 +66,8 @@ async fn test_payer_not_signer_fails() {
 
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
+        context.payer.pubkey(),
+        context.payer.pubkey(),
         rule_set_addr,
         rule_set_state_addr,
         mint,
@@ -181,6 +183,8 @@ async fn test_additional_signer_and_amount() {
 
     // Create a `validate` instruction WITHOUT the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
+        context.payer.pubkey(),
+        context.payer.pubkey(),
         rule_set_addr,
         rule_set_state_addr,
         mint,
@@ -219,6 +223,8 @@ async fn test_additional_signer_and_amount() {
 
     // Create a `validate` instruction WITH the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
+        context.payer.pubkey(),
+        context.payer.pubkey(),
         rule_set_addr,
         rule_set_state_addr,
         mint,
@@ -251,6 +257,8 @@ async fn test_additional_signer_and_amount() {
 
     // Create a `validate` instruction WITH the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
+        context.payer.pubkey(),
+        context.payer.pubkey(),
         rule_set_addr,
         rule_set_state_addr,
         mint,
@@ -363,6 +371,8 @@ async fn test_pass() {
 
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
+        context.payer.pubkey(),
+        context.payer.pubkey(),
         rule_set_addr,
         rule_set_state_addr,
         mint,

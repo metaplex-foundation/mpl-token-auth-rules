@@ -144,6 +144,8 @@ async fn basic_royalty_enforcement() {
 
     // Create a `validate` instruction for a `Transfer` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
+        context.payer.pubkey(),
+        context.payer.pubkey(),
         rule_set_addr,
         rule_set_state_addr,
         mint,
@@ -204,6 +206,8 @@ async fn basic_royalty_enforcement() {
 
     // Create a `validate` instruction for a `Delegate` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
+        context.payer.pubkey(),
+        context.payer.pubkey(),
         rule_set_addr,
         rule_set_state_addr,
         mint,
@@ -233,6 +237,8 @@ async fn basic_royalty_enforcement() {
     // --------------------------------
     // Create a `validate` instruction for a `SaleTransfer` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
+        context.payer.pubkey(),
+        context.payer.pubkey(),
         rule_set_addr,
         rule_set_state_addr,
         mint,

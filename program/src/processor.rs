@@ -88,10 +88,22 @@ impl Processor {
             }
             RuleSetInstruction::Validate(args) => {
                 let account_info_iter = &mut accounts.iter();
+                let payer_info = next_account_info(account_info_iter)?;
+                let rule_authority_info = next_account_info(account_info_iter)?;
                 let rule_set_pda_info = next_account_info(account_info_iter)?;
                 let rule_set_state_pda_info = next_account_info(account_info_iter)?;
                 let mint_info = next_account_info(account_info_iter)?;
                 let _system_program_info = next_account_info(account_info_iter)?;
+
+                if args.update_rule_state {
+                    if !payer_info.is_signer {
+                        return Err(RuleSetError::PayerIsNotSigner.into());
+                    }
+
+                    if !rule_authority_info.is_signer {
+                        return Err(RuleSetError::RuleAuthorityIsNotSigner.into());
+                    }
+                }
 
                 // RuleSet must be owned by this program.
                 if *rule_set_pda_info.owner != crate::ID {

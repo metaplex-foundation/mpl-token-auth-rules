@@ -57,7 +57,9 @@ pub enum Rule {
         amount: u64,
         operator: CompareOp,
     },
-    Frequency,
+    Frequency {
+        authority: Pubkey,
+    },
     Pass,
 }
 
@@ -250,8 +252,15 @@ impl Rule {
                     (false, RuleSetError::MissingPayloadValue.into())
                 }
             }
-            Rule::Frequency => {
+            Rule::Frequency { authority } => {
                 msg!("Validating Frequency");
+
+                if let Some(account) = accounts.get(authority) {
+                    if !account.is_signer {
+                        return (false, RuleSetError::RuleAuthorityIsNotSigner.into());
+                    }
+                }
+
                 (false, RuleSetError::NotImplemented.into())
             }
             Rule::Pass => {
