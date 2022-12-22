@@ -26,20 +26,6 @@ pub struct ValidateArgs {
     pub update_rule_state: bool,
 }
 
-#[repr(C)]
-#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
-/// Args for `create_frequency_rule` instruction.
-pub struct CreateFrequencyRuleArgs {
-    /// Name of the RuleSet, used in PDA derivation.
-    pub rule_set_name: String,
-    /// Name of the Frequency Rule, used in Frequency PDA derivation.
-    pub freq_rule_name: String,
-    /// Timestamp of last update.
-    pub last_update: i64,
-    /// Timestamp of permitted period.
-    pub period: i64,
-}
-
 #[derive(Debug, Clone, ShankInstruction, BorshSerialize, BorshDeserialize)]
 #[rustfmt::skip]
 /// Instructions available in this program.
