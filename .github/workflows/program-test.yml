@@ -14,7 +14,7 @@ env:
 
 jobs:
   build-and-test-program:
-    runs-on: ubuntu-latest
+    runs-on: buildjet-16vcpu-ubuntu-2204
     env:
       cache_id: program-test
 
