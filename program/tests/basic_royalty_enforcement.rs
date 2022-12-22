@@ -123,6 +123,9 @@ async fn basic_royalty_enforcement() {
 
     context.banks_client.process_transaction(tx).await.unwrap();
 
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new().pubkey();
+
     // Store the payload of data to validate against the rule definition.
     // In this case the Target will be used to look up the `AccountInfo`
     // and see who the owner is.
@@ -134,9 +137,13 @@ async fn basic_royalty_enforcement() {
     // Create a `validate` instruction for a `Transfer` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
+        mint,
+        None,
+        None,
+        None,
         Operation::Transfer.to_string(),
         payload,
-        true,
+        false,
         vec![AccountMeta::new_readonly(
             fake_token_metadata_owned_escrow.pubkey(),
             false,
@@ -192,9 +199,13 @@ async fn basic_royalty_enforcement() {
     // Create a `validate` instruction for a `Delegate` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
+        mint,
+        None,
+        None,
+        None,
         Operation::Delegate.to_string(),
         payload.clone(),
-        true,
+        false,
         vec![],
     );
 
@@ -219,9 +230,13 @@ async fn basic_royalty_enforcement() {
     // Create a `validate` instruction for a `SaleTransfer` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
+        mint,
+        None,
+        None,
+        None,
         Operation::SaleTransfer.to_string(),
         payload,
-        true,
+        false,
         vec![],
     );
 

@@ -1,17 +1,14 @@
 use crate::{
     error::RuleSetError,
     payload::{Payload, PayloadKey},
-    pda::FREQ_PDA,
     utils::assert_derivation,
 };
 use serde::{Deserialize, Serialize};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
-    pubkey::Pubkey, sysvar::Sysvar,
+    pubkey::Pubkey,
 };
 use std::collections::HashMap;
-
-use super::{FrequencyAccount, SolanaAccount};
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub enum CompareOp {
@@ -61,8 +58,7 @@ pub enum Rule {
         operator: CompareOp,
     },
     Frequency {
-        freq_name: String,
-        freq_account: Pubkey,
+        authority: Pubkey,
     },
     Pass,
 }
@@ -73,8 +69,10 @@ impl Rule {
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
         update_rule_state: bool,
+        state_pda: Option<&Pubkey>,
     ) -> ProgramResult {
-        let (status, rollup_err) = self.low_level_validate(accounts, payload, update_rule_state);
+        let (status, rollup_err) =
+            self.low_level_validate(accounts, payload, update_rule_state, state_pda);
 
         if status {
             ProgramResult::Ok(())
@@ -87,7 +85,8 @@ impl Rule {
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
-        update_rule_state: bool,
+        _update_rule_state: bool,
+        _state_pda: Option<&Pubkey>,
     ) -> (bool, ProgramError) {
         match self {
             Rule::All { rules } => {
@@ -95,7 +94,8 @@ impl Rule {
                 let mut last = self.to_error();
                 for rule in rules {
                     last = rule.to_error();
-                    let result = rule.low_level_validate(accounts, payload, update_rule_state);
+                    let result =
+                        rule.low_level_validate(accounts, payload, _update_rule_state, _state_pda);
                     if !result.0 {
                         return result;
                     }
@@ -107,7 +107,8 @@ impl Rule {
                 let mut last = self.to_error();
                 for rule in rules {
                     last = rule.to_error();
-                    let result = rule.low_level_validate(accounts, payload, update_rule_state);
+                    let result =
+                        rule.low_level_validate(accounts, payload, _update_rule_state, _state_pda);
                     if result.0 {
                         return result;
                     }
@@ -115,7 +116,8 @@ impl Rule {
                 (false, last)
             }
             Rule::Not { rule } => {
-                let result = rule.low_level_validate(accounts, payload, update_rule_state);
+                let result =
+                    rule.low_level_validate(accounts, payload, _update_rule_state, _state_pda);
                 (!result.0, result.1)
             }
             Rule::AdditionalSigner { account } => {
@@ -250,122 +252,23 @@ impl Rule {
                     (false, RuleSetError::MissingPayloadValue.into())
                 }
             }
-            Rule::Frequency {
-                freq_name: _,
-                freq_account,
-            } => {
+            Rule::Frequency { authority } => {
                 msg!("Validating Frequency");
-                // Get the Frequency Rule `AccountInfo`.
-                let freq_account_info = if let Some(account_info) = accounts.get(freq_account) {
-                    account_info
-                } else {
-                    return (false, RuleSetError::MissingAccount.into());
-                };
 
-                // Grab the current time.
-                let current_time = match solana_program::clock::Clock::get() {
-                    Ok(clock) => clock,
-                    Err(err) => return (false, err),
-                };
-
-                // Deserialize the Frequency Rule account data.
-                let mut freq_account_data =
-                    match FrequencyAccount::from_account_info(freq_account_info) {
-                        Ok(freq_account_data) => freq_account_data,
-                        Err(err) => return (false, err),
-                    };
-
-                // Calculate last time + period.
-                let freq_check = if let Some(val) = freq_account_data
-                    .last_update
-                    .checked_add(freq_account_data.period)
-                {
-                    val
-                } else {
-                    return (false, RuleSetError::NumericalOverflow.into());
-                };
-
-                // Compare current time to last time + period.
-                if current_time.unix_timestamp < freq_check {
-                    return (false, self.to_error());
-                }
-
-                // If requested, update `last_update` time in Frequency rule to current time.
-                if update_rule_state {
-                    freq_account_data.last_update = current_time.unix_timestamp;
-                    // Serialize the Frequency Rule.
-                    match freq_account_data.to_account_data(freq_account_info) {
-                        Ok(_) => (true, self.to_error()),
-                        Err(err) => (false, err),
+                if let Some(account) = accounts.get(authority) {
+                    if !account.is_signer {
+                        return (false, RuleSetError::RuleAuthorityIsNotSigner.into());
                     }
                 } else {
-                    (true, self.to_error())
+                    return (false, RuleSetError::MissingAccount.into());
                 }
+
+                (false, RuleSetError::NotImplemented.into())
             }
             Rule::Pass => {
                 msg!("Validating Pass");
                 (true, self.to_error())
             }
-        }
-    }
-
-    pub fn assert_rule_pda_derivations(
-        &self,
-        owner: &Pubkey,
-        rule_set_name: &String,
-        accounts: &HashMap<Pubkey, &AccountInfo>,
-    ) -> ProgramResult {
-        match self {
-            Rule::All { rules } => {
-                for rule in rules {
-                    rule.assert_rule_pda_derivations(owner, rule_set_name, accounts)?;
-                }
-                Ok(())
-            }
-            Rule::Any { rules } => {
-                let mut error: Option<ProgramResult> = None;
-                for rule in rules {
-                    match rule.assert_rule_pda_derivations(owner, rule_set_name, accounts) {
-                        Ok(_) => return Ok(()),
-                        Err(e) => error = Some(Err(e)),
-                    }
-                }
-                error.unwrap_or_else(|| Err(RuleSetError::DataTypeMismatch.into()))
-            }
-            Rule::Frequency {
-                freq_name,
-                freq_account,
-            } => {
-                msg!("Assert Frequency PDA deriviation");
-                if let Some(freq_pda_account_info) = accounts.get(freq_account) {
-                    // Frequency PDA account must be owned by this program.
-                    if *freq_pda_account_info.owner != crate::ID {
-                        return Err(RuleSetError::IncorrectOwner.into());
-                    }
-
-                    // Frequency PDA account must not be empty.
-                    if freq_pda_account_info.data_is_empty() {
-                        return Err(RuleSetError::DataIsEmpty.into());
-                    }
-
-                    // Check Frequency account info derivation.
-                    let _bump = assert_derivation(
-                        &crate::ID,
-                        freq_account,
-                        &[
-                            FREQ_PDA.as_bytes(),
-                            owner.as_ref(),
-                            rule_set_name.as_bytes(),
-                            freq_name.as_bytes(),
-                        ],
-                    )?;
-                } else {
-                    return Err(RuleSetError::MissingAccount.into());
-                }
-
-                Ok(())
-            }
-            _ => Ok(()),
         }
     }
 

@@ -26,41 +26,29 @@ pub struct ValidateArgs {
     pub update_rule_state: bool,
 }
 
-#[repr(C)]
-#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
-/// Args for `create_frequency_rule` instruction.
-pub struct CreateFrequencyRuleArgs {
-    /// Name of the RuleSet, used in PDA derivation.
-    pub rule_set_name: String,
-    /// Name of the Frequency Rule, used in Frequency PDA derivation.
-    pub freq_rule_name: String,
-    /// Timestamp of last update.
-    pub last_update: i64,
-    /// Timestamp of permitted period.
-    pub period: i64,
-}
-
 #[derive(Debug, Clone, ShankInstruction, BorshSerialize, BorshDeserialize)]
 #[rustfmt::skip]
 /// Instructions available in this program.
 pub enum RuleSetInstruction {
     /// This instruction stores a caller-pre-serialized `RuleSet` into the rule_set PDA account.
-    #[account(0, writable, signer, name="payer", desc="Payer and creator of the RuleSet")]
+    #[account(0, signer, writable, name="payer", desc="Payer and creator of the RuleSet")]
     #[account(1, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
     #[account(2, name = "system_program", desc = "System program")]
     Create(CreateArgs),
 
-    /// This instruction executes the RuleSet stored in the rule_set PDA account by sending
-    /// it an `AccountsMap` and a `PayloadMap` and calling the `RuleSet`'s `validate` method.
-    #[account(0, name="rule_set", desc = "The PDA account where the RuleSet is stored")]
-    #[account(1, name = "system_program", desc = "System program")]
-    Validate(ValidateArgs),
-
-    /// This instruction stores a Frequency Rule into a Frequency Rule PDA account.
-    #[account(0, writable, signer, name="payer", desc="Payer and creator of the Frequency Rule")]
-    #[account(1, writable, name="frequency_pda", desc = "The PDA account where the Frequency Rule is stored")]
+    /// This instruction executes the RuleSet stored in the rule_set PDA account by calling the
+    /// `RuleSet`'s `validate` method.  If any of the Rules contained in the RuleSet have state
+    /// information (such as the Frequency rule's `last_update` time value), the optional accounts
+    /// must be provided in order to save the updated stated in the RuleSet state PDA.  Note that
+    /// updating the state for a Rule requires that the `rule_authority` signer matches the Pubkey
+    /// stored in the Rule.
+    #[account(0, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
+    #[account(1, name="mint", desc="Mint of token asset")]
     #[account(2, name = "system_program", desc = "System program")]
-    CreateFrequencyRule(CreateFrequencyRuleArgs),
+    #[account(3, optional, signer, writable, name="payer", desc="Payer for RuleSet state PDA account")]
+    #[account(4, optional, signer, name="rule_authority", desc="Signing authority for any Rule state updates")]
+    #[account(5, optional, writable, name="rule_set_state_pda", desc = "The PDA account where any RuleSet state is stored")]
+    Validate(ValidateArgs),
 }
 /// Builds a `create` instruction.
 pub fn create(
@@ -94,6 +82,10 @@ pub fn create(
 #[allow(clippy::too_many_arguments)]
 pub fn validate(
     rule_set_pda: Pubkey,
+    mint: Pubkey,
+    payer: Option<Pubkey>,
+    rule_authority: Option<Pubkey>,
+    rule_set_state_pda: Option<Pubkey>,
     operation: String,
     payload: Payload,
     update_rule_state: bool,
@@ -101,8 +93,21 @@ pub fn validate(
 ) -> Instruction {
     let mut accounts = vec![
         AccountMeta::new_readonly(rule_set_pda, false),
+        AccountMeta::new_readonly(mint, false),
         AccountMeta::new_readonly(solana_program::system_program::id(), false),
     ];
+
+    if let Some(payer) = payer {
+        accounts.push(AccountMeta::new(payer, true));
+    }
+
+    if let Some(rule_authority) = rule_authority {
+        accounts.push(AccountMeta::new_readonly(rule_authority, true));
+    }
+
+    if let Some(rule_set_state_pda) = rule_set_state_pda {
+        accounts.push(AccountMeta::new(rule_set_state_pda, false));
+    }
 
     accounts.extend(additional_rule_accounts);
 
@@ -113,35 +118,6 @@ pub fn validate(
             operation,
             payload,
             update_rule_state,
-        })
-        .try_to_vec()
-        .unwrap(),
-    }
-}
-
-/// Builds a `create_frequency_rule` instruction.
-pub fn create_frequency_rule(
-    payer: Pubkey,
-    freq_rule_pda: Pubkey,
-    rule_set_name: String,
-    freq_rule_name: String,
-    last_update: i64,
-    period: i64,
-) -> Instruction {
-    let accounts = vec![
-        AccountMeta::new(payer, true),
-        AccountMeta::new(freq_rule_pda, false),
-        AccountMeta::new_readonly(solana_program::system_program::id(), false),
-    ];
-
-    Instruction {
-        program_id: crate::ID,
-        accounts,
-        data: RuleSetInstruction::CreateFrequencyRule(CreateFrequencyRuleArgs {
-            rule_set_name,
-            freq_rule_name,
-            last_update,
-            period,
         })
         .try_to_vec()
         .unwrap(),
