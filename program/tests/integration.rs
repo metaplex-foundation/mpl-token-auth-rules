@@ -8,7 +8,6 @@ use mpl_token_auth_rules::{
     state::{CompareOp, Rule, RuleSet},
 };
 use num_traits::cast::FromPrimitive;
-use num_traits::ToPrimitive;
 use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_program::instruction::{AccountMeta, InstructionError};
@@ -57,7 +56,7 @@ async fn test_payer_not_signer_fails() {
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
-        Operation::Transfer.to_u16().unwrap(),
+        Operation::Transfer.to_string(),
         Payload::default(),
         true,
         vec![],
@@ -119,7 +118,7 @@ async fn test_additional_signer_and_amount() {
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_u16().unwrap(), overall_rule)
+        .add(Operation::Transfer.to_string(), overall_rule)
         .unwrap();
 
     println!("{:#?}", rule_set);
@@ -159,7 +158,7 @@ async fn test_additional_signer_and_amount() {
     // Create a `validate` instruction WITHOUT the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
-        Operation::Transfer.to_u16().unwrap(),
+        Operation::Transfer.to_string(),
         payload.clone(),
         true,
         vec![AccountMeta::new_readonly(context.payer.pubkey(), true)],
@@ -195,7 +194,7 @@ async fn test_additional_signer_and_amount() {
     // Create a `validate` instruction WITH the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
-        Operation::Transfer.to_u16().unwrap(),
+        Operation::Transfer.to_string(),
         payload,
         true,
         vec![
@@ -225,7 +224,7 @@ async fn test_additional_signer_and_amount() {
     // Create a `validate` instruction WITH the second signer.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
-        Operation::Transfer.to_u16().unwrap(),
+        Operation::Transfer.to_string(),
         payload,
         true,
         vec![
@@ -319,7 +318,7 @@ async fn test_frequency() {
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_u16().unwrap(), freq_rule)
+        .add(Operation::Transfer.to_string(), freq_rule)
         .unwrap();
 
     println!("{:#?}", rule_set);
@@ -362,7 +361,7 @@ async fn test_frequency() {
     // Create a `validate` instruction passing in the Frequency Rule account.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
-        Operation::Transfer.to_u16().unwrap(),
+        Operation::Transfer.to_string(),
         Payload::default(),
         true,
         vec![AccountMeta::new(freq_account, false)],
@@ -403,7 +402,7 @@ async fn test_pass() {
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_u16().unwrap(), pass_rule)
+        .add(Operation::Transfer.to_string(), pass_rule)
         .unwrap();
 
     println!("{:#?}", rule_set);
@@ -446,7 +445,7 @@ async fn test_pass() {
     // Create a `validate` instruction.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
-        Operation::Transfer.to_u16().unwrap(),
+        Operation::Transfer.to_string(),
         Payload::default(),
         true,
         vec![],

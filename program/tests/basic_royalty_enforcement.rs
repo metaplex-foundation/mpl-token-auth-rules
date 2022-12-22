@@ -6,7 +6,6 @@ use mpl_token_auth_rules::{
     payload::{LeafInfo, Payload, PayloadKey, PayloadType},
     state::{Rule, RuleSet},
 };
-use num_traits::ToPrimitive;
 use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_program::instruction::AccountMeta;
@@ -54,20 +53,17 @@ async fn basic_royalty_enforcement() {
         context.payer.pubkey(),
     );
     basic_royalty_enforcement_rule_set
-        .add(
-            Operation::Transfer.to_u16().unwrap(),
-            owned_by_token_metadata,
-        )
+        .add(Operation::Transfer.to_string(), owned_by_token_metadata)
         .unwrap();
     basic_royalty_enforcement_rule_set
         .add(
-            Operation::Delegate.to_u16().unwrap(),
+            Operation::Delegate.to_string(),
             leaf_in_marketplace_tree.clone(),
         )
         .unwrap();
     basic_royalty_enforcement_rule_set
         .add(
-            Operation::SaleTransfer.to_u16().unwrap(),
+            Operation::SaleTransfer.to_string(),
             leaf_in_marketplace_tree,
         )
         .unwrap();
@@ -138,7 +134,7 @@ async fn basic_royalty_enforcement() {
     // Create a `validate` instruction for a `Transfer` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
-        Operation::Transfer.to_u16().unwrap(),
+        Operation::Transfer.to_string(),
         payload,
         true,
         vec![AccountMeta::new_readonly(
@@ -196,7 +192,7 @@ async fn basic_royalty_enforcement() {
     // Create a `validate` instruction for a `Delegate` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
-        Operation::Delegate.to_u16().unwrap(),
+        Operation::Delegate.to_string(),
         payload.clone(),
         true,
         vec![],
@@ -223,7 +219,7 @@ async fn basic_royalty_enforcement() {
     // Create a `validate` instruction for a `SaleTransfer` operation.
     let validate_ix = mpl_token_auth_rules::instruction::validate(
         rule_set_addr,
-        Operation::SaleTransfer.to_u16().unwrap(),
+        Operation::SaleTransfer.to_string(),
         payload,
         true,
         vec![],
