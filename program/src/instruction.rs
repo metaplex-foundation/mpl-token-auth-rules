@@ -19,7 +19,7 @@ pub struct CreateArgs {
 /// Args for `validate` instruction.
 pub struct ValidateArgs {
     /// `Operation` to validate.
-    pub operation: u16,
+    pub operation: String,
     /// `Payload` data used for rule validation.
     pub payload: Payload,
     /// Update any relevant state stored in Rule, such as the Frequency `last_update` time value.
@@ -94,7 +94,7 @@ pub fn create(
 #[allow(clippy::too_many_arguments)]
 pub fn validate(
     rule_set_pda: Pubkey,
-    operation: u16,
+    operation: String,
     payload: Payload,
     update_rule_state: bool,
     additional_rule_accounts: Vec<AccountMeta>,
