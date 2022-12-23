@@ -5,7 +5,7 @@ use crate::{
     instruction::{Context, Create, CreateArgs, RuleSetInstruction, Validate, ValidateArgs},
     pda::{PREFIX, STATE_PDA},
     state::{RuleSet, RULE_SET_VERSION},
-    utils::{assert_derivation, create_or_allocate_account_raw},
+    utils::{assert_derivation, create_or_allocate_account_raw, resize_or_reallocate_account_raw},
     MAX_NAME_LENGTH,
 };
 use borsh::BorshDeserialize;
@@ -99,15 +99,24 @@ fn create_v1(program_id: &Pubkey, ctx: Context<Create>, args: CreateArgs) -> Pro
         &[bump],
     ];
 
-    // Create or allocate RuleSet PDA account.
-    create_or_allocate_account_raw(
-        *program_id,
-        ctx.accounts.rule_set_pda_info,
-        ctx.accounts.system_program_info,
-        ctx.accounts.payer_info,
-        serialized_rule_set.len(),
-        rule_set_seeds,
-    )?;
+    // Create or allocate, resize or reallocate RuleSet PDA.
+    if ctx.accounts.rule_set_pda_info.data_is_empty() {
+        create_or_allocate_account_raw(
+            *program_id,
+            ctx.accounts.rule_set_pda_info,
+            ctx.accounts.system_program_info,
+            ctx.accounts.payer_info,
+            serialized_rule_set.len(),
+            rule_set_seeds,
+        )?;
+    } else {
+        resize_or_reallocate_account_raw(
+            ctx.accounts.rule_set_pda_info,
+            ctx.accounts.payer_info,
+            ctx.accounts.system_program_info,
+            serialized_rule_set.len(),
+        )?;
+    }
 
     // Copy user-pre-serialized RuleSet to PDA account.
     sol_memcpy(
