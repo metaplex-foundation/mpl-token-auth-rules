@@ -4,6 +4,10 @@ pub mod utils;
 
 use mpl_token_auth_rules::{
     error::RuleSetError,
+    instruction::{
+        builders::{CreateBuilder, ValidateBuilder},
+        CreateArgs, InstructionBuilder, ValidateArgs,
+    },
     payload::{Payload, PayloadKey, PayloadType},
     state::{CompareOp, Rule, RuleSet},
 };
@@ -30,12 +34,15 @@ async fn test_payer_not_signer_fails() {
     );
 
     // Create a `create` instruction.
-    let create_ix = mpl_token_auth_rules::instruction::create(
-        context.payer.pubkey(),
-        rule_set_addr,
-        vec![],
-        vec![],
-    );
+    let create_ix = CreateBuilder::new()
+        .payer(context.payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .additional_rule_accounts(vec![])
+        .build(CreateArgs::V1 {
+            serialized_rule_set: vec![],
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a non-signed transaction.
     let create_tx = Transaction::new_with_payer(&[create_ix], Some(&context.payer.pubkey()));
@@ -57,17 +64,17 @@ async fn test_payer_not_signer_fails() {
     let mint = Keypair::new().pubkey();
 
     // Create a `validate` instruction.
-    let validate_ix = mpl_token_auth_rules::instruction::validate(
-        rule_set_addr,
-        mint,
-        None,
-        None,
-        None,
-        Operation::Transfer.to_string(),
-        Payload::default(),
-        false,
-        vec![],
-    );
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .additional_rule_accounts(vec![])
+        .build(ValidateArgs::V1 {
+            operation: Operation::Transfer.to_string(),
+            payload: Payload::default(),
+            update_rule_state: false,
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a non-signed transaction.
     let validate_tx = Transaction::new_with_payer(&[validate_ix], Some(&context.payer.pubkey()));
@@ -131,18 +138,21 @@ async fn test_additional_signer_and_amount() {
     println!("{:#?}", rule_set);
 
     // Serialize the RuleSet using RMP serde.
-    let mut serialized_data = Vec::new();
+    let mut serialized_rule_set = Vec::new();
     rule_set
-        .serialize(&mut Serializer::new(&mut serialized_data))
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
         .unwrap();
 
     // Create a `create` instruction.
-    let create_ix = mpl_token_auth_rules::instruction::create(
-        context.payer.pubkey(),
-        rule_set_addr,
-        serialized_data,
-        vec![],
-    );
+    let create_ix = CreateBuilder::new()
+        .payer(context.payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .additional_rule_accounts(vec![])
+        .build(CreateArgs::V1 {
+            serialized_rule_set,
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a transaction.
     let create_tx = Transaction::new_signed_with_payer(
@@ -166,17 +176,20 @@ async fn test_additional_signer_and_amount() {
     let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(2))]);
 
     // Create a `validate` instruction WITHOUT the second signer.
-    let validate_ix = mpl_token_auth_rules::instruction::validate(
-        rule_set_addr,
-        mint,
-        None,
-        None,
-        None,
-        Operation::Transfer.to_string(),
-        payload.clone(),
-        false,
-        vec![AccountMeta::new_readonly(context.payer.pubkey(), true)],
-    );
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(
+            context.payer.pubkey(),
+            true,
+        )])
+        .build(ValidateArgs::V1 {
+            operation: Operation::Transfer.to_string(),
+            payload: payload.clone(),
+            update_rule_state: false,
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a transaction.
     let validate_tx = Transaction::new_signed_with_payer(
@@ -206,20 +219,20 @@ async fn test_additional_signer_and_amount() {
     }
 
     // Create a `validate` instruction WITH the second signer.
-    let validate_ix = mpl_token_auth_rules::instruction::validate(
-        rule_set_addr,
-        mint,
-        None,
-        None,
-        None,
-        Operation::Transfer.to_string(),
-        payload,
-        false,
-        vec![
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .additional_rule_accounts(vec![
             AccountMeta::new_readonly(context.payer.pubkey(), true),
             AccountMeta::new_readonly(second_signer.pubkey(), true),
-        ],
-    );
+        ])
+        .build(ValidateArgs::V1 {
+            operation: Operation::Transfer.to_string(),
+            payload,
+            update_rule_state: false,
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a transaction.
     let validate_tx = Transaction::new_signed_with_payer(
@@ -240,20 +253,20 @@ async fn test_additional_signer_and_amount() {
     let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(1))]);
 
     // Create a `validate` instruction WITH the second signer.
-    let validate_ix = mpl_token_auth_rules::instruction::validate(
-        rule_set_addr,
-        mint,
-        None,
-        None,
-        None,
-        Operation::Transfer.to_string(),
-        payload,
-        false,
-        vec![
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .additional_rule_accounts(vec![
             AccountMeta::new_readonly(context.payer.pubkey(), true),
             AccountMeta::new_readonly(second_signer.pubkey(), true),
-        ],
-    );
+        ])
+        .build(ValidateArgs::V1 {
+            operation: Operation::Transfer.to_string(),
+            payload,
+            update_rule_state: false,
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a transaction.
     let validate_tx = Transaction::new_signed_with_payer(
@@ -308,18 +321,21 @@ async fn test_pass() {
     println!("{:#?}", rule_set);
 
     // Serialize the RuleSet using RMP serde.
-    let mut serialized_data = Vec::new();
+    let mut serialized_rule_set = Vec::new();
     rule_set
-        .serialize(&mut Serializer::new(&mut serialized_data))
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
         .unwrap();
 
     // Create a `create` instruction.
-    let create_ix = mpl_token_auth_rules::instruction::create(
-        context.payer.pubkey(),
-        rule_set_addr,
-        serialized_data,
-        vec![],
-    );
+    let create_ix = CreateBuilder::new()
+        .payer(context.payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .additional_rule_accounts(vec![])
+        .build(CreateArgs::V1 {
+            serialized_rule_set,
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a transaction.
     let create_tx = Transaction::new_signed_with_payer(
@@ -346,17 +362,17 @@ async fn test_pass() {
     let mint = Keypair::new().pubkey();
 
     // Create a `validate` instruction.
-    let validate_ix = mpl_token_auth_rules::instruction::validate(
-        rule_set_addr,
-        mint,
-        None,
-        None,
-        None,
-        Operation::Transfer.to_string(),
-        Payload::default(),
-        false,
-        vec![],
-    );
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .additional_rule_accounts(vec![])
+        .build(ValidateArgs::V1 {
+            operation: Operation::Transfer.to_string(),
+            payload: Payload::default(),
+            update_rule_state: false,
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a transaction.
     let validate_tx = Transaction::new_signed_with_payer(

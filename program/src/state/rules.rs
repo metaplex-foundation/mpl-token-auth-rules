@@ -69,10 +69,16 @@ impl Rule {
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
         update_rule_state: bool,
-        state_pda: Option<&Pubkey>,
+        rule_set_state_pda: &Option<&AccountInfo>,
+        rule_authority: &Option<&AccountInfo>,
     ) -> ProgramResult {
-        let (status, rollup_err) =
-            self.low_level_validate(accounts, payload, update_rule_state, state_pda);
+        let (status, rollup_err) = self.low_level_validate(
+            accounts,
+            payload,
+            update_rule_state,
+            rule_set_state_pda,
+            rule_authority,
+        );
 
         if status {
             ProgramResult::Ok(())
@@ -86,7 +92,8 @@ impl Rule {
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
         _update_rule_state: bool,
-        _state_pda: Option<&Pubkey>,
+        _rule_set_state_pda: &Option<&AccountInfo>,
+        _rule_authority: &Option<&AccountInfo>,
     ) -> (bool, ProgramError) {
         match self {
             Rule::All { rules } => {
@@ -94,8 +101,13 @@ impl Rule {
                 let mut last = self.to_error();
                 for rule in rules {
                     last = rule.to_error();
-                    let result =
-                        rule.low_level_validate(accounts, payload, _update_rule_state, _state_pda);
+                    let result = rule.low_level_validate(
+                        accounts,
+                        payload,
+                        _update_rule_state,
+                        _rule_set_state_pda,
+                        _rule_authority,
+                    );
                     if !result.0 {
                         return result;
                     }
@@ -107,8 +119,13 @@ impl Rule {
                 let mut last = self.to_error();
                 for rule in rules {
                     last = rule.to_error();
-                    let result =
-                        rule.low_level_validate(accounts, payload, _update_rule_state, _state_pda);
+                    let result = rule.low_level_validate(
+                        accounts,
+                        payload,
+                        _update_rule_state,
+                        _rule_set_state_pda,
+                        _rule_authority,
+                    );
                     if result.0 {
                         return result;
                     }
@@ -116,8 +133,13 @@ impl Rule {
                 (false, last)
             }
             Rule::Not { rule } => {
-                let result =
-                    rule.low_level_validate(accounts, payload, _update_rule_state, _state_pda);
+                let result = rule.low_level_validate(
+                    accounts,
+                    payload,
+                    _update_rule_state,
+                    _rule_set_state_pda,
+                    _rule_authority,
+                );
                 (!result.0, result.1)
             }
             Rule::AdditionalSigner { account } => {
