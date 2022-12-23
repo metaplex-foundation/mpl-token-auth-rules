@@ -1,3 +1,4 @@
+//! The definition and associated functions of the `Payload` type that is passed from the program client to the auth rules program for validation.
 use crate::error::RuleSetError;
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
@@ -7,19 +8,25 @@ use std::collections::HashMap;
 #[repr(C)]
 #[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+/// A seed path type used by the `DerivedKeyMatch` rule.
 pub struct SeedsVec {
+    /// The vector of derivation seeds.
     pub seeds: Vec<Vec<u8>>,
 }
 
 #[repr(C)]
 #[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+/// A proof type used by the `PubkeyTreeMatch` rule.
 pub struct LeafInfo {
+    /// The leaf the pubkey exists on.
     pub leaf: [u8; 32],
+    /// The merkle proof for the leaf.
     pub proof: Vec<[u8; 32]>,
 }
 
 impl LeafInfo {
+    /// Create a new `LeafInfo`.
     pub fn new(leaf: [u8; 32], proof: Vec<[u8; 32]>) -> Self {
         Self { leaf, proof }
     }
@@ -28,16 +35,22 @@ impl LeafInfo {
 #[repr(C)]
 #[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+/// Variants representing the different types represented in a payload.
 pub enum PayloadType {
+    /// A plain `Pubkey`.
     Pubkey(Pubkey),
+    /// Derivation seeds.
     Seeds(SeedsVec),
+    /// A merkle leaf and proof.
     MerkleProof(LeafInfo),
+    /// A plain `u64` used for `Amount`.
     Number(u64),
 }
 
 #[repr(C)]
 #[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Default)]
+/// A wrapper type for the payload hashmap.
 pub struct Payload {
     map: HashMap<PayloadKey, PayloadType>,
 }
@@ -154,9 +167,15 @@ impl Payload {
     Clone,
     Copy,
 )]
+
+/// An enum representing the different members of a standard token operation.
 pub enum PayloadKey {
+    /// The target of the operation, e.g. the recipient of a transfer.
     Target,
+    /// The holder of the token, e.g. the sender of a transfer.
     Holder,
+    /// The authority of a transfer, e.g. the delegate of token.
     Authority,
+    /// The amount being transferred.
     Amount,
 }

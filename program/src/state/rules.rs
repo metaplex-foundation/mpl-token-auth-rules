@@ -11,59 +11,96 @@ use solana_program::{
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+/// Operators that can be used to compare against an `Amount` rule.
 pub enum CompareOp {
+    /// Less Than
     Lt,
+    /// Less Than or Equal To
     LtEq,
+    /// Equal To
     Eq,
+    /// Greater Than or Equal To
     GtEq,
+    /// Greater Than
     Gt,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+/// The struct containing every type of Rule and its associated data.
 pub enum Rule {
+    /// Group AND, where every rule contained must pass.
     All {
+        /// The vector of Rules contained under All.
         rules: Vec<Rule>,
     },
+    /// Group OR, where at least one rule contained must pass.
     Any {
+        /// The vector of Rules contained under Any.
         rules: Vec<Rule>,
     },
+    /// Negation, where the contained rule must fail.
     Not {
+        /// The Rule contained under Not.
         rule: Box<Rule>,
     },
+    /// An additional signer must be present.
     AdditionalSigner {
+        /// The public key that must have also signed the transaction.
         account: Pubkey,
     },
+    /// Direct comparison between Pubkeys.
     PubkeyMatch {
+        /// The public key to be compared against.
         pubkey: Pubkey,
+        /// The field in the `Payload` to be compared.
         field: PayloadKey,
     },
+    /// The comparing `Pubkey` must be in the list of `Pubkey`s.
     PubkeyListMatch {
+        /// The list of public keys to be compared against.
         pubkeys: Vec<Pubkey>,
+        /// The field in the `Payload` to be compared.
         field: PayloadKey,
     },
+    /// The pubkey must be a member of the Merkle tree.
     PubkeyTreeMatch {
+        /// The root of the Merkle tree.
         root: [u8; 32],
+        /// The field in the `Payload` to be compared.
         field: PayloadKey,
     },
+    /// A resulting derivation of seeds must match to a `Pubkey`.
     DerivedKeyMatch {
+        /// The `Pubkey` to be compared against.
         account: Pubkey,
+        /// The field in the `Payload` to be compared.
         field: PayloadKey,
     },
+    /// The `Pubkey` must be owned by a given program.
     ProgramOwned {
+        /// The program that must own the `Pubkey`.
         program: Pubkey,
+        /// The field in the `Payload` to be compared.
         field: PayloadKey,
     },
+    /// Comparison against the amount of tokens being transferred.
     Amount {
+        /// The amount to be compared against.
         amount: u64,
+        /// The operator to be used in the comparison.
         operator: CompareOp,
     },
+    /// Comparison based on time between operations.
     Frequency {
+        /// The authority of the frequency account.
         authority: Pubkey,
     },
+    /// An operation that always succeeds.
     Pass,
 }
 
 impl Rule {
+    /// The top level validation function which parses an entire rule tree.
     pub fn validate(
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
@@ -87,6 +124,7 @@ impl Rule {
         }
     }
 
+    /// Lower level validation function which iterates through a rule tree and applies boolean logic to rule results.
     pub fn low_level_validate(
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
@@ -294,6 +332,7 @@ impl Rule {
         }
     }
 
+    /// Convert the rule to a corresponding error resulting from the rule failure.
     pub fn to_error(&self) -> ProgramError {
         match self {
             Rule::All { .. } | Rule::Any { .. } | Rule::Not { .. } | Rule::Pass => {

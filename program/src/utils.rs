@@ -1,3 +1,4 @@
+//! Utilities for the program
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
@@ -60,7 +61,7 @@ pub fn create_or_allocate_account_raw<'a>(
     Ok(())
 }
 
-/// Resize an account using realloc, lifted from Solana Cookbook
+/// Resize an account using realloc, lifted from Solana Cookbook.
 #[inline(always)]
 pub fn resize_or_reallocate_account_raw<'a>(
     target_account: &AccountInfo<'a>,
@@ -86,6 +87,7 @@ pub fn resize_or_reallocate_account_raw<'a>(
     Ok(())
 }
 
+/// Verify the derivation of the seeds against the given account.
 pub fn assert_derivation(
     program_id: &Pubkey,
     account: &Pubkey,
@@ -98,6 +100,7 @@ pub fn assert_derivation(
     Ok(bump)
 }
 
+/// Assert that the given account is owned by the given pubkey.
 pub fn assert_owned_by(account: &AccountInfo, owner: &Pubkey) -> ProgramResult {
     if account.owner != owner {
         Err(RuleSetError::IncorrectOwner.into())

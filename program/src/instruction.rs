@@ -11,6 +11,7 @@ use solana_program::{
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 /// Args for `create` instruction.
 pub enum CreateOrUpdateArgs {
+    /// V1 implementation of the `create` instruction arguments.
     V1 {
         /// RuleSet pre-serialized by caller into the MessagePack format.
         serialized_rule_set: Vec<u8>,
@@ -21,6 +22,7 @@ pub enum CreateOrUpdateArgs {
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 /// Args for `validate` instruction.
 pub enum ValidateArgs {
+    /// V1 implementation of the `validate` instruction arguments.
     V1 {
         /// `Operation` to validate.
         operation: String,
@@ -118,11 +120,16 @@ impl InstructionBuilder for builders::Validate {
     }
 }
 
+/// Account context holding the accounts used by various instructions.
 pub struct Context<'a, T> {
+    /// The struct holding the named accounts used by an instruction.
     pub accounts: T,
+    /// All remaining accounts passed to an instruction.
     pub remaining_accounts: Vec<&'a AccountInfo<'a>>,
 }
 
+/// A trait for building an instruction.
 pub trait InstructionBuilder {
+    /// The required function to return the built instruction.
     fn instruction(&self) -> solana_program::instruction::Instruction;
 }
