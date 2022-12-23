@@ -71,8 +71,8 @@ pub enum Rule {
     },
     /// A resulting derivation of seeds must match to a `Pubkey`.
     DerivedKeyMatch {
-        /// The `Pubkey` to be compared against.
-        account: Pubkey,
+        /// The program for which the derivation must be true.
+        program: Pubkey,
         /// The field in the `Payload` to be compared.
         field: PayloadKey,
     },
@@ -251,10 +251,10 @@ impl Rule {
                     (false, self.to_error())
                 }
             }
-            Rule::DerivedKeyMatch { account, field } => {
+            Rule::DerivedKeyMatch { program, field } => {
                 msg!("Validating DerivedKeyMatch");
 
-                let seeds = match payload.get_seeds(field) {
+                let (account, seeds) = match payload.get_account_and_seeds(field) {
                     Some(seeds) => seeds,
                     _ => return (false, RuleSetError::MissingPayloadValue.into()),
                 };
@@ -264,8 +264,8 @@ impl Rule {
                     .iter()
                     .map(Vec::as_slice)
                     .collect::<Vec<&[u8]>>();
-                let seeds = &vec_of_slices[..];
-                if let Ok(_bump) = assert_derivation(&crate::ID, account, seeds) {
+
+                if let Ok(_bump) = assert_derivation(program, account, &vec_of_slices) {
                     (true, self.to_error())
                 } else {
                     (false, self.to_error())

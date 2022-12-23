@@ -14,6 +14,13 @@ pub struct SeedsVec {
     pub seeds: Vec<Vec<u8>>,
 }
 
+impl SeedsVec {
+    /// Create a new `SeedsVec`.
+    pub fn new(seeds: Vec<Vec<u8>>) -> Self {
+        Self { seeds }
+    }
+}
+
 #[repr(C)]
 #[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
@@ -39,8 +46,8 @@ impl LeafInfo {
 pub enum PayloadType {
     /// A plain `Pubkey`.
     Pubkey(Pubkey),
-    /// Derivation seeds.
-    Seeds(SeedsVec),
+    /// Account and Derivation seeds.
+    AccountAndSeeds(Pubkey, SeedsVec),
     /// A merkle leaf and proof.
     MerkleProof(LeafInfo),
     /// A plain `u64` used for `Amount`.
@@ -113,10 +120,10 @@ impl Payload {
     /// Get a reference to the `SeedsVec` associated with a key, if and only if the `Payload` value
     /// is the `PayloadType::Seeds` variant.  Returns `None` if the key is not present in the
     /// `Payload` or the value is a different `PayloadType` variant.
-    pub fn get_seeds(&self, key: &PayloadKey) -> Option<&SeedsVec> {
+    pub fn get_account_and_seeds(&self, key: &PayloadKey) -> Option<(&Pubkey, &SeedsVec)> {
         if let Some(val) = self.map.get(key) {
             match val {
-                PayloadType::Seeds(seeds) => Some(seeds),
+                PayloadType::AccountAndSeeds(account, seeds) => Some((account, seeds)),
                 _ => None,
             }
         } else {
