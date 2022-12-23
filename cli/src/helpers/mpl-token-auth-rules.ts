@@ -6,7 +6,7 @@ import {
     SYSVAR_INSTRUCTIONS_PUBKEY,
     Transaction,
 } from "@solana/web3.js";
-import { createCreateInstruction, createValidateInstruction, Operation, Payload, PROGRAM_ID } from "../../../packages/sdk/src/mpl-token-auth-rules";
+import { createCreateInstruction, createValidateInstruction, Payload, PROGRAM_ID } from "../../../packages/sdk/src/mpl-token-auth-rules";
 import { findRuleSetPDA } from "./pda";
 import { TokenMetadataProgram } from "@metaplex-foundation/js";
 
@@ -21,11 +21,11 @@ export const createTokenAuthorizationRules = async (
     let createIX = createCreateInstruction(
         {
             payer: payer.publicKey,
-            rulesetPda: ruleSetAddress[0],
+            ruleSetPda: ruleSetAddress[0],
             systemProgram: SystemProgram.programId,
         },
         {
-            createArgs: { name, serializedRuleSet: data },
+            createArgs: { serializedRuleSet: data },
         },
         PROGRAM_ID,
     )
@@ -48,33 +48,32 @@ export const validateOperation = async (
     payload: Payload,
 ) => {
 
-    let op_type: Operation = Operation.Transfer;
+    let op_type: number = 0;
     switch (operation) {
         case "Transfer":
-            op_type = Operation.Transfer;
+            op_type = 0;
             break;
         case "Delegate":
-            op_type = Operation.Delegate;
+            op_type = 1;
             break;
         case "SaleTransfer":
-            op_type = Operation.SaleTransfer;
+            op_type = 2;
             break;
         case "MigrateClass":
-            op_type = Operation.MigrateClass;
+            op_type = 3;
             break;
     }
     const ruleSetAddress = await findRuleSetPDA(payer.publicKey, name);
     let validateIX = createValidateInstruction(
         {
-            payer: payer.publicKey,
-            ruleset: ruleSetAddress[0],
+            ruleSet: ruleSetAddress[0],
             systemProgram: SystemProgram.programId,
         },
         {
             validateArgs: {
-                name,
                 operation: op_type,
-                payload
+                payload,
+                updateRuleState: true,
             },
         },
         PROGRAM_ID,

@@ -4,7 +4,7 @@ import { PREFIX, PROGRAM_ID } from "../../../packages/sdk/src/mpl-token-auth-rul
 export const findRuleSetPDA = async (payer: PublicKey, name: string) => {
     return await PublicKey.findProgramAddress(
         [
-            Buffer.from(PREFIX),
+            Buffer.from("rule_set"),
             payer.toBuffer(),
             Buffer.from(name),
         ],

@@ -5,7 +5,7 @@ import { Command, program } from "commander";
 import log from "loglevel";
 import * as fs from 'fs';
 import { findRuleSetPDA } from './helpers/pda';
-import { Payload, Operation } from '../../packages/sdk/src/generated';
+import { Payload } from '../../packages/sdk/src/generated';
 
 program
     .command("create")
@@ -72,15 +72,15 @@ program
         console.log("Tree Leaf: " + tree_leaf);
         console.log("Tree Proof: " + tree_proof);
 
-        let payload: Payload = {
-            amount,
-            destinationKey: new PublicKey(destination_address),
-            derivedKeySeeds: null,
-            treeMatchLeaf: null,
-        };
-        payload.amount = amount;
-        let result = await validateOperation(connection, payer, name, operation, payload);
-        console.log("Result: " + result);
+        // let payload: Payload = {
+        //     amount,
+        //     destinationKey: new PublicKey(destination_address),
+        //     derivedKeySeeds: null,
+        //     treeMatchLeaf: null,
+        // };
+        // payload.amount = amount;
+        // let result = await validateOperation(connection, payer, name, operation, payload);
+        // console.log("Result: " + result);
     });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -100,6 +100,53 @@ function loadKeypair(keypairPath) {
 
     return Keypair.fromSecretKey(decodedKey);
 }
+
+program
+    .command("print")
+    .option(
+        "-e, --env <string>",
+        "Solana cluster env name",
+        "devnet", //mainnet-beta, testnet, devnet
+    )
+    .option("-r, --rpc <string>", "The endpoint to connect to.")
+    .option("-k, --keypair <path>", `Solana wallet location`)
+    .option("-l, --log-level <string>", "log level", setLogLevel)
+    .option("-n, --name <string>", "The name of the ruleset.")
+    .option("-c, --creator <string>", "The creator address.")
+    .action(async (directory, cmd) => {
+        const { keypair, env, rpc, name, creator } = cmd.opts();
+        let payer = loadKeypair(keypair);
+        const connection = new Connection(rpc, "finalized");
+
+        const ruleSetAddress = await findRuleSetPDA(new PublicKey(creator), name);
+        // console.log("RuleSet Address: " + ruleSetAddress[0].toString());
+        let rulesetData = await connection.getAccountInfo(ruleSetAddress[0]);
+        let rulesetDecoded = decode(rulesetData?.data);
+        console.log("RuleSet Decoded: " + rulesetDecoded);
+        //console.log(rulesetDecoded);
+    });
+
+enum Rule {
+    All,
+    Any,
+    Not,
+    AdditionalSigner,
+    PubkeyMatch,
+    PubkeyListMatch,
+    PubkeyTreeMatch,
+    DerivedKeyMatch,
+    ProgramOwned,
+    Amount,
+    Frequency,
+    Pass,
+}
+
+program
+    .command("fuck")
+    .action(async (directory, cmd) => {
+        let data = encode("AdditionalSigner");
+        console.log(data);
+    });
 
 program
     .version("0.0.1")
