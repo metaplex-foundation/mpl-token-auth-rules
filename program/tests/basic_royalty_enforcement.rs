@@ -14,7 +14,8 @@ use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_program_test::tokio;
 use solana_sdk::{
-    signature::Signer, signer::keypair::Keypair, system_instruction, transaction::Transaction,
+    instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
+    transaction::Transaction,
 };
 use utils::{program_test, Operation};
 
@@ -143,7 +144,10 @@ async fn basic_royalty_enforcement() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .additional_rule_accounts(vec![])
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(
+            fake_token_metadata_owned_escrow.pubkey(),
+            false,
+        )])
         .build(ValidateArgs::V1 {
             operation: Operation::Transfer.to_string(),
             payload,
