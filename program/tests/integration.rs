@@ -10,7 +10,6 @@ use mpl_token_auth_rules::{
     },
     payload::{Payload, PayloadKey, PayloadType},
     state::{CompareOp, Rule, RuleSet},
-    ID,
 };
 use num_traits::cast::FromPrimitive;
 use rmp_serde::Serializer;
@@ -68,9 +67,6 @@ async fn test_payer_not_signer_fails() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .payer(crate::ID)
-        .rule_authority(crate::ID)
-        .rule_set_state_pda(crate::ID)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
             operation: Operation::Transfer.to_string(),
@@ -183,9 +179,6 @@ async fn test_additional_signer_and_amount() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .payer(crate::ID)
-        .rule_authority(crate::ID)
-        .rule_set_state_pda(crate::ID)
         .additional_rule_accounts(vec![AccountMeta::new_readonly(
             context.payer.pubkey(),
             true,
@@ -229,9 +222,6 @@ async fn test_additional_signer_and_amount() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .payer(crate::ID)
-        .rule_authority(crate::ID)
-        .rule_set_state_pda(crate::ID)
         .additional_rule_accounts(vec![
             AccountMeta::new_readonly(context.payer.pubkey(), true),
             AccountMeta::new_readonly(second_signer.pubkey(), true),
@@ -266,9 +256,6 @@ async fn test_additional_signer_and_amount() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .payer(crate::ID)
-        .rule_authority(crate::ID)
-        .rule_set_state_pda(crate::ID)
         .additional_rule_accounts(vec![
             AccountMeta::new_readonly(context.payer.pubkey(), true),
             AccountMeta::new_readonly(second_signer.pubkey(), true),
@@ -378,9 +365,6 @@ async fn test_pass() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .payer(crate::ID)
-        .rule_authority(crate::ID)
-        .rule_set_state_pda(crate::ID)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
             operation: Operation::Transfer.to_string(),

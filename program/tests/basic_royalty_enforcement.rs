@@ -9,7 +9,6 @@ use mpl_token_auth_rules::{
     },
     payload::{LeafInfo, Payload, PayloadKey, PayloadType},
     state::{Rule, RuleSet},
-    ID,
 };
 use rmp_serde::Serializer;
 use serde::Serialize;
@@ -144,9 +143,6 @@ async fn basic_royalty_enforcement() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .payer(crate::ID)
-        .rule_authority(crate::ID)
-        .rule_set_state_pda(crate::ID)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
             operation: Operation::Transfer.to_string(),
@@ -206,9 +202,6 @@ async fn basic_royalty_enforcement() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .payer(crate::ID)
-        .rule_authority(crate::ID)
-        .rule_set_state_pda(crate::ID)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
             operation: Operation::Delegate.to_string(),
@@ -240,9 +233,6 @@ async fn basic_royalty_enforcement() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .payer(crate::ID)
-        .rule_authority(crate::ID)
-        .rule_set_state_pda(crate::ID)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
             operation: Operation::SaleTransfer.to_string(),

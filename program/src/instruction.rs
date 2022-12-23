@@ -92,19 +92,25 @@ impl InstructionBuilder for builders::Validate {
             AccountMeta::new_readonly(solana_program::system_program::id(), false),
         ];
 
+        // Add optional account or `crate::ID`.
         if let Some(payer) = self.payer {
-            let is_signer = payer != crate::ID;
-            accounts.push(AccountMeta::new(payer, is_signer));
+            accounts.push(AccountMeta::new(payer, true));
+        } else {
+            accounts.push(AccountMeta::new_readonly(crate::ID, false));
         }
 
+        // Add optional account or `crate::ID`.
         if let Some(rule_authority) = self.rule_authority {
-            let is_signer = rule_authority != crate::ID;
-            accounts.push(AccountMeta::new_readonly(rule_authority, is_signer));
+            accounts.push(AccountMeta::new_readonly(rule_authority, true));
+        } else {
+            accounts.push(AccountMeta::new_readonly(crate::ID, false));
         }
 
+        // Add optional account or `crate::ID`.
         if let Some(rule_set_state_pda) = self.rule_set_state_pda {
-            let is_signer = rule_set_state_pda != crate::ID;
-            accounts.push(AccountMeta::new(rule_set_state_pda, is_signer));
+            accounts.push(AccountMeta::new(rule_set_state_pda, true));
+        } else {
+            accounts.push(AccountMeta::new_readonly(crate::ID, false));
         }
 
         accounts.extend(self.additional_rule_accounts.clone());
