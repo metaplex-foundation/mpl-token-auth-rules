@@ -37,7 +37,6 @@ async fn test_payer_not_signer_fails() {
     let create_ix = CreateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
-        .additional_rule_accounts(vec![])
         .build(CreateArgs::V1 {
             serialized_rule_set: vec![],
         })
@@ -147,7 +146,6 @@ async fn test_additional_signer_and_amount() {
     let create_ix = CreateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
-        .additional_rule_accounts(vec![])
         .build(CreateArgs::V1 {
             serialized_rule_set,
         })
@@ -330,7 +328,6 @@ async fn test_pass() {
     let create_ix = CreateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
-        .additional_rule_accounts(vec![])
         .build(CreateArgs::V1 {
             serialized_rule_set,
         })

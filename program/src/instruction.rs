@@ -5,7 +5,6 @@ use shank::ShankInstruction;
 use solana_program::{
     account_info::AccountInfo,
     instruction::{AccountMeta, Instruction},
-    pubkey::Pubkey,
 };
 
 #[repr(C)]
@@ -21,7 +20,6 @@ pub enum CreateArgs {
 #[repr(C)]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 /// Args for `validate` instruction.
-
 pub enum ValidateArgs {
     V1 {
         /// `Operation` to validate.
@@ -41,7 +39,6 @@ pub enum RuleSetInstruction {
     #[account(0, signer, writable, name="payer", desc="Payer and creator of the RuleSet")]
     #[account(1, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
     #[account(2, name = "system_program", desc = "System program")]
-    #[args(additional_rule_accounts: Vec<Pubkey>)]
     Create(CreateArgs),
 
     /// This instruction executes the RuleSet stored in the rule_set PDA account by calling the
@@ -63,15 +60,11 @@ pub enum RuleSetInstruction {
 /// Builds a `create` instruction.
 impl InstructionBuilder for builders::Create {
     fn instruction(&self) -> solana_program::instruction::Instruction {
-        let mut accounts = vec![
+        let accounts = vec![
             AccountMeta::new(self.payer, true),
             AccountMeta::new(self.rule_set_pda, false),
             AccountMeta::new_readonly(solana_program::system_program::id(), false),
         ];
-
-        for account in self.additional_rule_accounts.iter() {
-            accounts.push(AccountMeta::new_readonly(*account, false));
-        }
 
         Instruction {
             program_id: crate::ID,

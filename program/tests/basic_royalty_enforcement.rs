@@ -87,7 +87,6 @@ async fn basic_royalty_enforcement() {
     let create_ix = CreateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
-        .additional_rule_accounts(vec![])
         .build(CreateArgs::V1 {
             serialized_rule_set,
         })
