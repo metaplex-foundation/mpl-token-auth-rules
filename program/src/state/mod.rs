@@ -1,3 +1,4 @@
+//! All structures and related functions representing a Rule Set on-chain.
 use borsh::{BorshDeserialize, BorshSerialize};
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
@@ -17,11 +18,16 @@ use crate::{error::RuleSetError, utils::assert_owned_by};
 
 #[repr(C)]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Copy, FromPrimitive)]
+/// The key at the beginning of the serialized account that identifies the account type.
+/// NOTE: This is not used for the `RuleSet` account, which uses msgpack instead of Borsh for SerDes.
 pub enum Key {
+    /// An uninitialized account, which has all bytes set to zero by default.
     Uninitialized,
+    /// An account containing frequency state.
     Frequency,
 }
 
+/// A trait implementing generic functions required by all accounts on Solana.
 pub trait SolanaAccount: BorshSerialize + BorshDeserialize {
     /// Get the `Key` for this `Account`.  This key is to be stored in the first byte of the
     /// `Account` data.

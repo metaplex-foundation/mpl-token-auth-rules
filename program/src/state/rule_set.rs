@@ -3,10 +3,12 @@ use serde::{Deserialize, Serialize};
 use solana_program::{entrypoint::ProgramResult, pubkey::Pubkey};
 use std::collections::HashMap;
 
+/// Version of the `RuleSet` struct.
 pub const RULE_SET_VERSION: u32 = 1;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default)]
 #[serde(rename_all = "camelCase")]
+/// The struct containing all Rule Set data.
 pub struct RuleSet {
     /// Version of the RuleSet.  This is not a user version, but the version
     /// of this lib, to be used for future backwards compatibility.
@@ -56,6 +58,7 @@ impl RuleSet {
         }
     }
 
+    /// Retrieve the `Rule` tree for a given `Operation`.
     pub fn get(&self, operation: String) -> Option<&Rule> {
         self.operations.get(&operation)
     }

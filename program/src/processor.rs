@@ -1,3 +1,4 @@
+//! The processors for the Rule Set program instructions.
 use std::collections::HashMap;
 
 use crate::{
@@ -20,8 +21,10 @@ use solana_program::{
     pubkey::{Pubkey, PUBKEY_BYTES},
 };
 
+/// The generic processor struct.
 pub struct Processor;
 impl Processor {
+    /// The main entrypoint for the Rule Set program that matches on the instruction type and args
     pub fn process_instruction<'a>(
         program_id: &Pubkey,
         accounts: &'a [AccountInfo<'a>],
@@ -270,6 +273,7 @@ pub fn next_optional_account_info<'a, 'b, I: Iterator<Item = &'a AccountInfo<'b>
     })
 }
 
+/// Convenience function for comparing two [`Pubkey`]s.
 pub fn cmp_pubkeys(a: &Pubkey, b: &Pubkey) -> bool {
     sol_memcmp(a.as_ref(), b.as_ref(), PUBKEY_BYTES) == 0
 }

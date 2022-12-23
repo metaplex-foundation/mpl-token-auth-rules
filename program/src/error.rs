@@ -1,3 +1,4 @@
+//! Errors used by the Rule Set program.
 use num_derive::FromPrimitive;
 use solana_program::{
     decode_error::DecodeError,
@@ -7,6 +8,7 @@ use solana_program::{
 use thiserror::Error;
 
 #[derive(Error, Clone, Debug, Eq, PartialEq, FromPrimitive)]
+/// The various errors that can be returned by the Rule Set program instructions.
 pub enum RuleSetError {
     /// 0 - Numerical Overflow
     #[error("Numerical Overflow")]
