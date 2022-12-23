@@ -2484,7 +2484,8 @@ dependencies = [
 [[package]]
 name = "mpl-token-metadata-context-derive"
 version = "0.0.1"
-source = "git+https://github.com/metaplex-foundation/metaplex-program-library.git?rev=57723451#5772345137fe92373c435ac22ca96f2a4b519bea"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4d72db771ffb888fd22278b58cd91d50f2fc47c9705acb9f04c00b4ecaa80fc"
 dependencies = [
  "quote 1.0.23",
  "syn 1.0.107",
