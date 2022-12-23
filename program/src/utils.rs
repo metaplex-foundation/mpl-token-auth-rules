@@ -1,3 +1,4 @@
+//! Utilities for the program
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
@@ -60,6 +61,8 @@ pub fn create_or_allocate_account_raw<'a>(
     Ok(())
 }
 
+/// Assert that the derivation of the given seeds match the given pubkey
+/// and return the resulting bump.
 pub fn assert_derivation(
     program_id: &Pubkey,
     account: &Pubkey,
@@ -72,6 +75,7 @@ pub fn assert_derivation(
     Ok(bump)
 }
 
+/// Assert that the given account is owned by the given pubkey.
 pub fn assert_owned_by(account: &AccountInfo, owner: &Pubkey) -> ProgramResult {
     if account.owner != owner {
         Err(RuleSetError::IncorrectOwner.into())

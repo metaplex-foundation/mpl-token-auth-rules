@@ -5,6 +5,7 @@ pub mod payload;
 pub mod pda;
 pub mod processor;
 pub mod state;
+#[deny(missing_docs)]
 pub mod utils;
 
 pub use solana_program;

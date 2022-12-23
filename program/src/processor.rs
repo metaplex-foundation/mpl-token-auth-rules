@@ -40,6 +40,8 @@ impl Processor {
                 let rule_set: RuleSet = rmp_serde::from_slice(&args.serialized_rule_set)
                     .map_err(|_| RuleSetError::MessagePackDeserializationError)?;
 
+                msg!("RuleSet: {:#?}", rule_set);
+
                 if rule_set.name().len() > MAX_NAME_LENGTH {
                     return Err(RuleSetError::NameTooLong.into());
                 }
