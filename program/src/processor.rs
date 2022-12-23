@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     error::RuleSetError,
-    instruction::{CreateArgs, RuleSetInstruction, ValidateArgs},
+    instruction::{Context, Create, CreateArgs, RuleSetInstruction, Validate, ValidateArgs},
     pda::{PREFIX, STATE_PDA},
     state::{RuleSet, RULE_SET_VERSION},
     utils::{assert_derivation, create_or_allocate_account_raw},
@@ -10,19 +10,19 @@ use crate::{
 };
 use borsh::BorshDeserialize;
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
+    account_info::AccountInfo,
     entrypoint::ProgramResult,
     msg,
     program_error::ProgramError,
-    program_memory::sol_memcpy,
-    pubkey::Pubkey,
+    program_memory::{sol_memcmp, sol_memcpy},
+    pubkey::{Pubkey, PUBKEY_BYTES},
 };
 
 pub struct Processor;
 impl Processor {
-    pub fn process_instruction(
+    pub fn process_instruction<'a>(
         program_id: &Pubkey,
-        accounts: &[AccountInfo],
+        accounts: &'a [AccountInfo<'a>],
         instruction_data: &[u8],
     ) -> ProgramResult {
         let instruction = RuleSetInstruction::try_from_slice(instruction_data)?;
@@ -40,27 +40,26 @@ impl Processor {
 }
 
 // Function to match on `CreateArgs` version and call correct implementation.
-fn create(program_id: &Pubkey, accounts: &[AccountInfo], args: CreateArgs) -> ProgramResult {
+fn create<'a>(
+    program_id: &Pubkey,
+    accounts: &'a [AccountInfo<'a>],
+    args: CreateArgs,
+) -> ProgramResult {
+    let context = Create::as_context(accounts)?;
+
     match args {
-        CreateArgs::V1 { .. } => create_v1(program_id, accounts, args),
+        CreateArgs::V1 { .. } => create_v1(program_id, context, args),
     }
 }
 
 /// V1 implementation of the `create` instruction.
-fn create_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: CreateArgs) -> ProgramResult {
-    let account_info_iter = &mut accounts.iter();
-
-    // Required accounts.
-    let payer_info = next_account_info(account_info_iter)?;
-    let rule_set_pda_info = next_account_info(account_info_iter)?;
-    let system_program_info = next_account_info(account_info_iter)?;
-
+fn create_v1(program_id: &Pubkey, ctx: Context<Create>, args: CreateArgs) -> ProgramResult {
     // Get the V1 arguments for the instruction.
     let CreateArgs::V1 {
         serialized_rule_set,
     } = args;
 
-    if !payer_info.is_signer {
+    if !ctx.accounts.payer_info.is_signer {
         return Err(RuleSetError::PayerIsNotSigner.into());
     }
 
@@ -78,24 +77,24 @@ fn create_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: CreateArgs) ->
     }
 
     // The payer/signer must be the RuleSet owner.
-    if payer_info.key != rule_set.owner() {
+    if ctx.accounts.payer_info.key != rule_set.owner() {
         return Err(RuleSetError::RuleSetOwnerMismatch.into());
     }
 
     // Check RuleSet account info derivation.
     let bump = assert_derivation(
         program_id,
-        rule_set_pda_info.key,
+        ctx.accounts.rule_set_pda_info.key,
         &[
             PREFIX.as_bytes(),
-            payer_info.key.as_ref(),
+            ctx.accounts.payer_info.key.as_ref(),
             rule_set.name().as_bytes(),
         ],
     )?;
 
     let rule_set_seeds = &[
         PREFIX.as_ref(),
-        payer_info.key.as_ref(),
+        ctx.accounts.payer_info.key.as_ref(),
         rule_set.name().as_ref(),
         &[bump],
     ];
@@ -103,16 +102,20 @@ fn create_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: CreateArgs) ->
     // Create or allocate RuleSet PDA account.
     create_or_allocate_account_raw(
         *program_id,
-        rule_set_pda_info,
-        system_program_info,
-        payer_info,
+        ctx.accounts.rule_set_pda_info,
+        ctx.accounts.system_program_info,
+        ctx.accounts.payer_info,
         serialized_rule_set.len(),
         rule_set_seeds,
     )?;
 
     // Copy user-pre-serialized RuleSet to PDA account.
     sol_memcpy(
-        &mut rule_set_pda_info.try_borrow_mut_data().unwrap(),
+        &mut ctx
+            .accounts
+            .rule_set_pda_info
+            .try_borrow_mut_data()
+            .unwrap(),
         &serialized_rule_set,
         serialized_rule_set.len(),
     );
@@ -121,21 +124,20 @@ fn create_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: CreateArgs) ->
 }
 
 // Function to match on `ValidateArgs` version and call correct implementation.
-fn validate(program_id: &Pubkey, accounts: &[AccountInfo], args: ValidateArgs) -> ProgramResult {
+fn validate<'a>(
+    program_id: &Pubkey,
+    accounts: &'a [AccountInfo<'a>],
+    args: ValidateArgs,
+) -> ProgramResult {
+    let context = Validate::as_context(accounts)?;
+
     match args {
-        ValidateArgs::V1 { .. } => validate_v1(program_id, accounts, args),
+        ValidateArgs::V1 { .. } => validate_v1(program_id, context, args),
     }
 }
 
 /// V1 implementation of the `validate` instruction.
-fn validate_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: ValidateArgs) -> ProgramResult {
-    let account_info_iter = &mut accounts.iter();
-
-    // Required accounts.
-    let rule_set_pda_info = next_account_info(account_info_iter)?;
-    let mint_info = next_account_info(account_info_iter)?;
-    let _system_program_info = next_account_info(account_info_iter)?;
-
+fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) -> ProgramResult {
     // Get the V1 arguments for the instruction.
     let ValidateArgs::V1 {
         operation,
@@ -143,23 +145,10 @@ fn validate_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: ValidateArgs
         update_rule_state,
     } = args;
 
-    // Optional accounts are required if we are updating any Rule state.  Note that
-    // `rule_authority_info is marked as unused here but this account is included below
-    // in the `accounts_map` that is passed to Rule `validate`.
-    let (payer_info, _rule_authority_info, rule_set_state_pda_info) = if update_rule_state {
-        (
-            Some(next_account_info(account_info_iter)?),
-            Some(next_account_info(account_info_iter)?),
-            Some(next_account_info(account_info_iter)?),
-        )
-    } else {
-        (None, None, None)
-    };
-
     // If state is being updated for any Rules, the payer must be present and must be a signer so
     // that the RuleSet state PDA can be created or reallocated.
     if update_rule_state {
-        if let Some(payer_info) = payer_info {
+        if let Some(payer_info) = ctx.accounts.payer_info {
             if !payer_info.is_signer {
                 return Err(RuleSetError::PayerIsNotSigner.into());
             }
@@ -169,17 +158,19 @@ fn validate_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: ValidateArgs
     }
 
     // RuleSet must be owned by this program.
-    if *rule_set_pda_info.owner != crate::ID {
+    if *ctx.accounts.rule_set_pda_info.owner != crate::ID {
         return Err(RuleSetError::IncorrectOwner.into());
     }
 
     // RuleSet must not be empty.
-    if rule_set_pda_info.data_is_empty() {
+    if ctx.accounts.rule_set_pda_info.data_is_empty() {
         return Err(RuleSetError::DataIsEmpty.into());
     }
 
     // Borrow the RuleSet PDA data.
-    let data = rule_set_pda_info
+    let data = ctx
+        .accounts
+        .rule_set_pda_info
         .data
         .try_borrow()
         .map_err(|_| RuleSetError::DataTypeMismatch)?;
@@ -191,7 +182,7 @@ fn validate_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: ValidateArgs
     // Check RuleSet account info derivation.
     let _bump = assert_derivation(
         program_id,
-        rule_set_pda_info.key,
+        ctx.accounts.rule_set_pda_info.key,
         &[
             PREFIX.as_bytes(),
             rule_set.owner().as_ref(),
@@ -201,7 +192,7 @@ fn validate_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: ValidateArgs
 
     // If RuleSet state is to be updated, check account info derivation.
     if update_rule_state {
-        if let Some(rule_set_state_pda_info) = rule_set_state_pda_info {
+        if let Some(rule_set_state_pda_info) = ctx.accounts.rule_set_state_pda_info {
             let _bump = assert_derivation(
                 program_id,
                 rule_set_state_pda_info.key,
@@ -209,7 +200,7 @@ fn validate_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: ValidateArgs
                     STATE_PDA.as_bytes(),
                     rule_set.owner().as_ref(),
                     rule_set.name().as_bytes(),
-                    mint_info.key.as_ref(),
+                    ctx.accounts.mint_info.key.as_ref(),
                 ],
             )?;
         } else {
@@ -217,12 +208,13 @@ fn validate_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: ValidateArgs
         }
     }
 
-    // Convert the accounts into a map of `Pubkey`s to the corresponding account infos.
-    // This makes it easy to pass the account infos into validation functions since
-    // they store the `Pubkey`s.
-    let accounts_map = accounts
+    // Convert remaining Rule accounts into a map of `Pubkey`s to the corresponding `AccountInfo`s.
+    // This makes it easy to pass the account infos into validation functions since they store the
+    //`Pubkey`s.
+    let accounts_map = ctx
+        .remaining_accounts
         .iter()
-        .map(|account| (*account.key, account))
+        .map(|account| (*account.key, *account))
         .collect::<HashMap<Pubkey, &AccountInfo>>();
 
     // Get the Rule from the RuleSet based on the caller-specified operation.
@@ -235,11 +227,34 @@ fn validate_v1(program_id: &Pubkey, accounts: &[AccountInfo], args: ValidateArgs
         &accounts_map,
         &payload,
         update_rule_state,
-        rule_set_state_pda_info.map(|account_info| account_info.key),
+        &ctx.accounts.rule_set_state_pda_info,
+        &ctx.accounts.rule_authority_info,
     ) {
         msg!("Failed to validate: {}", err);
         return Err(err);
     }
 
     Ok(())
+}
+
+/// Convenience function for accessing the next item in an [`AccountInfo`]
+/// iterator and validating whether the account is present or not.
+///
+/// This relies on the client setting the `crate::id()` as the pubkey for
+/// accounts that are not set, which effectively allows us to use positional
+/// optional accounts.
+pub fn next_optional_account_info<'a, 'b, I: Iterator<Item = &'a AccountInfo<'b>>>(
+    iter: &mut I,
+) -> Result<Option<I::Item>, ProgramError> {
+    let account_info = iter.next().ok_or(ProgramError::NotEnoughAccountKeys)?;
+
+    Ok(if cmp_pubkeys(account_info.key, &crate::id()) {
+        None
+    } else {
+        Some(account_info)
+    })
+}
+
+pub fn cmp_pubkeys(a: &Pubkey, b: &Pubkey) -> bool {
+    sol_memcmp(a.as_ref(), b.as_ref(), PUBKEY_BYTES) == 0
 }
