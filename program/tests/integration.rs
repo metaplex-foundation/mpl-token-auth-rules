@@ -354,9 +354,6 @@ async fn test_pubkey_match() {
     // --------------------------------
     // Validate PubkeyMatch Rule pass
     // --------------------------------
-    // Create a Keypair to simulate a token mint address.
-    let mint = Keypair::new().pubkey();
-
     // Store the payload of data to validate against the rule definition with CORRECT Pubkey.
     let payload = Payload::from([(PayloadKey::Target, PayloadType::Pubkey(target.pubkey()))]);
 
