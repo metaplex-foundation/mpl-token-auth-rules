@@ -3,21 +3,16 @@
 pub mod utils;
 
 use mpl_token_auth_rules::{
-    instruction::{
-        builders::{CreateOrUpdateBuilder, ValidateBuilder},
-        CreateOrUpdateArgs, InstructionBuilder, ValidateArgs,
-    },
+    instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{LeafInfo, Payload, PayloadKey, PayloadType},
     state::{Rule, RuleSet},
 };
-use rmp_serde::Serializer;
-use serde::Serialize;
 use solana_program_test::tokio;
 use solana_sdk::{
     instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
     transaction::Transaction,
 };
-use utils::{program_test, Operation};
+use utils::{create_rule_set_on_chain, process_passing_validate_ix, program_test, Operation};
 
 #[tokio::test]
 async fn basic_royalty_enforcement() {
@@ -26,12 +21,6 @@ async fn basic_royalty_enforcement() {
     // --------------------------------
     // Create RuleSet
     // --------------------------------
-    // Find RuleSet PDA.
-    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
-        context.payer.pubkey(),
-        "basic_royalty_enforcement".to_string(),
-    );
-
     // Rule for Transfers: Allow transfers to a Token Owned Escrow account.
     let owned_by_token_metadata = Rule::ProgramOwned {
         program: mpl_token_metadata::id(),
@@ -77,36 +66,13 @@ async fn basic_royalty_enforcement() {
         serde_json::to_string_pretty(&basic_royalty_enforcement_rule_set,).unwrap()
     );
 
-    // Serialize the RuleSet using RMP serde.
-    let mut serialized_rule_set = Vec::new();
-    basic_royalty_enforcement_rule_set
-        .serialize(&mut Serializer::new(&mut serialized_rule_set))
-        .unwrap();
-
-    // Create a `create` instruction.
-    let create_ix = CreateOrUpdateBuilder::new()
-        .payer(context.payer.pubkey())
-        .rule_set_pda(rule_set_addr)
-        .build(CreateOrUpdateArgs::V1 {
-            serialized_rule_set,
-        })
-        .unwrap()
-        .instruction();
-
-    // Add it to a transaction.
-    let create_tx = Transaction::new_signed_with_payer(
-        &[create_ix],
-        Some(&context.payer.pubkey()),
-        &[&context.payer],
-        context.last_blockhash,
-    );
-
-    // Process the transaction.
-    context
-        .banks_client
-        .process_transaction(create_tx)
-        .await
-        .expect("creation should succeed");
+    // Put the RuleSet on chain.
+    let rule_set_addr = create_rule_set_on_chain(
+        &mut context,
+        basic_royalty_enforcement_rule_set,
+        "basic_royalty_enforcement".to_string(),
+    )
+    .await;
 
     // --------------------------------
     // Validate Transfer operation
@@ -155,20 +121,8 @@ async fn basic_royalty_enforcement() {
         .unwrap()
         .instruction();
 
-    // Add it to a transaction.
-    let validate_tx = Transaction::new_signed_with_payer(
-        &[validate_ix],
-        Some(&context.payer.pubkey()),
-        &[&context.payer],
-        context.last_blockhash,
-    );
-
-    // Process the transaction.
-    context
-        .banks_client
-        .process_transaction(validate_tx)
-        .await
-        .expect("Transfer operation validation should succeed");
+    // Validate Transfer operation.
+    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
     // Validate Delegate operation
@@ -214,20 +168,8 @@ async fn basic_royalty_enforcement() {
         .unwrap()
         .instruction();
 
-    // Add it to a transaction.
-    let validate_tx = Transaction::new_signed_with_payer(
-        &[validate_ix],
-        Some(&context.payer.pubkey()),
-        &[&context.payer],
-        context.last_blockhash,
-    );
-
-    // Process the transaction.
-    context
-        .banks_client
-        .process_transaction(validate_tx)
-        .await
-        .expect("Delegate operation validation should succeed");
+    // Validate Delegate operation.
+    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
     // Validate SaleTransfer operation
@@ -245,18 +187,6 @@ async fn basic_royalty_enforcement() {
         .unwrap()
         .instruction();
 
-    // Add it to a transaction.
-    let validate_tx = Transaction::new_signed_with_payer(
-        &[validate_ix],
-        Some(&context.payer.pubkey()),
-        &[&context.payer],
-        context.last_blockhash,
-    );
-
-    // Process the transaction.
-    context
-        .banks_client
-        .process_transaction(validate_tx)
-        .await
-        .expect("SaleTransfer operation validation should succeed");
+    // Validate SaleTransfer operation.
+    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
 }
