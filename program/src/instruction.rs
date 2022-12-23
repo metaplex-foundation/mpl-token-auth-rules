@@ -41,7 +41,6 @@ pub enum RuleSetInstruction {
     #[account(0, signer, writable, name="payer", desc="Payer and creator of the RuleSet")]
     #[account(1, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
     #[account(2, name = "system_program", desc = "System program")]
-    #[args(serialized_rule_set: Vec<u8>)]
     #[args(additional_rule_accounts: Vec<Pubkey>)]
     Create(CreateArgs),
 
@@ -57,9 +56,6 @@ pub enum RuleSetInstruction {
     #[account(3, optional, signer, writable, name="payer", desc="Payer for RuleSet state PDA account")]
     #[account(4, optional, signer, name="rule_authority", desc="Signing authority for any Rule state updates")]
     #[account(5, optional, writable, name="rule_set_state_pda", desc = "The PDA account where any RuleSet state is stored")]
-    #[args(operation: String)]
-    #[args(payload: Payload)]
-    #[args(update_rule_state: bool)]
     #[args(additional_rule_accounts: Vec<AccountMeta>)]
     Validate(ValidateArgs),
 }
