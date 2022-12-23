@@ -93,15 +93,18 @@ impl InstructionBuilder for builders::Validate {
         ];
 
         if let Some(payer) = self.payer {
-            accounts.push(AccountMeta::new(payer, true));
+            let is_signer = payer != crate::ID;
+            accounts.push(AccountMeta::new(payer, is_signer));
         }
 
         if let Some(rule_authority) = self.rule_authority {
-            accounts.push(AccountMeta::new_readonly(rule_authority, true));
+            let is_signer = rule_authority != crate::ID;
+            accounts.push(AccountMeta::new_readonly(rule_authority, is_signer));
         }
 
         if let Some(rule_set_state_pda) = self.rule_set_state_pda {
-            accounts.push(AccountMeta::new(rule_set_state_pda, false));
+            let is_signer = rule_set_state_pda != crate::ID;
+            accounts.push(AccountMeta::new(rule_set_state_pda, is_signer));
         }
 
         accounts.extend(self.additional_rule_accounts.clone());
