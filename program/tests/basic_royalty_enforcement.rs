@@ -4,8 +4,8 @@ pub mod utils;
 
 use mpl_token_auth_rules::{
     instruction::{
-        builders::{CreateBuilder, ValidateBuilder},
-        CreateArgs, InstructionBuilder, ValidateArgs,
+        builders::{CreateOrUpdateBuilder, ValidateBuilder},
+        CreateOrUpdateArgs, InstructionBuilder, ValidateArgs,
     },
     payload::{LeafInfo, Payload, PayloadKey, PayloadType},
     state::{Rule, RuleSet},
@@ -84,11 +84,10 @@ async fn basic_royalty_enforcement() {
         .unwrap();
 
     // Create a `create` instruction.
-    let create_ix = CreateBuilder::new()
+    let create_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
-        .additional_rule_accounts(vec![])
-        .build(CreateArgs::V1 {
+        .build(CreateOrUpdateArgs::V1 {
             serialized_rule_set,
         })
         .unwrap()

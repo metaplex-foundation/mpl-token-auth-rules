@@ -5,8 +5,8 @@ pub mod utils;
 use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{
-        builders::{CreateBuilder, ValidateBuilder},
-        CreateArgs, InstructionBuilder, ValidateArgs,
+        builders::{CreateOrUpdateBuilder, ValidateBuilder},
+        CreateOrUpdateArgs, InstructionBuilder, ValidateArgs,
     },
     payload::{Payload, PayloadKey, PayloadType},
     state::{CompareOp, Rule, RuleSet},
@@ -34,11 +34,10 @@ async fn test_payer_not_signer_fails() {
     );
 
     // Create a `create` instruction.
-    let create_ix = CreateBuilder::new()
+    let create_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
-        .additional_rule_accounts(vec![])
-        .build(CreateArgs::V1 {
+        .build(CreateOrUpdateArgs::V1 {
             serialized_rule_set: vec![],
         })
         .unwrap()
@@ -144,11 +143,10 @@ async fn test_additional_signer_and_amount() {
         .unwrap();
 
     // Create a `create` instruction.
-    let create_ix = CreateBuilder::new()
+    let create_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
-        .additional_rule_accounts(vec![])
-        .build(CreateArgs::V1 {
+        .build(CreateOrUpdateArgs::V1 {
             serialized_rule_set,
         })
         .unwrap()
@@ -327,11 +325,10 @@ async fn test_pass() {
         .unwrap();
 
     // Create a `create` instruction.
-    let create_ix = CreateBuilder::new()
+    let create_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
-        .additional_rule_accounts(vec![])
-        .build(CreateArgs::V1 {
+        .build(CreateOrUpdateArgs::V1 {
             serialized_rule_set,
         })
         .unwrap()
@@ -388,4 +385,109 @@ async fn test_pass() {
         .process_transaction(validate_tx)
         .await
         .expect("validation should succeed");
+}
+
+#[tokio::test]
+async fn test_update_ruleset() {
+    let mut context = program_test().start_with_context().await;
+
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
+    // Find RuleSet PDA.
+    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
+        context.payer.pubkey(),
+        "test rule_set".to_string(),
+    );
+
+    // Create a Pass Rule.
+    let pass_rule = Rule::Pass;
+
+    // Create a RuleSet.
+    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    rule_set
+        .add(Operation::Transfer.to_string(), pass_rule)
+        .unwrap();
+
+    // Serialize the RuleSet using RMP serde.
+    let mut serialized_rule_set = Vec::new();
+    rule_set
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
+        .unwrap();
+
+    // Create a `create` instruction.
+    let create_ix = CreateOrUpdateBuilder::new()
+        .payer(context.payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .build(CreateOrUpdateArgs::V1 {
+            serialized_rule_set,
+        })
+        .unwrap()
+        .instruction();
+
+    // Add it to a transaction.
+    let create_tx = Transaction::new_signed_with_payer(
+        &[create_ix.clone()],
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        context.last_blockhash,
+    );
+
+    // Process the transaction.
+    context
+        .banks_client
+        .process_transaction(create_tx)
+        .await
+        .expect("creation should succeed");
+
+    // Create some additional rules.
+    let adtl_signer = Rule::AdditionalSigner {
+        account: context.payer.pubkey(),
+    };
+
+    let amount_check = Rule::Amount {
+        amount: 1,
+        operator: CompareOp::Eq,
+    };
+
+    let overall_rule = Rule::All {
+        rules: vec![adtl_signer, amount_check],
+    };
+
+    // Create a new RuleSet.
+    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    rule_set
+        .add(Operation::Transfer.to_string(), overall_rule)
+        .unwrap();
+
+    // Serialize the RuleSet using RMP serde.
+    let mut serialized_rule_set = Vec::new();
+    rule_set
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
+        .unwrap();
+
+    // Create a new `create` instruction to update the RuleSet.
+    let update_ix = CreateOrUpdateBuilder::new()
+        .payer(context.payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .build(CreateOrUpdateArgs::V1 {
+            serialized_rule_set,
+        })
+        .unwrap()
+        .instruction();
+
+    // Add it to a transaction.
+    let update_tx = Transaction::new_signed_with_payer(
+        &[update_ix],
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        context.last_blockhash,
+    );
+
+    // Process the transaction.
+    context
+        .banks_client
+        .process_transaction(update_tx)
+        .await
+        .expect("Updating RuleSet PDA with new RuleSet should succeed");
 }
