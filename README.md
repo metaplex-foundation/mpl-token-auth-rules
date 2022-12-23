@@ -218,7 +218,7 @@ export const createTokenAuthorizationRules = async (
             systemProgram: SystemProgram.programId,
         },
         {
-            createArgs: { name, serializedRuleSet: data },
+            CreateOrUpdateArgs: { name, serializedRuleSet: data },
         },
         PROGRAM_ID,
     )

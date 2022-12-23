@@ -2,228 +2,274 @@ use std::collections::HashMap;
 
 use crate::{
     error::RuleSetError,
-    instruction::RuleSetInstruction,
-    pda::{FREQ_PDA, PREFIX},
-    state::{FrequencyAccount, RuleSet},
-    utils::{assert_derivation, create_or_allocate_account_raw},
+    instruction::{
+        Context, CreateOrUpdate, CreateOrUpdateArgs, RuleSetInstruction, Validate, ValidateArgs,
+    },
+    pda::{PREFIX, STATE_PDA},
+    state::{RuleSet, RULE_SET_VERSION},
+    utils::{assert_derivation, create_or_allocate_account_raw, resize_or_reallocate_account_raw},
     MAX_NAME_LENGTH,
 };
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::BorshDeserialize;
 use solana_program::{
-    account_info::{next_account_info, AccountInfo},
+    account_info::AccountInfo,
     entrypoint::ProgramResult,
     msg,
-    program_memory::sol_memcpy,
-    pubkey::Pubkey,
+    program_error::ProgramError,
+    program_memory::{sol_memcmp, sol_memcpy},
+    pubkey::{Pubkey, PUBKEY_BYTES},
 };
 
 pub struct Processor;
 impl Processor {
-    pub fn process_instruction(
+    pub fn process_instruction<'a>(
         program_id: &Pubkey,
-        accounts: &[AccountInfo],
+        accounts: &'a [AccountInfo<'a>],
         instruction_data: &[u8],
     ) -> ProgramResult {
         let instruction = RuleSetInstruction::try_from_slice(instruction_data)?;
         match instruction {
-            RuleSetInstruction::Create(args) => {
-                let account_info_iter = &mut accounts.iter();
-                let payer_info = next_account_info(account_info_iter)?;
-                let rule_set_pda_info = next_account_info(account_info_iter)?;
-                let system_program_info = next_account_info(account_info_iter)?;
-
-                if !payer_info.is_signer {
-                    return Err(RuleSetError::PayerIsNotSigner.into());
-                }
-
-                // Deserialize RuleSet.
-                let rule_set: RuleSet = rmp_serde::from_slice(&args.serialized_rule_set)
-                    .map_err(|_| RuleSetError::MessagePackDeserializationError)?;
-
-                msg!("RuleSet: {:#?}", rule_set);
-
-                if rule_set.name().len() > MAX_NAME_LENGTH {
-                    return Err(RuleSetError::NameTooLong.into());
-                }
-
-                // The payer/signer must be the RuleSet owner.
-                if payer_info.key != rule_set.owner() {
-                    return Err(RuleSetError::RuleSetOwnerMismatch.into());
-                }
-
-                // Check RuleSet account info derivation.
-                let bump = assert_derivation(
-                    program_id,
-                    rule_set_pda_info.key,
-                    &[
-                        PREFIX.as_bytes(),
-                        payer_info.key.as_ref(),
-                        rule_set.name().as_bytes(),
-                    ],
-                )?;
-
-                // Convert the accounts into a map of Pubkeys to the corresponding account infos.
-                // This makes it easy to pass the account infos into validation functions since they store the Pubkeys.
-                let accounts_map = accounts
-                    .iter()
-                    .map(|account| (*account.key, account))
-                    .collect::<HashMap<Pubkey, &AccountInfo>>();
-
-                // Validate any PDA derivations present in the RuleSet.
-                for rule in rule_set.operations.values() {
-                    rule.assert_rule_pda_derivations(
-                        payer_info.key,
-                        &rule_set.name().to_string(),
-                        &accounts_map,
-                    )?;
-                }
-
-                let rule_set_seeds = &[
-                    PREFIX.as_ref(),
-                    payer_info.key.as_ref(),
-                    rule_set.name().as_ref(),
-                    &[bump],
-                ];
-
-                // Create or allocate RuleSet PDA account.
-                create_or_allocate_account_raw(
-                    *program_id,
-                    rule_set_pda_info,
-                    system_program_info,
-                    payer_info,
-                    args.serialized_rule_set.len(),
-                    rule_set_seeds,
-                )?;
-
-                // Copy user-pre-serialized RuleSet to PDA account.
-                sol_memcpy(
-                    &mut rule_set_pda_info.try_borrow_mut_data().unwrap(),
-                    &args.serialized_rule_set,
-                    args.serialized_rule_set.len(),
-                );
-
-                Ok(())
+            RuleSetInstruction::CreateOrUpdate(args) => {
+                msg!("Instruction: CreateOrUpdate");
+                create_or_update(program_id, accounts, args)
             }
             RuleSetInstruction::Validate(args) => {
-                let account_info_iter = &mut accounts.iter();
-                let rule_set_pda_info = next_account_info(account_info_iter)?;
-                let _system_program_info = next_account_info(account_info_iter)?;
-
-                // RuleSet must be owned by this program.
-                if *rule_set_pda_info.owner != crate::ID {
-                    return Err(RuleSetError::IncorrectOwner.into());
-                }
-
-                // RuleSet must not be empty.
-                if rule_set_pda_info.data_is_empty() {
-                    return Err(RuleSetError::DataIsEmpty.into());
-                }
-
-                // Borrow the RuleSet PDA data.
-                let data = rule_set_pda_info
-                    .data
-                    .try_borrow()
-                    .map_err(|_| RuleSetError::DataTypeMismatch)?;
-
-                // Deserialize RuleSet.
-                let rule_set: RuleSet = rmp_serde::from_slice(&data)
-                    .map_err(|_| RuleSetError::MessagePackDeserializationError)?;
-
-                // Check RuleSet account info derivation.
-                let _bump = assert_derivation(
-                    program_id,
-                    rule_set_pda_info.key,
-                    &[
-                        PREFIX.as_bytes(),
-                        rule_set.owner().as_ref(),
-                        rule_set.name().as_bytes(),
-                    ],
-                )?;
-
-                // Convert the accounts into a map of Pubkeys to the corresponding account infos.
-                // This makes it easy to pass the account infos into validation functions since they store the Pubkeys.
-                let accounts_map = accounts
-                    .iter()
-                    .map(|account| (*account.key, account))
-                    .collect::<HashMap<Pubkey, &AccountInfo>>();
-
-                // Get the Rule from the RuleSet based on the caller-specified Operation.
-                let rule = rule_set
-                    .get(args.operation)
-                    .ok_or(RuleSetError::OperationNotFound)?;
-
-                // Validate the Rule.
-                if let Err(err) =
-                    rule.validate(&accounts_map, &args.payload, args.update_rule_state)
-                {
-                    msg!("Failed to validate: {}", err);
-                    return Err(err);
-                }
-
-                Ok(())
-            }
-            RuleSetInstruction::CreateFrequencyRule(args) => {
-                let account_info_iter = &mut accounts.iter();
-                let payer_info = next_account_info(account_info_iter)?;
-                let freq_rule_pda_info = next_account_info(account_info_iter)?;
-                let system_program_info = next_account_info(account_info_iter)?;
-
-                if !payer_info.is_signer {
-                    return Err(RuleSetError::PayerIsNotSigner.into());
-                }
-
-                if args.rule_set_name.len() > MAX_NAME_LENGTH
-                    || args.freq_rule_name.len() > MAX_NAME_LENGTH
-                {
-                    return Err(RuleSetError::NameTooLong.into());
-                }
-
-                // Check Frequency PDA account info derivation.
-                let bump = assert_derivation(
-                    program_id,
-                    freq_rule_pda_info.key,
-                    &[
-                        FREQ_PDA.as_bytes(),
-                        payer_info.key.as_ref(),
-                        args.rule_set_name.as_bytes(),
-                        args.freq_rule_name.as_bytes(),
-                    ],
-                )?;
-
-                let freq_pda_seeds = &[
-                    FREQ_PDA.as_bytes(),
-                    payer_info.key.as_ref(),
-                    args.rule_set_name.as_bytes(),
-                    args.freq_rule_name.as_bytes(),
-                    &[bump],
-                ];
-
-                let freq_data = FrequencyAccount::new(args.last_update, args.period);
-
-                // Serialize the Frequency Rule.
-                let serialized_rule = freq_data
-                    .try_to_vec()
-                    .map_err(|_| RuleSetError::BorshSerializationError)?;
-
-                // Create or allocate Frequency PDA account.
-                create_or_allocate_account_raw(
-                    *program_id,
-                    freq_rule_pda_info,
-                    system_program_info,
-                    payer_info,
-                    serialized_rule.len(),
-                    freq_pda_seeds,
-                )?;
-
-                // Copy Frequency Rule to PDA account.
-                sol_memcpy(
-                    &mut freq_rule_pda_info.try_borrow_mut_data().unwrap(),
-                    &serialized_rule,
-                    serialized_rule.len(),
-                );
-
-                Ok(())
+                msg!("Instruction: Validate");
+                validate(program_id, accounts, args)
             }
         }
     }
+}
+
+// Function to match on `CreateOrUpdateArgs` version and call correct implementation.
+fn create_or_update<'a>(
+    program_id: &Pubkey,
+    accounts: &'a [AccountInfo<'a>],
+    args: CreateOrUpdateArgs,
+) -> ProgramResult {
+    let context = CreateOrUpdate::as_context(accounts)?;
+
+    match args {
+        CreateOrUpdateArgs::V1 { .. } => create_or_update_v1(program_id, context, args),
+    }
+}
+
+/// V1 implementation of the `create` instruction.
+fn create_or_update_v1(
+    program_id: &Pubkey,
+    ctx: Context<CreateOrUpdate>,
+    args: CreateOrUpdateArgs,
+) -> ProgramResult {
+    // Get the V1 arguments for the instruction.
+    let CreateOrUpdateArgs::V1 {
+        serialized_rule_set,
+    } = args;
+
+    if !ctx.accounts.payer_info.is_signer {
+        return Err(RuleSetError::PayerIsNotSigner.into());
+    }
+
+    // Deserialize RuleSet.
+    let rule_set: RuleSet = rmp_serde::from_slice(&serialized_rule_set)
+        .map_err(|_| RuleSetError::MessagePackDeserializationError)?;
+
+    if rule_set.name().len() > MAX_NAME_LENGTH {
+        return Err(RuleSetError::NameTooLong.into());
+    }
+
+    // Make sure we know how to work with this RuleSet.
+    if rule_set.version() != RULE_SET_VERSION {
+        return Err(RuleSetError::UnsupportedRuleSetVersion.into());
+    }
+
+    // The payer/signer must be the RuleSet owner.
+    if ctx.accounts.payer_info.key != rule_set.owner() {
+        return Err(RuleSetError::RuleSetOwnerMismatch.into());
+    }
+
+    // Check RuleSet account info derivation.
+    let bump = assert_derivation(
+        program_id,
+        ctx.accounts.rule_set_pda_info.key,
+        &[
+            PREFIX.as_bytes(),
+            ctx.accounts.payer_info.key.as_ref(),
+            rule_set.name().as_bytes(),
+        ],
+    )?;
+
+    let rule_set_seeds = &[
+        PREFIX.as_ref(),
+        ctx.accounts.payer_info.key.as_ref(),
+        rule_set.name().as_ref(),
+        &[bump],
+    ];
+
+    // Create or allocate, resize or reallocate RuleSet PDA.
+    if ctx.accounts.rule_set_pda_info.data_is_empty() {
+        create_or_allocate_account_raw(
+            *program_id,
+            ctx.accounts.rule_set_pda_info,
+            ctx.accounts.system_program_info,
+            ctx.accounts.payer_info,
+            serialized_rule_set.len(),
+            rule_set_seeds,
+        )?;
+    } else {
+        resize_or_reallocate_account_raw(
+            ctx.accounts.rule_set_pda_info,
+            ctx.accounts.payer_info,
+            ctx.accounts.system_program_info,
+            serialized_rule_set.len(),
+        )?;
+    }
+
+    // Copy user-pre-serialized RuleSet to PDA account.
+    sol_memcpy(
+        &mut ctx
+            .accounts
+            .rule_set_pda_info
+            .try_borrow_mut_data()
+            .unwrap(),
+        &serialized_rule_set,
+        serialized_rule_set.len(),
+    );
+
+    Ok(())
+}
+
+// Function to match on `ValidateArgs` version and call correct implementation.
+fn validate<'a>(
+    program_id: &Pubkey,
+    accounts: &'a [AccountInfo<'a>],
+    args: ValidateArgs,
+) -> ProgramResult {
+    let context = Validate::as_context(accounts)?;
+
+    match args {
+        ValidateArgs::V1 { .. } => validate_v1(program_id, context, args),
+    }
+}
+
+/// V1 implementation of the `validate` instruction.
+fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) -> ProgramResult {
+    // Get the V1 arguments for the instruction.
+    let ValidateArgs::V1 {
+        operation,
+        payload,
+        update_rule_state,
+    } = args;
+
+    // If state is being updated for any Rules, the payer must be present and must be a signer so
+    // that the RuleSet state PDA can be created or reallocated.
+    if update_rule_state {
+        if let Some(payer_info) = ctx.accounts.payer_info {
+            if !payer_info.is_signer {
+                return Err(RuleSetError::PayerIsNotSigner.into());
+            }
+        } else {
+            return Err(ProgramError::NotEnoughAccountKeys);
+        }
+    }
+
+    // RuleSet must be owned by this program.
+    if *ctx.accounts.rule_set_pda_info.owner != crate::ID {
+        return Err(RuleSetError::IncorrectOwner.into());
+    }
+
+    // RuleSet must not be empty.
+    if ctx.accounts.rule_set_pda_info.data_is_empty() {
+        return Err(RuleSetError::DataIsEmpty.into());
+    }
+
+    // Borrow the RuleSet PDA data.
+    let data = ctx
+        .accounts
+        .rule_set_pda_info
+        .data
+        .try_borrow()
+        .map_err(|_| RuleSetError::DataTypeMismatch)?;
+
+    // Deserialize RuleSet.
+    let rule_set: RuleSet =
+        rmp_serde::from_slice(&data).map_err(|_| RuleSetError::MessagePackDeserializationError)?;
+
+    // Check RuleSet account info derivation.
+    let _bump = assert_derivation(
+        program_id,
+        ctx.accounts.rule_set_pda_info.key,
+        &[
+            PREFIX.as_bytes(),
+            rule_set.owner().as_ref(),
+            rule_set.name().as_bytes(),
+        ],
+    )?;
+
+    // If RuleSet state is to be updated, check account info derivation.
+    if update_rule_state {
+        if let Some(rule_set_state_pda_info) = ctx.accounts.rule_set_state_pda_info {
+            let _bump = assert_derivation(
+                program_id,
+                rule_set_state_pda_info.key,
+                &[
+                    STATE_PDA.as_bytes(),
+                    rule_set.owner().as_ref(),
+                    rule_set.name().as_bytes(),
+                    ctx.accounts.mint_info.key.as_ref(),
+                ],
+            )?;
+        } else {
+            return Err(ProgramError::NotEnoughAccountKeys);
+        }
+    }
+
+    // Convert remaining Rule accounts into a map of `Pubkey`s to the corresponding `AccountInfo`s.
+    // This makes it easy to pass the account infos into validation functions since they store the
+    //`Pubkey`s.
+    let accounts_map = ctx
+        .remaining_accounts
+        .iter()
+        .map(|account| (*account.key, *account))
+        .collect::<HashMap<Pubkey, &AccountInfo>>();
+
+    // Get the Rule from the RuleSet based on the caller-specified operation.
+    let rule = rule_set
+        .get(operation)
+        .ok_or(RuleSetError::OperationNotFound)?;
+
+    // Validate the Rule.
+    if let Err(err) = rule.validate(
+        &accounts_map,
+        &payload,
+        update_rule_state,
+        &ctx.accounts.rule_set_state_pda_info,
+        &ctx.accounts.rule_authority_info,
+    ) {
+        msg!("Failed to validate: {}", err);
+        return Err(err);
+    }
+
+    Ok(())
+}
+
+/// Convenience function for accessing the next item in an [`AccountInfo`]
+/// iterator and validating whether the account is present or not.
+///
+/// This relies on the client setting the `crate::id()` as the pubkey for
+/// accounts that are not set, which effectively allows us to use positional
+/// optional accounts.
+pub fn next_optional_account_info<'a, 'b, I: Iterator<Item = &'a AccountInfo<'b>>>(
+    iter: &mut I,
+) -> Result<Option<I::Item>, ProgramError> {
+    let account_info = iter.next().ok_or(ProgramError::NotEnoughAccountKeys)?;
+
+    Ok(if cmp_pubkeys(account_info.key, &crate::id()) {
+        None
+    } else {
+        Some(account_info)
+    })
+}
+
+pub fn cmp_pubkeys(a: &Pubkey, b: &Pubkey) -> bool {
+    sol_memcmp(a.as_ref(), b.as_ref(), PUBKEY_BYTES) == 0
 }

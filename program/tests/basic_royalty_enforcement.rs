@@ -3,16 +3,19 @@
 pub mod utils;
 
 use mpl_token_auth_rules::{
+    instruction::{
+        builders::{CreateOrUpdateBuilder, ValidateBuilder},
+        CreateOrUpdateArgs, InstructionBuilder, ValidateArgs,
+    },
     payload::{LeafInfo, Payload, PayloadKey, PayloadType},
     state::{Rule, RuleSet},
 };
-use num_traits::ToPrimitive;
 use rmp_serde::Serializer;
 use serde::Serialize;
-use solana_program::instruction::AccountMeta;
 use solana_program_test::tokio;
 use solana_sdk::{
-    signature::Signer, signer::keypair::Keypair, system_instruction, transaction::Transaction,
+    instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
+    transaction::Transaction,
 };
 use utils::{program_test, Operation};
 
@@ -54,20 +57,17 @@ async fn basic_royalty_enforcement() {
         context.payer.pubkey(),
     );
     basic_royalty_enforcement_rule_set
-        .add(
-            Operation::Transfer.to_u16().unwrap(),
-            owned_by_token_metadata,
-        )
+        .add(Operation::Transfer.to_string(), owned_by_token_metadata)
         .unwrap();
     basic_royalty_enforcement_rule_set
         .add(
-            Operation::Delegate.to_u16().unwrap(),
+            Operation::Delegate.to_string(),
             leaf_in_marketplace_tree.clone(),
         )
         .unwrap();
     basic_royalty_enforcement_rule_set
         .add(
-            Operation::SaleTransfer.to_u16().unwrap(),
+            Operation::SaleTransfer.to_string(),
             leaf_in_marketplace_tree,
         )
         .unwrap();
@@ -78,18 +78,20 @@ async fn basic_royalty_enforcement() {
     );
 
     // Serialize the RuleSet using RMP serde.
-    let mut serialized_data = Vec::new();
+    let mut serialized_rule_set = Vec::new();
     basic_royalty_enforcement_rule_set
-        .serialize(&mut Serializer::new(&mut serialized_data))
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
         .unwrap();
 
     // Create a `create` instruction.
-    let create_ix = mpl_token_auth_rules::instruction::create(
-        context.payer.pubkey(),
-        rule_set_addr,
-        serialized_data,
-        vec![],
-    );
+    let create_ix = CreateOrUpdateBuilder::new()
+        .payer(context.payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .build(CreateOrUpdateArgs::V1 {
+            serialized_rule_set,
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a transaction.
     let create_tx = Transaction::new_signed_with_payer(
@@ -127,6 +129,9 @@ async fn basic_royalty_enforcement() {
 
     context.banks_client.process_transaction(tx).await.unwrap();
 
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new().pubkey();
+
     // Store the payload of data to validate against the rule definition.
     // In this case the Target will be used to look up the `AccountInfo`
     // and see who the owner is.
@@ -135,17 +140,20 @@ async fn basic_royalty_enforcement() {
         PayloadType::Pubkey(fake_token_metadata_owned_escrow.pubkey()),
     )]);
 
-    // Create a `validate` instruction for a `Transfer` operation.
-    let validate_ix = mpl_token_auth_rules::instruction::validate(
-        rule_set_addr,
-        Operation::Transfer.to_u16().unwrap(),
-        payload,
-        true,
-        vec![AccountMeta::new_readonly(
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(
             fake_token_metadata_owned_escrow.pubkey(),
             false,
-        )],
-    );
+        )])
+        .build(ValidateArgs::V1 {
+            operation: Operation::Transfer.to_string(),
+            payload,
+            update_rule_state: false,
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a transaction.
     let validate_tx = Transaction::new_signed_with_payer(
@@ -194,13 +202,17 @@ async fn basic_royalty_enforcement() {
     let payload = Payload::from([(PayloadKey::Target, PayloadType::MerkleProof(leaf_info))]);
 
     // Create a `validate` instruction for a `Delegate` operation.
-    let validate_ix = mpl_token_auth_rules::instruction::validate(
-        rule_set_addr,
-        Operation::Delegate.to_u16().unwrap(),
-        payload.clone(),
-        true,
-        vec![],
-    );
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .additional_rule_accounts(vec![])
+        .build(ValidateArgs::V1 {
+            operation: Operation::Delegate.to_string(),
+            payload: payload.clone(),
+            update_rule_state: false,
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a transaction.
     let validate_tx = Transaction::new_signed_with_payer(
@@ -221,13 +233,17 @@ async fn basic_royalty_enforcement() {
     // Validate SaleTransfer operation
     // --------------------------------
     // Create a `validate` instruction for a `SaleTransfer` operation.
-    let validate_ix = mpl_token_auth_rules::instruction::validate(
-        rule_set_addr,
-        Operation::SaleTransfer.to_u16().unwrap(),
-        payload,
-        true,
-        vec![],
-    );
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .additional_rule_accounts(vec![])
+        .build(ValidateArgs::V1 {
+            operation: Operation::SaleTransfer.to_string(),
+            payload,
+            update_rule_state: false,
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a transaction.
     let validate_tx = Transaction::new_signed_with_payer(
