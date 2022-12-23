@@ -11,8 +11,7 @@ use mpl_token_auth_rules::{
     payload::{Payload, PayloadKey, PayloadType},
     state::{CompareOp, Rule, RuleSet},
 };
-use num_traits::cast::FromPrimitive;
-use solana_program::instruction::{AccountMeta, InstructionError};
+use solana_program::instruction::AccountMeta;
 use solana_program_test::{tokio, BanksClientError};
 use solana_sdk::{
     signature::Signer,
@@ -20,8 +19,8 @@ use solana_sdk::{
     transaction::{Transaction, TransactionError},
 };
 use utils::{
-    create_rule_set_on_chain, process_failing_validate_ix, process_passing_validate_ix,
-    program_test, Operation,
+    assert_rule_set_error, create_rule_set_on_chain, process_failing_validate_ix,
+    process_passing_validate_ix, program_test, Operation,
 };
 
 #[tokio::test]
@@ -161,17 +160,8 @@ async fn test_additional_signer_and_amount() {
     // Fail to validate Transfer operation.
     let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
 
-    // Deconstruct the error code and make sure it is what we expect.
-    match err {
-        BanksClientError::TransactionError(TransactionError::InstructionError(
-            _,
-            InstructionError::Custom(val),
-        )) => {
-            let rule_set_error = RuleSetError::from_u32(val).unwrap();
-            assert_eq!(rule_set_error, RuleSetError::MissingAccount);
-        }
-        _ => panic!("Unexpected error {:?}", err),
-    }
+    // Check that error is what we expect.
+    assert_rule_set_error(err, RuleSetError::MissingAccount);
 
     // Create a `validate` instruction WITH the second signer.
     let validate_ix = ValidateBuilder::new()
@@ -214,17 +204,8 @@ async fn test_additional_signer_and_amount() {
     // Fail to validate Transfer operation.
     let err = process_failing_validate_ix(&mut context, validate_ix, vec![&second_signer]).await;
 
-    // Deconstruct the error code and make sure it is what we expect.
-    match err {
-        BanksClientError::TransactionError(TransactionError::InstructionError(
-            _,
-            InstructionError::Custom(val),
-        )) => {
-            let rule_set_error = RuleSetError::from_u32(val).unwrap();
-            assert_eq!(rule_set_error, RuleSetError::AmountCheckFailed);
-        }
-        _ => panic!("Unexpected error {:?}", err),
-    }
+    // Check that error is what we expect.
+    assert_rule_set_error(err, RuleSetError::AmountCheckFailed);
 }
 
 #[tokio::test]
@@ -252,9 +233,6 @@ async fn test_pass() {
     // --------------------------------
     // Validate Pass Rule
     // --------------------------------
-    // Warp some slots before validating.
-    context.warp_to_slot(2).unwrap();
-
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 

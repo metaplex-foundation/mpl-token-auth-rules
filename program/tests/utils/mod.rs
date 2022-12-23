@@ -1,13 +1,22 @@
 use mpl_token_auth_rules::{
+    error::RuleSetError,
     instruction::{builders::CreateOrUpdateBuilder, CreateOrUpdateArgs, InstructionBuilder},
     state::RuleSet,
 };
 use num_derive::ToPrimitive;
+use num_traits::cast::FromPrimitive;
 use rmp_serde::Serializer;
 use serde::Serialize;
-use solana_program::{instruction::Instruction, pubkey::Pubkey};
+use solana_program::{
+    instruction::{Instruction, InstructionError},
+    pubkey::Pubkey,
+};
 use solana_program_test::{BanksClientError, ProgramTest, ProgramTestContext};
-use solana_sdk::{signature::Signer, signer::keypair::Keypair, transaction::Transaction};
+use solana_sdk::{
+    signature::Signer,
+    signer::keypair::Keypair,
+    transaction::{Transaction, TransactionError},
+};
 
 #[repr(C)]
 #[derive(ToPrimitive)]
@@ -120,4 +129,18 @@ pub async fn process_failing_validate_ix(
         .process_transaction(validate_tx)
         .await
         .expect_err("validation should fail")
+}
+
+pub fn assert_rule_set_error(err: BanksClientError, rule_set_error: RuleSetError) {
+    // Deconstruct the error code and make sure it is what we expect.
+    match err {
+        BanksClientError::TransactionError(TransactionError::InstructionError(
+            _,
+            InstructionError::Custom(val),
+        )) => {
+            let deconstructed_err = RuleSetError::from_u32(val).unwrap();
+            assert_eq!(deconstructed_err, rule_set_error);
+        }
+        _ => panic!("Unexpected error {:?}", err),
+    }
 }
