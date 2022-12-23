@@ -10,7 +10,7 @@ use solana_program::{
 #[repr(C)]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 /// Args for `create` instruction.
-pub enum CreateArgs {
+pub enum CreateOrUpdateArgs {
     V1 {
         /// RuleSet pre-serialized by caller into the MessagePack format.
         serialized_rule_set: Vec<u8>,
@@ -39,7 +39,7 @@ pub enum RuleSetInstruction {
     #[account(0, signer, writable, name="payer", desc="Payer and creator of the RuleSet")]
     #[account(1, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
     #[account(2, name = "system_program", desc = "System program")]
-    Create(CreateArgs),
+    CreateOrUpdate(CreateOrUpdateArgs),
 
     /// This instruction executes the RuleSet stored in the rule_set PDA account by calling the
     /// `RuleSet`'s `validate` method.  If any of the Rules contained in the RuleSet have state
@@ -57,8 +57,8 @@ pub enum RuleSetInstruction {
     Validate(ValidateArgs),
 }
 
-/// Builds a `create` instruction.
-impl InstructionBuilder for builders::Create {
+/// Builds a `CreateOrUpdate` instruction.
+impl InstructionBuilder for builders::CreateOrUpdate {
     fn instruction(&self) -> solana_program::instruction::Instruction {
         let accounts = vec![
             AccountMeta::new(self.payer, true),
@@ -69,14 +69,14 @@ impl InstructionBuilder for builders::Create {
         Instruction {
             program_id: crate::ID,
             accounts,
-            data: RuleSetInstruction::Create(self.args.clone())
+            data: RuleSetInstruction::CreateOrUpdate(self.args.clone())
                 .try_to_vec()
                 .unwrap(),
         }
     }
 }
 
-/// Builds a `validate` instruction.
+/// Builds a `Validate` instruction.
 impl InstructionBuilder for builders::Validate {
     fn instruction(&self) -> solana_program::instruction::Instruction {
         let mut accounts = vec![

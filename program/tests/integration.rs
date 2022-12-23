@@ -5,8 +5,8 @@ pub mod utils;
 use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{
-        builders::{CreateBuilder, ValidateBuilder},
-        CreateArgs, InstructionBuilder, ValidateArgs,
+        builders::{CreateOrUpdateBuilder, ValidateBuilder},
+        CreateOrUpdateArgs, InstructionBuilder, ValidateArgs,
     },
     payload::{Payload, PayloadKey, PayloadType},
     state::{CompareOp, Rule, RuleSet},
@@ -34,10 +34,10 @@ async fn test_payer_not_signer_fails() {
     );
 
     // Create a `create` instruction.
-    let create_ix = CreateBuilder::new()
+    let create_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
-        .build(CreateArgs::V1 {
+        .build(CreateOrUpdateArgs::V1 {
             serialized_rule_set: vec![],
         })
         .unwrap()
@@ -143,10 +143,10 @@ async fn test_additional_signer_and_amount() {
         .unwrap();
 
     // Create a `create` instruction.
-    let create_ix = CreateBuilder::new()
+    let create_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
-        .build(CreateArgs::V1 {
+        .build(CreateOrUpdateArgs::V1 {
             serialized_rule_set,
         })
         .unwrap()
@@ -325,10 +325,10 @@ async fn test_pass() {
         .unwrap();
 
     // Create a `create` instruction.
-    let create_ix = CreateBuilder::new()
+    let create_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
-        .build(CreateArgs::V1 {
+        .build(CreateOrUpdateArgs::V1 {
             serialized_rule_set,
         })
         .unwrap()
@@ -416,10 +416,10 @@ async fn test_update_ruleset() {
         .unwrap();
 
     // Create a `create` instruction.
-    let create_ix = CreateBuilder::new()
+    let create_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
-        .build(CreateArgs::V1 {
+        .build(CreateOrUpdateArgs::V1 {
             serialized_rule_set,
         })
         .unwrap()
@@ -467,10 +467,10 @@ async fn test_update_ruleset() {
         .unwrap();
 
     // Create a new `create` instruction to update the RuleSet.
-    let update_ix = CreateBuilder::new()
+    let update_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
-        .build(CreateArgs::V1 {
+        .build(CreateOrUpdateArgs::V1 {
             serialized_rule_set,
         })
         .unwrap()

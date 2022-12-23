@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use crate::{
     error::RuleSetError,
-    instruction::{Context, Create, CreateArgs, RuleSetInstruction, Validate, ValidateArgs},
+    instruction::{
+        Context, CreateOrUpdate, CreateOrUpdateArgs, RuleSetInstruction, Validate, ValidateArgs,
+    },
     pda::{PREFIX, STATE_PDA},
     state::{RuleSet, RULE_SET_VERSION},
     utils::{assert_derivation, create_or_allocate_account_raw, resize_or_reallocate_account_raw},
@@ -27,9 +29,9 @@ impl Processor {
     ) -> ProgramResult {
         let instruction = RuleSetInstruction::try_from_slice(instruction_data)?;
         match instruction {
-            RuleSetInstruction::Create(args) => {
-                msg!("Instruction: Create");
-                create(program_id, accounts, args)
+            RuleSetInstruction::CreateOrUpdate(args) => {
+                msg!("Instruction: CreateOrUpdate");
+                create_or_update(program_id, accounts, args)
             }
             RuleSetInstruction::Validate(args) => {
                 msg!("Instruction: Validate");
@@ -39,23 +41,27 @@ impl Processor {
     }
 }
 
-// Function to match on `CreateArgs` version and call correct implementation.
-fn create<'a>(
+// Function to match on `CreateOrUpdateArgs` version and call correct implementation.
+fn create_or_update<'a>(
     program_id: &Pubkey,
     accounts: &'a [AccountInfo<'a>],
-    args: CreateArgs,
+    args: CreateOrUpdateArgs,
 ) -> ProgramResult {
-    let context = Create::as_context(accounts)?;
+    let context = CreateOrUpdate::as_context(accounts)?;
 
     match args {
-        CreateArgs::V1 { .. } => create_v1(program_id, context, args),
+        CreateOrUpdateArgs::V1 { .. } => create_or_update_v1(program_id, context, args),
     }
 }
 
 /// V1 implementation of the `create` instruction.
-fn create_v1(program_id: &Pubkey, ctx: Context<Create>, args: CreateArgs) -> ProgramResult {
+fn create_or_update_v1(
+    program_id: &Pubkey,
+    ctx: Context<CreateOrUpdate>,
+    args: CreateOrUpdateArgs,
+) -> ProgramResult {
     // Get the V1 arguments for the instruction.
-    let CreateArgs::V1 {
+    let CreateOrUpdateArgs::V1 {
         serialized_rule_set,
     } = args;
 
