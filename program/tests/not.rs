@@ -43,6 +43,9 @@ async fn test_not() {
     let rule_set_addr =
         create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
 
+    // --------------------------------
+    // Validate fail
+    // --------------------------------
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
