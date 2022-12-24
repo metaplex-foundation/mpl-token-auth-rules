@@ -7,66 +7,66 @@
 
 import * as beet from '@metaplex-foundation/beet';
 import * as web3 from '@solana/web3.js';
-import { CreateArgs, createArgsBeet } from '../types/CreateArgs';
+import { CreateOrUpdateArgs, createOrUpdateArgsBeet } from '../types/CreateOrUpdateArgs';
 
 /**
  * @category Instructions
- * @category Create
+ * @category CreateOrUpdate
  * @category generated
  */
-export type CreateInstructionArgs = {
-  createArgs: CreateArgs;
+export type CreateOrUpdateInstructionArgs = {
+  createOrUpdateArgs: CreateOrUpdateArgs;
 };
 /**
  * @category Instructions
- * @category Create
+ * @category CreateOrUpdate
  * @category generated
  */
-export const CreateStruct = new beet.FixableBeetArgsStruct<
-  CreateInstructionArgs & {
+export const CreateOrUpdateStruct = new beet.FixableBeetArgsStruct<
+  CreateOrUpdateInstructionArgs & {
     instructionDiscriminator: number;
   }
 >(
   [
     ['instructionDiscriminator', beet.u8],
-    ['createArgs', createArgsBeet],
+    ['createOrUpdateArgs', createOrUpdateArgsBeet],
   ],
-  'CreateInstructionArgs',
+  'CreateOrUpdateInstructionArgs',
 );
 /**
- * Accounts required by the _Create_ instruction
+ * Accounts required by the _CreateOrUpdate_ instruction
  *
  * @property [_writable_, **signer**] payer Payer and creator of the RuleSet
  * @property [_writable_] ruleSetPda The PDA account where the RuleSet is stored
  * @category Instructions
- * @category Create
+ * @category CreateOrUpdate
  * @category generated
  */
-export type CreateInstructionAccounts = {
+export type CreateOrUpdateInstructionAccounts = {
   payer: web3.PublicKey;
   ruleSetPda: web3.PublicKey;
   systemProgram?: web3.PublicKey;
 };
 
-export const createInstructionDiscriminator = 0;
+export const createOrUpdateInstructionDiscriminator = 0;
 
 /**
- * Creates a _Create_ instruction.
+ * Creates a _CreateOrUpdate_ instruction.
  *
  * @param accounts that will be accessed while the instruction is processed
  * @param args to provide as instruction data to the program
  *
  * @category Instructions
- * @category Create
+ * @category CreateOrUpdate
  * @category generated
  */
-export function createCreateInstruction(
-  accounts: CreateInstructionAccounts,
-  args: CreateInstructionArgs,
+export function createCreateOrUpdateInstruction(
+  accounts: CreateOrUpdateInstructionAccounts,
+  args: CreateOrUpdateInstructionArgs,
   programId = new web3.PublicKey('auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'),
 ) {
-  const [data] = CreateStruct.serialize({
-    instructionDiscriminator: createInstructionDiscriminator,
+  const [data] = CreateOrUpdateStruct.serialize({
+    instructionDiscriminator: createOrUpdateInstructionDiscriminator,
     ...args,
   });
   const keys: web3.AccountMeta[] = [
