@@ -138,7 +138,7 @@ async fn test_additional_signer_and_not_amount() {
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
-    // Store the payload of data to validate against the rule definition.
+    // Store a payload of data with an amount not allowed by the Amount Rule (Amount Rule NOT'd).
     let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(2))]);
 
     // Create a `validate` instruction WITHOUT the second signer.
@@ -182,10 +182,10 @@ async fn test_additional_signer_and_not_amount() {
     // Validate Transfer operation.
     process_passing_validate_ix(&mut context, validate_ix, vec![&second_signer]).await;
 
-    // Store a payload of data with the WRONG amount (its the amount in the Rule but the rule is NOT'd)
+    // Store a payload of data with an amount allowed by the Amount Rule (Amount Rule NOT'd).
     let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(1))]);
 
-    // Create a `validate` instruction WITH the second signer.  Will fail because of WRONG amount.
+    // Create a `validate` instruction WITH the second signer.  Will fail as Amount Rule is NOT'd.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
