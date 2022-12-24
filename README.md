@@ -12,9 +12,59 @@ There are **Primitive Rules** and **Composed Rules** that are created by combini
 
 **Composed Rules** return a true or false based on whether any or all of the primitive rules return true.  Composed rules can then be combined into higher-level composed rules that implement more complex boolean logic.  Because of the recursive definition of the `Rule` enum, calling `validate()` on a top-level composed rule will start at the top and validate at every level, down to the component primitive rules.
 
-# Examples
+## Environment Setup
+1. Install Rust from https://rustup.rs/
+2. Install Solana from https://docs.solana.com/cli/install-solana-cli-tools#use-solanas-install-tool
+3. Run `yarn install` to install dependencies
 
-## Rust
+---
+
+### Build and test the Rust program
+```
+$ cd program/
+$ cargo build-bpf
+$ cargo test-bpf
+$ cd ..
+```
+
+---
+
+### Build the program, generate the JS API, and rebuild IDL (using Shank and Solita)
+```
+$ yarn build:rust
+$ yarn solita
+```
+
+---
+
+### Build the JS SDK only (must be generated first)
+```
+$ yarn build:sdk
+```
+
+---
+
+### Build the program and generate/build the IDL/SDK/docs
+```
+$ yarn build
+```
+
+---
+
+### Start Amman and run the test script
+Run the following command in a separate shell
+```
+$ amman start
+```
+
+Then, run the Amman script
+```
+$ yarn amman
+```
+
+## Examples
+
+### Rust
 **Note: Additional Rust examples can be found in the [program/tests](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/main/program/tests) directory.**
 ```rust
 use mpl_token_auth_rules::{
@@ -172,7 +222,7 @@ fn main() {
 }
 ```
 
-## JavaScript
+### JavaScript
 **Note: Additional JS examples can be found in the [/cli/](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/cli) source along with the example rulesets in [/cli/examples/](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/cli/examples)**
 ```js
 import { encode, decode } from '@msgpack/msgpack';
@@ -257,55 +307,4 @@ let payer = Keypair.generate
 const encoded = encode(RULESET);
 // Create the ruleset
 await createTokenAuthorizationRules(connection, payer, name, encoded);
-
-```
-
-### Environment Setup
-1. Install Rust from https://rustup.rs/
-2. Install Solana from https://docs.solana.com/cli/install-solana-cli-tools#use-solanas-install-tool
-3. Run `yarn install` to install dependencies
-
----
-
-### Build and test the Rust program
-```
-$ cd program/
-$ cargo build-bpf
-$ cargo test-bpf
-$ cd ..
-```
-
----
-
-### Build the program, generate the JS API, and rebuild IDL (using Shank and Solita)
-```
-$ yarn build:rust
-$ yarn solita
-```
-
----
-
-### Build the JS SDK only (must be generated first)
-```
-$ yarn build:sdk
-```
-
----
-
-### Build the program and generate/build the IDL/SDK/docs
-```
-$ yarn build
-```
-
----
-
-### Start Amman and run the test script
-Run the following command in a separate shell
-```
-$ amman start
-```
-
-Then, run the Amman script
-```
-$ yarn amman
 ```
