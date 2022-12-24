@@ -1,9 +1,9 @@
 {
-  "version": "0.1.6",
+  "version": "0.2.0",
   "name": "mpl_token_auth_rules",
   "instructions": [
     {
-      "name": "Create",
+      "name": "CreateOrUpdate",
       "accounts": [
         {
           "name": "payer",
@@ -26,9 +26,9 @@
       ],
       "args": [
         {
-          "name": "createArgs",
+          "name": "createOrUpdateArgs",
           "type": {
-            "defined": "CreateArgs"
+            "defined": "CreateOrUpdateArgs"
           }
         }
       ],
@@ -41,16 +41,43 @@
       "name": "Validate",
       "accounts": [
         {
-          "name": "ruleSet",
+          "name": "ruleSetPda",
           "isMut": false,
           "isSigner": false,
           "desc": "The PDA account where the RuleSet is stored"
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Mint of token asset"
         },
         {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false,
           "desc": "System program"
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "desc": "Payer for RuleSet state PDA account",
+          "optional": true
+        },
+        {
+          "name": "ruleAuthority",
+          "isMut": false,
+          "isSigner": true,
+          "desc": "Signing authority for any Rule state updates",
+          "optional": true
+        },
+        {
+          "name": "ruleSetStatePda",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "The PDA account where any RuleSet state is stored",
+          "optional": true
         }
       ],
       "args": [
@@ -64,41 +91,6 @@
       "discriminant": {
         "type": "u8",
         "value": 1
-      }
-    },
-    {
-      "name": "CreateFrequencyRule",
-      "accounts": [
-        {
-          "name": "payer",
-          "isMut": true,
-          "isSigner": true,
-          "desc": "Payer and creator of the Frequency Rule"
-        },
-        {
-          "name": "frequencyPda",
-          "isMut": true,
-          "isSigner": false,
-          "desc": "The PDA account where the Frequency Rule is stored"
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false,
-          "desc": "System program"
-        }
-      ],
-      "args": [
-        {
-          "name": "createFrequencyRuleArgs",
-          "type": {
-            "defined": "CreateFrequencyRuleArgs"
-          }
-        }
-      ],
-      "discriminant": {
-        "type": "u8",
-        "value": 2
       }
     }
   ],
@@ -127,64 +119,6 @@
     }
   ],
   "types": [
-    {
-      "name": "CreateArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "serializedRuleSet",
-            "type": "bytes"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ValidateArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "operation",
-            "type": "u16"
-          },
-          {
-            "name": "payload",
-            "type": {
-              "defined": "Payload"
-            }
-          },
-          {
-            "name": "updateRuleState",
-            "type": "bool"
-          }
-        ]
-      }
-    },
-    {
-      "name": "CreateFrequencyRuleArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "ruleSetName",
-            "type": "string"
-          },
-          {
-            "name": "freqRuleName",
-            "type": "string"
-          },
-          {
-            "name": "lastUpdate",
-            "type": "i64"
-          },
-          {
-            "name": "period",
-            "type": "i64"
-          }
-        ]
-      }
-    },
     {
       "name": "SeedsVec",
       "type": {
@@ -244,6 +178,50 @@
                 }
               ]
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "CreateOrUpdateArgs",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "V1",
+            "fields": [
+              {
+                "name": "serialized_rule_set",
+                "type": "bytes"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ValidateArgs",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "V1",
+            "fields": [
+              {
+                "name": "operation",
+                "type": "string"
+              },
+              {
+                "name": "payload",
+                "type": {
+                  "defined": "Payload"
+                }
+              },
+              {
+                "name": "update_rule_state",
+                "type": "bool"
+              }
+            ]
           }
         ]
       }
@@ -439,6 +417,16 @@
       "code": 23,
       "name": "OperationNotFound",
       "msg": "The operation retrieved is not in the selected RuleSet"
+    },
+    {
+      "code": 24,
+      "name": "RuleAuthorityIsNotSigner",
+      "msg": "Rule authority is not signer"
+    },
+    {
+      "code": 25,
+      "name": "UnsupportedRuleSetVersion",
+      "msg": "Unsupported RuleSet version"
     }
   ],
   "metadata": {
