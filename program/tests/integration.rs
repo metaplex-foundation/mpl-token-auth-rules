@@ -27,6 +27,9 @@ use utils::{
 async fn test_payer_not_signer_fails() {
     let mut context = program_test().start_with_context().await;
 
+    // --------------------------------
+    // Create fail unsigned tx
+    // --------------------------------
     // Find RuleSet PDA.
     let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
         context.payer.pubkey(),
@@ -59,6 +62,9 @@ async fn test_payer_not_signer_fails() {
         _ => panic!("Unexpected error {:?}", err),
     }
 
+    // --------------------------------
+    // Validate fail unsigned tx
+    // --------------------------------
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
@@ -96,6 +102,9 @@ async fn test_payer_not_signer_fails() {
 async fn test_additional_signer_and_not_amount() {
     let mut context = program_test().start_with_context().await;
 
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
     // Create some rules.
     let adtl_signer = Rule::AdditionalSigner {
         account: context.payer.pubkey(),
@@ -135,6 +144,9 @@ async fn test_additional_signer_and_not_amount() {
     let rule_set_addr =
         create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
 
+    // --------------------------------
+    // Validate fail missing account
+    // --------------------------------
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
@@ -163,6 +175,9 @@ async fn test_additional_signer_and_not_amount() {
     // Check that error is what we expect.
     assert_rule_set_error(err, RuleSetError::MissingAccount);
 
+    // --------------------------------
+    // Validate pass
+    // --------------------------------
     // Create a `validate` instruction WITH the second signer.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
@@ -182,6 +197,9 @@ async fn test_additional_signer_and_not_amount() {
     // Validate Transfer operation.
     process_passing_validate_ix(&mut context, validate_ix, vec![&second_signer]).await;
 
+    // --------------------------------
+    // Validate fail wrong amount
+    // --------------------------------
     // Store a payload of data with an amount allowed by the Amount Rule (Amount Rule NOT'd).
     let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(1))]);
 
@@ -212,6 +230,9 @@ async fn test_additional_signer_and_not_amount() {
 async fn test_update_ruleset() {
     let mut context = program_test().start_with_context().await;
 
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
     // Create a Pass Rule.
     let pass_rule = Rule::Pass;
 
@@ -225,6 +246,9 @@ async fn test_update_ruleset() {
     let _rule_set_addr =
         create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
 
+    // --------------------------------
+    // Update RuleSet
+    // --------------------------------
     // Create some other rules.
     let adtl_signer = Rule::AdditionalSigner {
         account: context.payer.pubkey(),
