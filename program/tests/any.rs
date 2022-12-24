@@ -8,7 +8,6 @@ use mpl_token_auth_rules::{
     payload::{Payload, PayloadKey, PayloadType},
     state::{CompareOp, Rule, RuleSet},
 };
-
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
 use utils::{

@@ -8,7 +8,6 @@ use mpl_token_auth_rules::{
     payload::{Payload, PayloadKey, PayloadType},
     state::{Rule, RuleSet},
 };
-
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
 use utils::{
@@ -44,7 +43,7 @@ async fn test_pubkey_list_match() {
         create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
-    // Validate PubkeyMatch Rule fail
+    // Validate fail
     // --------------------------------
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
@@ -75,7 +74,7 @@ async fn test_pubkey_list_match() {
     assert_rule_set_error(err, RuleSetError::PubkeyListMatchCheckFailed);
 
     // --------------------------------
-    // Validate PubkeyMatch Rule pass
+    // Validate pass
     // --------------------------------
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();

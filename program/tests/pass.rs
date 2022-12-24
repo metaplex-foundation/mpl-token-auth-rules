@@ -7,7 +7,6 @@ use mpl_token_auth_rules::{
     payload::Payload,
     state::{Rule, RuleSet},
 };
-
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
 use utils::{create_rule_set_on_chain, process_passing_validate_ix, program_test, Operation};
@@ -35,7 +34,7 @@ async fn test_pass() {
         create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
-    // Validate Pass Rule
+    // Validate pass
     // --------------------------------
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
