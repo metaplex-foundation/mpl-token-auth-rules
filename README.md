@@ -18,11 +18,14 @@ There are **Primitive Rules** and **Composed Rules** that are created by combini
 **Note: Additional Rust examples can be found in the [program/tests](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/main/program/tests) directory.**
 ```rust
 use mpl_token_auth_rules::{
+    instruction::{
+        builders::{CreateOrUpdateBuilder, ValidateBuilder},
+        CreateOrUpdateArgs, InstructionBuilder, ValidateArgs,
+    },
     payload::{Payload, PayloadKey, PayloadType},
     state::{CompareOp, Rule, RuleSet},
 };
 use num_derive::ToPrimitive;
-use num_traits::ToPrimitive;
 use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_client::rpc_client::RpcClient;
@@ -37,6 +40,16 @@ pub enum Operation {
     Transfer,
     Delegate,
     SaleTransfer,
+}
+
+impl ToString for Operation {
+    fn to_string(&self) -> String {
+        match self {
+            Operation::Transfer => "Transfer".to_string(),
+            Operation::Delegate => "Delegate".to_string(),
+            Operation::SaleTransfer => "SaleTransfer".to_string(),
+        }
+    }
 }
 
 fn main() {
@@ -57,56 +70,55 @@ fn main() {
         }
     }
 
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
     // Find RuleSet PDA.
     let (rule_set_addr, _ruleset_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
         payer.pubkey(),
         "test rule_set".to_string(),
     );
 
-    // Second signer.
-    let second_signer = Keypair::new();
+    // Additional signer.
+    let adtl_signer = Keypair::new();
 
     // Create some rules.
-    let adtl_signer = Rule::AdditionalSigner {
-        account: payer.pubkey(),
-    };
-    let adtl_signer2 = Rule::AdditionalSigner {
-        account: second_signer.pubkey(),
-    };
-    let amount_check = Rule::Amount {
-        amount: 2,
-        operator: CompareOp::Eq,
+    let adtl_signer_rule = Rule::AdditionalSigner {
+        account: adtl_signer.pubkey(),
     };
 
-    let first_rule = Rule::All {
-        rules: vec![adtl_signer, adtl_signer2],
+    let amount_rule = Rule::Amount {
+        amount: 1,
+        operator: CompareOp::LtEq,
     };
 
     let overall_rule = Rule::All {
-        rules: vec![first_rule, amount_check],
+        rules: vec![adtl_signer_rule, amount_rule],
     };
 
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_u16().unwrap(), overall_rule)
+        .add(Operation::Transfer.to_string(), overall_rule)
         .unwrap();
 
     println!("{:#?}", rule_set);
 
     // Serialize the RuleSet using RMP serde.
-    let mut serialized_data = Vec::new();
+    let mut serialized_rule_set = Vec::new();
     rule_set
-        .serialize(&mut Serializer::new(&mut serialized_data))
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
         .unwrap();
 
     // Create a `create` instruction.
-    let create_ix = mpl_token_auth_rules::instruction::create(
-        payer.pubkey(),
-        rule_set_addr,
-        serialized_data,
-        vec![],
-    );
+    let create_ix = CreateOrUpdateBuilder::new()
+        .payer(payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .build(CreateOrUpdateArgs::V1 {
+            serialized_rule_set,
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a transaction.
     let latest_blockhash = rpc_client.get_latest_blockhash().unwrap();
@@ -119,30 +131,36 @@ fn main() {
 
     // Send and confirm transaction.
     let signature = rpc_client.send_and_confirm_transaction(&create_tx).unwrap();
-
     println!("Create tx signature: {}", signature);
 
-    // Store the payload of data to validate against the rule definition.
-    let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(2))]);
+    // --------------------------------
+    // Validate Operation
+    // --------------------------------
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new().pubkey();
 
-    // Create a `validate` instruction.
-    let validate_ix = mpl_token_auth_rules::instruction::validate(
-        rule_set_addr,
-        Operation::Transfer.to_u16().unwrap(),
-        payload,
-        true,
-        vec![
-            AccountMeta::new_readonly(payer.pubkey(), true),
-            AccountMeta::new_readonly(second_signer.pubkey(), true),
-        ],
-    );
+    // Store the payload of data to validate against the rule definition.
+    let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(1))]);
+
+    // Create a `validate` instruction with the additional signer.
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(adtl_signer.pubkey(), true)])
+        .build(ValidateArgs::V1 {
+            operation: Operation::Transfer.to_string(),
+            payload,
+            update_rule_state: false,
+        })
+        .unwrap()
+        .instruction();
 
     // Add it to a transaction.
     let latest_blockhash = rpc_client.get_latest_blockhash().unwrap();
     let validate_tx = Transaction::new_signed_with_payer(
         &[validate_ix],
         Some(&payer.pubkey()),
-        &[&payer, &second_signer],
+        &[&payer, &adtl_signer],
         latest_blockhash,
     );
 
@@ -150,7 +168,6 @@ fn main() {
     let signature = rpc_client
         .send_and_confirm_transaction(&validate_tx)
         .unwrap();
-
     println!("Validate tx signature: {}", signature);
 }
 ```
