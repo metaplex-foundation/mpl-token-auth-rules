@@ -29,7 +29,7 @@ async fn test_pubkey_list_match() {
 
     let rule = Rule::PubkeyListMatch {
         pubkeys: vec![target_1.pubkey(), target_2.pubkey(), target_3.pubkey()],
-        field: PayloadKey::Target,
+        field: PayloadKey::Holder,
     };
 
     // Create a RuleSet.
@@ -50,7 +50,7 @@ async fn test_pubkey_list_match() {
 
     // Store the payload of data to validate against the rule definition with WRONG Pubkey.
     let payload = Payload::from([(
-        PayloadKey::Target,
+        PayloadKey::Holder,
         PayloadType::Pubkey(Keypair::new().pubkey()),
     )]);
 
@@ -80,7 +80,7 @@ async fn test_pubkey_list_match() {
     let mint = Keypair::new().pubkey();
 
     // Store the payload of data to validate against the rule definition with CORRECT Pubkey.
-    let payload = Payload::from([(PayloadKey::Target, PayloadType::Pubkey(target_2.pubkey()))]);
+    let payload = Payload::from([(PayloadKey::Holder, PayloadType::Pubkey(target_2.pubkey()))]);
 
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
