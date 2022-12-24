@@ -182,7 +182,7 @@ async fn test_additional_signer_and_amount() {
     // Validate Transfer operation.
     process_passing_validate_ix(&mut context, validate_ix, vec![&second_signer]).await;
 
-    // Store a payload of data with the WRONG amount.
+    // Store a payload of data with the WRONG amount (its the amount in the Rule but the rule is NOT'd)
     let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(1))]);
 
     // Create a `validate` instruction WITH the second signer.  Will fail because of WRONG amount.
@@ -345,7 +345,7 @@ async fn test_pubkey_match() {
         .unwrap()
         .instruction();
 
-    // Validate Transfer operation.
+    // Fail to validate Transfer operation.
     let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
@@ -426,7 +426,7 @@ async fn test_pubkey_list_match() {
         .unwrap()
         .instruction();
 
-    // Validate Transfer operation.
+    // Fail to validate Transfer operation.
     let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
