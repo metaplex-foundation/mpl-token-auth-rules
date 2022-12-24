@@ -9,6 +9,7 @@ use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_program::{
     instruction::{Instruction, InstructionError},
+    program_error::ProgramError,
     pubkey::Pubkey,
 };
 use solana_program_test::{BanksClientError, ProgramTest, ProgramTestContext};
@@ -140,6 +141,20 @@ pub fn assert_rule_set_error(err: BanksClientError, rule_set_error: RuleSetError
         )) => {
             let deconstructed_err = RuleSetError::from_u32(val).unwrap();
             assert_eq!(deconstructed_err, rule_set_error);
+        }
+        _ => panic!("Unexpected error {:?}", err),
+    }
+}
+
+pub fn assert_program_error(err: BanksClientError, program_error: ProgramError) {
+    // Deconstruct the error code and make sure it is what we expect.
+    match err {
+        BanksClientError::TransactionError(TransactionError::InstructionError(_, err)) => {
+            assert_eq!(
+                ProgramError::try_from(err)
+                    .expect("Could not convert InstructionError to ProgramError"),
+                program_error
+            );
         }
         _ => panic!("Unexpected error {:?}", err),
     }

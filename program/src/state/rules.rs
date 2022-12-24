@@ -131,7 +131,7 @@ impl Rule {
         payload: &Payload,
         _update_rule_state: bool,
         _rule_set_state_pda: &Option<&AccountInfo>,
-        _rule_authority: &Option<&AccountInfo>,
+        rule_authority: &Option<&AccountInfo>,
     ) -> (bool, ProgramError) {
         match self {
             Rule::All { rules } => {
@@ -144,7 +144,7 @@ impl Rule {
                         payload,
                         _update_rule_state,
                         _rule_set_state_pda,
-                        _rule_authority,
+                        rule_authority,
                     );
                     if !result.0 {
                         return result;
@@ -162,7 +162,7 @@ impl Rule {
                         payload,
                         _update_rule_state,
                         _rule_set_state_pda,
-                        _rule_authority,
+                        rule_authority,
                     );
                     if result.0 {
                         return result;
@@ -176,7 +176,7 @@ impl Rule {
                     payload,
                     _update_rule_state,
                     _rule_set_state_pda,
-                    _rule_authority,
+                    rule_authority,
                 );
                 (!result.0, result.1)
             }
@@ -315,8 +315,8 @@ impl Rule {
             Rule::Frequency { authority } => {
                 msg!("Validating Frequency");
 
-                if let Some(account) = accounts.get(authority) {
-                    if !account.is_signer {
+                if let Some(rule_authority) = rule_authority {
+                    if authority != rule_authority.key || !rule_authority.is_signer {
                         return (false, RuleSetError::RuleAuthorityIsNotSigner.into());
                     }
                 } else {

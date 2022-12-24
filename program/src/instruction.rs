@@ -103,7 +103,7 @@ impl InstructionBuilder for builders::Validate {
 
         // Add optional account or `crate::ID`.
         if let Some(rule_set_state_pda) = self.rule_set_state_pda {
-            accounts.push(AccountMeta::new(rule_set_state_pda, true));
+            accounts.push(AccountMeta::new(rule_set_state_pda, false));
         } else {
             accounts.push(AccountMeta::new_readonly(crate::ID, false));
         }
