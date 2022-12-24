@@ -507,6 +507,52 @@ createErrorFromCodeLookup.set(0x17, () => new OperationNotFoundError());
 createErrorFromNameLookup.set('OperationNotFound', () => new OperationNotFoundError());
 
 /**
+ * RuleAuthorityIsNotSigner: 'Rule authority is not signer'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class RuleAuthorityIsNotSignerError extends Error {
+  readonly code: number = 0x18;
+  readonly name: string = 'RuleAuthorityIsNotSigner';
+  constructor() {
+    super('Rule authority is not signer');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, RuleAuthorityIsNotSignerError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x18, () => new RuleAuthorityIsNotSignerError());
+createErrorFromNameLookup.set(
+  'RuleAuthorityIsNotSigner',
+  () => new RuleAuthorityIsNotSignerError(),
+);
+
+/**
+ * UnsupportedRuleSetVersion: 'Unsupported RuleSet version'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class UnsupportedRuleSetVersionError extends Error {
+  readonly code: number = 0x19;
+  readonly name: string = 'UnsupportedRuleSetVersion';
+  constructor() {
+    super('Unsupported RuleSet version');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, UnsupportedRuleSetVersionError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x19, () => new UnsupportedRuleSetVersionError());
+createErrorFromNameLookup.set(
+  'UnsupportedRuleSetVersion',
+  () => new UnsupportedRuleSetVersionError(),
+);
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

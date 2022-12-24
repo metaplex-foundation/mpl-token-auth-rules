@@ -36,20 +36,33 @@ export const ValidateStruct = new beet.FixableBeetArgsStruct<
 /**
  * Accounts required by the _Validate_ instruction
  *
- * @property [] ruleSet The PDA account where the RuleSet is stored
+ * @property [] ruleSetPda The PDA account where the RuleSet is stored
+ * @property [] mint Mint of token asset
+ * @property [_writable_, **signer**] payer (optional) Payer for RuleSet state PDA account
+ * @property [**signer**] ruleAuthority (optional) Signing authority for any Rule state updates
+ * @property [_writable_] ruleSetStatePda (optional) The PDA account where any RuleSet state is stored
  * @category Instructions
  * @category Validate
  * @category generated
  */
 export type ValidateInstructionAccounts = {
-  ruleSet: web3.PublicKey;
+  ruleSetPda: web3.PublicKey;
+  mint: web3.PublicKey;
   systemProgram?: web3.PublicKey;
+  payer?: web3.PublicKey;
+  ruleAuthority?: web3.PublicKey;
+  ruleSetStatePda?: web3.PublicKey;
 };
 
 export const validateInstructionDiscriminator = 1;
 
 /**
  * Creates a _Validate_ instruction.
+ *
+ * Optional accounts that are not provided will be omitted from the accounts
+ * array passed with the instruction.
+ * An optional account that is set cannot follow an optional account that is unset.
+ * Otherwise an Error is raised.
  *
  * @param accounts that will be accessed while the instruction is processed
  * @param args to provide as instruction data to the program
@@ -69,7 +82,12 @@ export function createValidateInstruction(
   });
   const keys: web3.AccountMeta[] = [
     {
-      pubkey: accounts.ruleSet,
+      pubkey: accounts.ruleSetPda,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.mint,
       isWritable: false,
       isSigner: false,
     },
@@ -79,6 +97,38 @@ export function createValidateInstruction(
       isSigner: false,
     },
   ];
+
+  if (accounts.payer != null) {
+    keys.push({
+      pubkey: accounts.payer,
+      isWritable: true,
+      isSigner: true,
+    });
+  }
+  if (accounts.ruleAuthority != null) {
+    if (accounts.payer == null) {
+      throw new Error(
+        "When providing 'ruleAuthority' then 'accounts.payer' need(s) to be provided as well.",
+      );
+    }
+    keys.push({
+      pubkey: accounts.ruleAuthority,
+      isWritable: false,
+      isSigner: true,
+    });
+  }
+  if (accounts.ruleSetStatePda != null) {
+    if (accounts.payer == null || accounts.ruleAuthority == null) {
+      throw new Error(
+        "When providing 'ruleSetStatePda' then 'accounts.payer', 'accounts.ruleAuthority' need(s) to be provided as well.",
+      );
+    }
+    keys.push({
+      pubkey: accounts.ruleSetStatePda,
+      isWritable: true,
+      isSigner: false,
+    });
+  }
 
   const ix = new web3.TransactionInstruction({
     programId,

@@ -7,21 +7,49 @@
 
 import * as beet from '@metaplex-foundation/beet';
 import { Payload, payloadBeet } from './Payload';
-export type ValidateArgs = {
-  operation: number;
-  payload: Payload;
-  updateRuleState: boolean;
+/**
+ * This type is used to derive the {@link ValidateArgs} type as well as the de/serializer.
+ * However don't refer to it in your code but use the {@link ValidateArgs} type instead.
+ *
+ * @category userTypes
+ * @category enums
+ * @category generated
+ * @private
+ */
+export type ValidateArgsRecord = {
+  V1: { operation: string; payload: Payload; updateRuleState: boolean };
 };
+
+/**
+ * Union type respresenting the ValidateArgs data enum defined in Rust.
+ *
+ * NOTE: that it includes a `__kind` property which allows to narrow types in
+ * switch/if statements.
+ * Additionally `isValidateArgs*` type guards are exposed below to narrow to a specific variant.
+ *
+ * @category userTypes
+ * @category enums
+ * @category generated
+ */
+export type ValidateArgs = beet.DataEnumKeyAsKind<ValidateArgsRecord>;
+
+export const isValidateArgsV1 = (x: ValidateArgs): x is ValidateArgs & { __kind: 'V1' } =>
+  x.__kind === 'V1';
 
 /**
  * @category userTypes
  * @category generated
  */
-export const validateArgsBeet = new beet.FixableBeetArgsStruct<ValidateArgs>(
+export const validateArgsBeet = beet.dataEnum<ValidateArgsRecord>([
   [
-    ['operation', beet.u16],
-    ['payload', payloadBeet],
-    ['updateRuleState', beet.bool],
+    'V1',
+    new beet.FixableBeetArgsStruct<ValidateArgsRecord['V1']>(
+      [
+        ['operation', beet.utf8String],
+        ['payload', payloadBeet],
+        ['updateRuleState', beet.bool],
+      ],
+      'ValidateArgsRecord["V1"]',
+    ),
   ],
-  'ValidateArgs',
-);
+]) as beet.FixableBeet<ValidateArgs, ValidateArgs>;
