@@ -5,7 +5,7 @@ pub mod utils;
 use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
-    payload::{Payload, PayloadKey, PayloadType},
+    payload::{Payload, PayloadType},
     state::{Rule, RuleSet},
 };
 use solana_program_test::tokio;
@@ -15,7 +15,7 @@ use solana_sdk::{
 };
 use utils::{
     assert_rule_set_error, create_rule_set_on_chain, process_failing_validate_ix,
-    process_passing_validate_ix, program_test, Operation,
+    process_passing_validate_ix, program_test, Operation, PayloadKey,
 };
 
 #[tokio::test]
@@ -28,7 +28,7 @@ async fn program_owned() {
     // Create a Rule.  The target must be owned by the program ID specified in the Rule.
     let rule = Rule::ProgramOwned {
         program: mpl_token_metadata::id(),
-        field: PayloadKey::Target,
+        field: PayloadKey::Target.to_string(),
     };
 
     // Create a RuleSet.
@@ -70,7 +70,7 @@ async fn program_owned() {
     // and see who the owner is.  Here we put in the WRONG Pubkey.
     let wrong_rule_account = Keypair::new();
     let payload = Payload::from([(
-        PayloadKey::Target,
+        PayloadKey::Target.to_string(),
         PayloadType::Pubkey(wrong_rule_account.pubkey()),
     )]);
 
@@ -102,7 +102,7 @@ async fn program_owned() {
     // --------------------------------
     // This time put the CORRECT Pubkey into the Payload and the validate instruction.
     let payload = Payload::from([(
-        PayloadKey::Target,
+        PayloadKey::Target.to_string(),
         PayloadType::Pubkey(fake_token_metadata_owned_escrow.pubkey()),
     )]);
 

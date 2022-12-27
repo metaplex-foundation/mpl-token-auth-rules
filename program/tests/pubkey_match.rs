@@ -5,14 +5,14 @@ pub mod utils;
 use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
-    payload::{Payload, PayloadKey, PayloadType},
+    payload::{Payload, PayloadType},
     state::{Rule, RuleSet},
 };
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
 use utils::{
     assert_rule_set_error, create_rule_set_on_chain, process_failing_validate_ix,
-    process_passing_validate_ix, program_test, Operation,
+    process_passing_validate_ix, program_test, Operation, PayloadKey,
 };
 
 #[tokio::test]
@@ -27,7 +27,7 @@ async fn test_pubkey_match() {
 
     let rule = Rule::PubkeyMatch {
         pubkey: target.pubkey(),
-        field: PayloadKey::Target,
+        field: PayloadKey::Target.to_string(),
     };
 
     // Create a RuleSet.
@@ -48,7 +48,7 @@ async fn test_pubkey_match() {
 
     // Store the payload of data to validate against the rule definition with WRONG Pubkey.
     let payload = Payload::from([(
-        PayloadKey::Target,
+        PayloadKey::Target.to_string(),
         PayloadType::Pubkey(Keypair::new().pubkey()),
     )]);
 
@@ -75,7 +75,10 @@ async fn test_pubkey_match() {
     // Validate pass
     // --------------------------------
     // Store the payload of data to validate against the rule definition with CORRECT Pubkey.
-    let payload = Payload::from([(PayloadKey::Target, PayloadType::Pubkey(target.pubkey()))]);
+    let payload = Payload::from([(
+        PayloadKey::Target.to_string(),
+        PayloadType::Pubkey(target.pubkey()),
+    )]);
 
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
