@@ -37,6 +37,30 @@ impl ToString for Operation {
     }
 }
 
+#[repr(C)]
+#[derive(ToPrimitive)]
+pub enum PayloadKey {
+    /// The target of the operation, e.g. the recipient of a transfer.
+    Target,
+    /// The holder of the token, e.g. the sender of a transfer.
+    Holder,
+    /// The authority of a transfer, e.g. the delegate of token.
+    Authority,
+    /// The amount being transferred.
+    Amount,
+}
+
+impl ToString for PayloadKey {
+    fn to_string(&self) -> String {
+        match self {
+            PayloadKey::Target => "Target".to_string(),
+            PayloadKey::Holder => "Holder".to_string(),
+            PayloadKey::Authority => "Authority".to_string(),
+            PayloadKey::Amount => "Amount".to_string(),
+        }
+    }
+}
+
 pub fn program_test() -> ProgramTest {
     ProgramTest::new("mpl_token_auth_rules", mpl_token_auth_rules::id(), None)
 }

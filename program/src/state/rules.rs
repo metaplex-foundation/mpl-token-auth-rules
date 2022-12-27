@@ -1,8 +1,4 @@
-use crate::{
-    error::RuleSetError,
-    payload::{Payload, PayloadKey},
-    utils::assert_derivation,
-};
+use crate::{error::RuleSetError, payload::Payload, utils::assert_derivation};
 use serde::{Deserialize, Serialize};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
@@ -53,35 +49,35 @@ pub enum Rule {
         /// The public key to be compared against.
         pubkey: Pubkey,
         /// The field in the `Payload` to be compared.
-        field: PayloadKey,
+        field: String,
     },
     /// The comparing `Pubkey` must be in the list of `Pubkey`s.
     PubkeyListMatch {
         /// The list of public keys to be compared against.
         pubkeys: Vec<Pubkey>,
         /// The field in the `Payload` to be compared.
-        field: PayloadKey,
+        field: String,
     },
     /// The pubkey must be a member of the Merkle tree.
     PubkeyTreeMatch {
         /// The root of the Merkle tree.
         root: [u8; 32],
         /// The field in the `Payload` to be compared.
-        field: PayloadKey,
+        field: String,
     },
     /// A resulting derivation of seeds must match to a `Pubkey`.
     DerivedKeyMatch {
         /// The `Pubkey` to be compared against.
         account: Pubkey,
         /// The field in the `Payload` to be compared.
-        field: PayloadKey,
+        field: String,
     },
     /// The `Pubkey` must be owned by a given program.
     ProgramOwned {
         /// The program that must own the `Pubkey`.
         program: Pubkey,
         /// The field in the `Payload` to be compared.
-        field: PayloadKey,
+        field: String,
     },
     /// Comparison against the amount of tokens being transferred.
     Amount {
@@ -89,6 +85,8 @@ pub enum Rule {
         amount: u64,
         /// The operator to be used in the comparison.
         operator: CompareOp,
+        /// The field the amount is stored in.
+        field: String,
     },
     /// Comparison based on time between operations.
     Frequency {
@@ -292,9 +290,10 @@ impl Rule {
             Rule::Amount {
                 amount: rule_amount,
                 operator,
+                field,
             } => {
                 msg!("Validating Amount");
-                if let Some(payload_amount) = &payload.get_amount(&PayloadKey::Amount) {
+                if let Some(payload_amount) = &payload.get_amount(field) {
                     let operator_fn = match operator {
                         CompareOp::Lt => PartialOrd::lt,
                         CompareOp::LtEq => PartialOrd::le,

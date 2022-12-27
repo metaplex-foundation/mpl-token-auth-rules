@@ -170,9 +170,7 @@
             "name": "map",
             "type": {
               "hashMap": [
-                {
-                  "defined": "PayloadKey"
-                },
+                "string",
                 {
                   "defined": "PayloadType"
                 }
@@ -258,26 +256,6 @@
             "fields": [
               "u64"
             ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "PayloadKey",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Target"
-          },
-          {
-            "name": "Holder"
-          },
-          {
-            "name": "Authority"
-          },
-          {
-            "name": "Amount"
           }
         ]
       }

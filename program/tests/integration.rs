@@ -8,7 +8,7 @@ use mpl_token_auth_rules::{
         builders::{CreateOrUpdateBuilder, ValidateBuilder},
         CreateOrUpdateArgs, InstructionBuilder, ValidateArgs,
     },
-    payload::{Payload, PayloadKey, PayloadType},
+    payload::{Payload, PayloadType},
     state::{CompareOp, Rule, RuleSet},
 };
 use solana_program::instruction::AccountMeta;
@@ -20,7 +20,7 @@ use solana_sdk::{
 };
 use utils::{
     assert_rule_set_error, create_rule_set_on_chain, process_failing_validate_ix,
-    process_passing_validate_ix, program_test, Operation,
+    process_passing_validate_ix, program_test, Operation, PayloadKey,
 };
 
 #[tokio::test]
@@ -119,6 +119,7 @@ async fn test_additional_signer_and_not_amount() {
     let amount_check = Rule::Amount {
         amount: 1,
         operator: CompareOp::Eq,
+        field: PayloadKey::Amount.to_string(),
     };
     let not_amount_check = Rule::Not {
         rule: Box::new(amount_check),
@@ -151,7 +152,7 @@ async fn test_additional_signer_and_not_amount() {
     let mint = Keypair::new().pubkey();
 
     // Store a payload of data with an amount not allowed by the Amount Rule (Amount Rule NOT'd).
-    let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(2))]);
+    let payload = Payload::from([(PayloadKey::Amount.to_string(), PayloadType::Number(2))]);
 
     // Create a `validate` instruction WITHOUT the second signer.
     let validate_ix = ValidateBuilder::new()
@@ -201,7 +202,7 @@ async fn test_additional_signer_and_not_amount() {
     // Validate fail wrong amount
     // --------------------------------
     // Store a payload of data with an amount allowed by the Amount Rule (Amount Rule NOT'd).
-    let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(1))]);
+    let payload = Payload::from([(PayloadKey::Amount.to_string(), PayloadType::Number(1))]);
 
     // Create a `validate` instruction WITH the second signer.  Will fail as Amount Rule is NOT'd.
     let validate_ix = ValidateBuilder::new()
@@ -257,6 +258,7 @@ async fn test_update_ruleset() {
     let amount_check = Rule::Amount {
         amount: 1,
         operator: CompareOp::Eq,
+        field: PayloadKey::Amount.to_string(),
     };
 
     let overall_rule = Rule::All {

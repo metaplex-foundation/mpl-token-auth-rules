@@ -5,14 +5,14 @@ pub mod utils;
 use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
-    payload::{Payload, PayloadKey, PayloadType},
+    payload::{Payload, PayloadType},
     state::{CompareOp, Rule, RuleSet},
 };
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
 use utils::{
     assert_rule_set_error, create_rule_set_on_chain, process_failing_validate_ix,
-    process_passing_validate_ix, program_test, Operation,
+    process_passing_validate_ix, program_test, Operation, PayloadKey,
 };
 
 #[tokio::test]
@@ -30,6 +30,7 @@ async fn test_any() {
     let amount_check = Rule::Amount {
         amount: 5,
         operator: CompareOp::Lt,
+        field: PayloadKey::Amount.to_string(),
     };
 
     let overall_rule = Rule::Any {
@@ -55,7 +56,7 @@ async fn test_any() {
     let mint = Keypair::new().pubkey();
 
     // Store a payload of data with the WRONG amount.
-    let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(5))]);
+    let payload = Payload::from([(PayloadKey::Amount.to_string(), PayloadType::Number(5))]);
 
     // Create a `validate` instruction without the additional signer and sending WRONG amount.
     let validate_ix = ValidateBuilder::new()
@@ -80,7 +81,7 @@ async fn test_any() {
     // Validate pass
     // --------------------------------
     // Store a payload of data with the correct amount.
-    let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(4))]);
+    let payload = Payload::from([(PayloadKey::Amount.to_string(), PayloadType::Number(4))]);
 
     // Create a `validate` instruction without the additional signer but sending correct amount.
     let validate_ix = ValidateBuilder::new()

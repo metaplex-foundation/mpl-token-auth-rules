@@ -4,7 +4,7 @@ pub mod utils;
 
 use mpl_token_auth_rules::{
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
-    payload::{LeafInfo, Payload, PayloadKey, PayloadType},
+    payload::{LeafInfo, Payload, PayloadType},
     state::{Rule, RuleSet},
 };
 use solana_program_test::tokio;
@@ -12,7 +12,9 @@ use solana_sdk::{
     instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
     transaction::Transaction,
 };
-use utils::{create_rule_set_on_chain, process_passing_validate_ix, program_test, Operation};
+use utils::{
+    create_rule_set_on_chain, process_passing_validate_ix, program_test, Operation, PayloadKey,
+};
 
 #[tokio::test]
 async fn basic_royalty_enforcement() {
@@ -24,7 +26,7 @@ async fn basic_royalty_enforcement() {
     // Rule for Transfers: Allow transfers to a Token Owned Escrow account.
     let owned_by_token_metadata = Rule::ProgramOwned {
         program: mpl_token_metadata::id(),
-        field: PayloadKey::Target,
+        field: PayloadKey::Target.to_string(),
     };
 
     // Merkle tree root generated in a different test program.
@@ -37,7 +39,7 @@ async fn basic_royalty_enforcement() {
     // member of the marketplace Merkle tree.
     let leaf_in_marketplace_tree = Rule::PubkeyTreeMatch {
         root: marketplace_tree_root,
-        field: PayloadKey::Target,
+        field: PayloadKey::Target.to_string(),
     };
 
     // Create Basic Royalty Enforcement RuleSet.
@@ -102,7 +104,7 @@ async fn basic_royalty_enforcement() {
     // In this case the Target will be used to look up the `AccountInfo`
     // and see who the owner is.
     let payload = Payload::from([(
-        PayloadKey::Target,
+        PayloadKey::Target.to_string(),
         PayloadType::Pubkey(fake_token_metadata_owned_escrow.pubkey()),
     )]);
 
@@ -153,7 +155,10 @@ async fn basic_royalty_enforcement() {
 
     // Store the payload of data to validate against the rule definition.
     // In this case it is a leaf node and its associated Merkle proof.
-    let payload = Payload::from([(PayloadKey::Target, PayloadType::MerkleProof(leaf_info))]);
+    let payload = Payload::from([(
+        PayloadKey::Target.to_string(),
+        PayloadType::MerkleProof(leaf_info),
+    )]);
 
     // Create a `validate` instruction for a `Delegate` operation.
     let validate_ix = ValidateBuilder::new()
