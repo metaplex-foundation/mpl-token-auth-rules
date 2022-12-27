@@ -27,6 +27,9 @@ use utils::{
 async fn test_payer_not_signer_fails() {
     let mut context = program_test().start_with_context().await;
 
+    // --------------------------------
+    // Create fail unsigned tx
+    // --------------------------------
     // Find RuleSet PDA.
     let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
         context.payer.pubkey(),
@@ -59,6 +62,9 @@ async fn test_payer_not_signer_fails() {
         _ => panic!("Unexpected error {:?}", err),
     }
 
+    // --------------------------------
+    // Validate fail unsigned tx
+    // --------------------------------
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
@@ -93,9 +99,12 @@ async fn test_payer_not_signer_fails() {
 }
 
 #[tokio::test]
-async fn test_additional_signer_and_amount() {
+async fn test_additional_signer_and_not_amount() {
     let mut context = program_test().start_with_context().await;
 
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
     // Create some rules.
     let adtl_signer = Rule::AdditionalSigner {
         account: context.payer.pubkey(),
@@ -135,10 +144,13 @@ async fn test_additional_signer_and_amount() {
     let rule_set_addr =
         create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
 
+    // --------------------------------
+    // Validate fail missing account
+    // --------------------------------
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
-    // Store the payload of data to validate against the rule definition.
+    // Store a payload of data with an amount not allowed by the Amount Rule (Amount Rule NOT'd).
     let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(2))]);
 
     // Create a `validate` instruction WITHOUT the second signer.
@@ -163,6 +175,9 @@ async fn test_additional_signer_and_amount() {
     // Check that error is what we expect.
     assert_rule_set_error(err, RuleSetError::MissingAccount);
 
+    // --------------------------------
+    // Validate pass
+    // --------------------------------
     // Create a `validate` instruction WITH the second signer.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
@@ -182,10 +197,13 @@ async fn test_additional_signer_and_amount() {
     // Validate Transfer operation.
     process_passing_validate_ix(&mut context, validate_ix, vec![&second_signer]).await;
 
-    // Store a payload of data with the WRONG amount.
+    // --------------------------------
+    // Validate fail wrong amount
+    // --------------------------------
+    // Store a payload of data with an amount allowed by the Amount Rule (Amount Rule NOT'd).
     let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(1))]);
 
-    // Create a `validate` instruction WITH the second signer.  Will fail because of WRONG amount.
+    // Create a `validate` instruction WITH the second signer.  Will fail as Amount Rule is NOT'd.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
@@ -209,7 +227,7 @@ async fn test_additional_signer_and_amount() {
 }
 
 #[tokio::test]
-async fn test_pass() {
+async fn test_update_ruleset() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------
@@ -224,52 +242,13 @@ async fn test_pass() {
         .add(Operation::Transfer.to_string(), pass_rule)
         .unwrap();
 
-    println!("{:#?}", rule_set);
-
-    // Put the RuleSet on chain.
-    let rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
-
-    // --------------------------------
-    // Validate Pass Rule
-    // --------------------------------
-    // Create a Keypair to simulate a token mint address.
-    let mint = Keypair::new().pubkey();
-
-    // Create a `validate` instruction.
-    let validate_ix = ValidateBuilder::new()
-        .rule_set_pda(rule_set_addr)
-        .mint(mint)
-        .additional_rule_accounts(vec![])
-        .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
-            payload: Payload::default(),
-            update_rule_state: false,
-        })
-        .unwrap()
-        .instruction();
-
-    // Validate Transfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
-}
-
-#[tokio::test]
-async fn test_update_ruleset() {
-    let mut context = program_test().start_with_context().await;
-
-    // Create a Pass Rule.
-    let pass_rule = Rule::Pass;
-
-    // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
-    rule_set
-        .add(Operation::Transfer.to_string(), pass_rule)
-        .unwrap();
-
     // Put the RuleSet on chain.
     let _rule_set_addr =
         create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
 
+    // --------------------------------
+    // Update RuleSet
+    // --------------------------------
     // Create some other rules.
     let adtl_signer = Rule::AdditionalSigner {
         account: context.payer.pubkey(),
@@ -293,167 +272,4 @@ async fn test_update_ruleset() {
     // Put the updated RuleSet on chain.
     let _rule_set_addr =
         create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
-}
-
-#[tokio::test]
-async fn test_pubkey_match() {
-    let mut context = program_test().start_with_context().await;
-
-    // --------------------------------
-    // Create RuleSet
-    // --------------------------------
-    // Create a Rule.
-    let target = Keypair::new();
-
-    let rule = Rule::PubkeyMatch {
-        pubkey: target.pubkey(),
-        field: PayloadKey::Target,
-    };
-
-    // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
-    rule_set.add(Operation::Transfer.to_string(), rule).unwrap();
-
-    println!("{:#?}", rule_set);
-
-    // Put the RuleSet on chain.
-    let rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
-
-    // --------------------------------
-    // Validate PubkeyMatch Rule fail
-    // --------------------------------
-    // Create a Keypair to simulate a token mint address.
-    let mint = Keypair::new().pubkey();
-
-    // Store the payload of data to validate against the rule definition with WRONG Pubkey.
-    let payload = Payload::from([(
-        PayloadKey::Target,
-        PayloadType::Pubkey(Keypair::new().pubkey()),
-    )]);
-
-    // Create a `validate` instruction.
-    let validate_ix = ValidateBuilder::new()
-        .rule_set_pda(rule_set_addr)
-        .mint(mint)
-        .additional_rule_accounts(vec![])
-        .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
-            payload,
-            update_rule_state: false,
-        })
-        .unwrap()
-        .instruction();
-
-    // Validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
-
-    // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::PubkeyMatchCheckFailed);
-
-    // --------------------------------
-    // Validate PubkeyMatch Rule pass
-    // --------------------------------
-    // Store the payload of data to validate against the rule definition with CORRECT Pubkey.
-    let payload = Payload::from([(PayloadKey::Target, PayloadType::Pubkey(target.pubkey()))]);
-
-    // Create a `validate` instruction.
-    let validate_ix = ValidateBuilder::new()
-        .rule_set_pda(rule_set_addr)
-        .mint(mint)
-        .additional_rule_accounts(vec![])
-        .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
-            payload,
-            update_rule_state: false,
-        })
-        .unwrap()
-        .instruction();
-
-    // Validate Transfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
-}
-
-#[tokio::test]
-async fn test_pubkey_list_match() {
-    let mut context = program_test().start_with_context().await;
-
-    // --------------------------------
-    // Create RuleSet
-    // --------------------------------
-    // Create a Rule.
-    let target_1 = Keypair::new();
-    let target_2 = Keypair::new();
-    let target_3 = Keypair::new();
-
-    let rule = Rule::PubkeyListMatch {
-        pubkeys: vec![target_1.pubkey(), target_2.pubkey(), target_3.pubkey()],
-        field: PayloadKey::Target,
-    };
-
-    // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
-    rule_set.add(Operation::Transfer.to_string(), rule).unwrap();
-
-    println!("{:#?}", rule_set);
-
-    // Put the RuleSet on chain.
-    let rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
-
-    // --------------------------------
-    // Validate PubkeyMatch Rule fail
-    // --------------------------------
-    // Create a Keypair to simulate a token mint address.
-    let mint = Keypair::new().pubkey();
-
-    // Store the payload of data to validate against the rule definition with WRONG Pubkey.
-    let payload = Payload::from([(
-        PayloadKey::Target,
-        PayloadType::Pubkey(Keypair::new().pubkey()),
-    )]);
-
-    // Create a `validate` instruction.
-    let validate_ix = ValidateBuilder::new()
-        .rule_set_pda(rule_set_addr)
-        .mint(mint)
-        .additional_rule_accounts(vec![])
-        .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
-            payload,
-            update_rule_state: false,
-        })
-        .unwrap()
-        .instruction();
-
-    // Validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
-
-    // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::PubkeyListMatchCheckFailed);
-
-    // --------------------------------
-    // Validate PubkeyMatch Rule pass
-    // --------------------------------
-    // Create a Keypair to simulate a token mint address.
-    let mint = Keypair::new().pubkey();
-
-    // Store the payload of data to validate against the rule definition with CORRECT Pubkey.
-    let payload = Payload::from([(PayloadKey::Target, PayloadType::Pubkey(target_2.pubkey()))]);
-
-    // Create a `validate` instruction.
-    let validate_ix = ValidateBuilder::new()
-        .rule_set_pda(rule_set_addr)
-        .mint(mint)
-        .additional_rule_accounts(vec![])
-        .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
-            payload,
-            update_rule_state: false,
-        })
-        .unwrap()
-        .instruction();
-
-    // Validate Transfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
 }
