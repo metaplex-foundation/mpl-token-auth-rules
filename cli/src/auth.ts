@@ -34,6 +34,8 @@ program
         }
 
         const rulesetFile = JSON.parse(fs.readFileSync(ruleset, 'utf-8'));
+        rulesetFile[1] = name;
+        rulesetFile[2] = Array.from(payer.publicKey.toBytes());
 
         const encoded = encode(rulesetFile);
         let rulesetAddress = await createTokenAuthorizationRules(connection, payer, name, encoded);
