@@ -5,7 +5,7 @@ import { Command, program } from "commander";
 import log from "loglevel";
 import * as fs from 'fs';
 import { findRuleSetPDA } from './helpers/pda';
-import { Payload, Operation } from '../../packages/sdk/src/generated';
+import { Payload } from '../../packages/sdk/src/generated';
 
 program
     .command("create")
@@ -72,16 +72,40 @@ program
         console.log("Tree Leaf: " + tree_leaf);
         console.log("Tree Proof: " + tree_proof);
 
-        let payload: Payload = {
-            amount,
-            destinationKey: new PublicKey(destination_address),
-            derivedKeySeeds: null,
-            treeMatchLeaf: null,
-        };
-        payload.amount = amount;
-        let result = await validateOperation(connection, payer, name, operation, payload);
-        console.log("Result: " + result);
+        // let payload: Payload = {
+        //     amount,
+        //     destinationKey: new PublicKey(destination_address),
+        //     derivedKeySeeds: null,
+        //     treeMatchLeaf: null,
+        // };
+        // payload.amount = amount;
+        // let result = await validateOperation(connection, payer, name, operation, payload);
+        // console.log("Result: " + result);
     });
+    
+program
+    .command("print")
+    .option(
+        "-e, --env <string>",
+        "Solana cluster env name",
+        "devnet", //mainnet-beta, testnet, devnet
+    )
+    .option("-r, --rpc <string>", "The endpoint to connect to.")
+    .option("-k, --keypair <path>", `Solana wallet location`)
+    .option("-l, --log-level <string>", "log level", setLogLevel)
+    .option("-c, --creator <string>", "The address of the ruleset creator.")
+    .option("-n, --name <string>", "The name of the ruleset.")
+    .action(async (directory, cmd) => {
+        const { keypair, env, rpc, name, creator } = cmd.opts();
+        let payer = loadKeypair(keypair);
+        const connection = new Connection(rpc, "finalized");
+
+        let rulesetPDA = await findRuleSetPDA(new PublicKey(creator), name);
+        let rulesetData = await connection.getAccountInfo(rulesetPDA[0]);
+        let rulesetDecoded = decode(rulesetData?.data);
+        console.log("RuleSet Decoded: " + JSON.stringify(rulesetDecoded, null, 2));
+    });
+
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function setLogLevel(value, prev) {

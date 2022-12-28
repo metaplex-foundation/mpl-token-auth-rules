@@ -6,7 +6,7 @@ import {
     SYSVAR_INSTRUCTIONS_PUBKEY,
     Transaction,
 } from "@solana/web3.js";
-import { createCreateInstruction, createValidateInstruction, Operation, Payload, PROGRAM_ID } from "../../../packages/sdk/src/mpl-token-auth-rules";
+import { createCreateOrUpdateInstruction, createValidateInstruction, Payload, PROGRAM_ID } from "../../../packages/sdk/src/mpl-token-auth-rules";
 import { findRuleSetPDA } from "./pda";
 import { TokenMetadataProgram } from "@metaplex-foundation/js";
 
@@ -18,14 +18,14 @@ export const createTokenAuthorizationRules = async (
 ) => {
     const ruleSetAddress = await findRuleSetPDA(payer.publicKey, name);
 
-    let createIX = createCreateInstruction(
+    let createIX = createCreateOrUpdateInstruction(
         {
             payer: payer.publicKey,
-            rulesetPda: ruleSetAddress[0],
+            ruleSetPda: ruleSetAddress[0],
             systemProgram: SystemProgram.programId,
         },
         {
-            createArgs: { name, serializedRuleSet: data },
+            createOrUpdateArgs: {__kind: "V1", serializedRuleSet: data },
         },
         PROGRAM_ID,
     )
@@ -44,37 +44,40 @@ export const validateOperation = async (
     connection: Connection,
     payer: Keypair,
     name: string,
+    mint: PublicKey,
     operation: string,
     payload: Payload,
 ) => {
 
-    let op_type: Operation = Operation.Transfer;
+    let op_type: string = "0";
     switch (operation) {
         case "Transfer":
-            op_type = Operation.Transfer;
+            op_type = "0";
             break;
         case "Delegate":
-            op_type = Operation.Delegate;
+            op_type = "1";
             break;
         case "SaleTransfer":
-            op_type = Operation.SaleTransfer;
+            op_type = "2";
             break;
         case "MigrateClass":
-            op_type = Operation.MigrateClass;
+            op_type = "3";
             break;
     }
     const ruleSetAddress = await findRuleSetPDA(payer.publicKey, name);
     let validateIX = createValidateInstruction(
         {
             payer: payer.publicKey,
-            ruleset: ruleSetAddress[0],
+            mint,
+            ruleSetPda: ruleSetAddress[0],
             systemProgram: SystemProgram.programId,
         },
         {
             validateArgs: {
-                name,
+                __kind: "V1",
                 operation: op_type,
-                payload
+                payload,
+                updateRuleState: true,
             },
         },
         PROGRAM_ID,

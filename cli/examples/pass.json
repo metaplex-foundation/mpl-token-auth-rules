@@ -1,6 +1,6 @@
 [
     1,
-    "Amount",
+    "Pass",
     [
       179,
       107,
@@ -36,12 +36,6 @@
       236
     ],
     {
-      "Transfer": {
-        "Amount": [
-          69,
-          "Eq",
-          "Amount"
-        ]
-      }
+      "Transfer": "Pass"
     }
   ]
