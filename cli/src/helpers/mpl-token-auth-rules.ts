@@ -49,21 +49,6 @@ export const validateOperation = async (
     payload: Payload,
 ) => {
 
-    let op_type: string = "0";
-    switch (operation) {
-        case "Transfer":
-            op_type = "0";
-            break;
-        case "Delegate":
-            op_type = "1";
-            break;
-        case "SaleTransfer":
-            op_type = "2";
-            break;
-        case "MigrateClass":
-            op_type = "3";
-            break;
-    }
     const ruleSetAddress = await findRuleSetPDA(payer.publicKey, name);
     let validateIX = createValidateInstruction(
         {
@@ -75,7 +60,7 @@ export const validateOperation = async (
         {
             validateArgs: {
                 __kind: "V1",
-                operation: op_type,
+                operation,
                 payload,
                 updateRuleState: true,
             },
