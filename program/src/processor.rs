@@ -4,7 +4,8 @@ use std::collections::HashMap;
 use crate::{
     error::RuleSetError,
     instruction::{
-        Context, CreateOrUpdate, CreateOrUpdateArgs, RuleSetInstruction, Validate, ValidateArgs,
+        builders::AppendToRuleSet, AppendToRuleSetArgs, Context, CreateOrUpdate,
+        CreateOrUpdateArgs, RuleSetInstruction, Validate, ValidateArgs,
     },
     pda::{PREFIX, STATE_PDA},
     state::{RuleSet, RULE_SET_VERSION},
@@ -39,6 +40,10 @@ impl Processor {
             RuleSetInstruction::Validate(args) => {
                 msg!("Instruction: Validate");
                 validate(program_id, accounts, args)
+            }
+            RuleSetInstruction::AppendToRuleSet(args) => {
+                msg!("Instruction: AppendToRuleSet");
+                append_to_rule_set(program_id, accounts, args)
             }
         }
     }
@@ -252,6 +257,28 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         return Err(err);
     }
 
+    Ok(())
+}
+
+// Function to match on `CreateOrUpdateArgs` version and call correct implementation.
+fn append_to_rule_set<'a>(
+    program_id: &Pubkey,
+    accounts: &'a [AccountInfo<'a>],
+    args: AppendToRuleSetArgs,
+) -> ProgramResult {
+    let context = AppendToRuleSet::as_context(accounts)?;
+
+    match args {
+        AppendToRuleSetArgs::V1 { .. } => append_to_rule_set_v1(program_id, context, args),
+    }
+}
+
+/// V1 implementation of the `validate` instruction.
+fn append_to_rule_set_v1(
+    program_id: &Pubkey,
+    ctx: Context<AppendToRuleSet>,
+    args: AppendToRuleSetArgs,
+) -> ProgramResult {
     Ok(())
 }
 

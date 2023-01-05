@@ -33,6 +33,17 @@ pub enum ValidateArgs {
     },
 }
 
+#[repr(C)]
+#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+/// Args for `append_to_rule_set` instruction.
+pub enum AppendToRuleSetArgs {
+    /// V1 implementation of the `create` instruction arguments.
+    V1 {
+        /// RuleSet pre-serialized by caller into the MessagePack format.
+        serialized_rule_set: Vec<u8>,
+    },
+}
+
 #[derive(Debug, Clone, ShankInstruction, AccountContext, BorshSerialize, BorshDeserialize)]
 #[rustfmt::skip]
 /// Instructions available in this program.
@@ -57,6 +68,12 @@ pub enum RuleSetInstruction {
     #[account(5, optional, writable, name="rule_set_state_pda", desc = "The PDA account where any RuleSet state is stored")]
     #[args(additional_rule_accounts: Vec<AccountMeta>)]
     Validate(ValidateArgs),
+
+    /// This instruction appends a pre-serialized `RuleSet` chunk into the rule_set PDA account.
+    #[account(0, signer, writable, name="payer", desc="Payer and creator of the RuleSet")]
+    #[account(1, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
+    #[account(2, name = "system_program", desc = "System program")]
+    AppendToRuleSet(AppendToRuleSetArgs),
 }
 
 /// Builds a `CreateOrUpdate` instruction.
@@ -114,6 +131,25 @@ impl InstructionBuilder for builders::Validate {
             program_id: crate::ID,
             accounts,
             data: RuleSetInstruction::Validate(self.args.clone())
+                .try_to_vec()
+                .unwrap(),
+        }
+    }
+}
+
+/// Builds a `CreateOrUpdate` instruction.
+impl InstructionBuilder for builders::AppendToRuleSet {
+    fn instruction(&self) -> solana_program::instruction::Instruction {
+        let accounts = vec![
+            AccountMeta::new(self.payer, true),
+            AccountMeta::new(self.rule_set_pda, false),
+            AccountMeta::new_readonly(solana_program::system_program::id(), false),
+        ];
+
+        Instruction {
+            program_id: crate::ID,
+            accounts,
+            data: RuleSetInstruction::AppendToRuleSet(self.args.clone())
                 .try_to_vec()
                 .unwrap(),
         }
