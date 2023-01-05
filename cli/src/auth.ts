@@ -5,7 +5,7 @@ import { Command, program } from "commander";
 import log from "loglevel";
 import * as fs from 'fs';
 import { findRuleSetPDA } from './helpers/pda';
-import { Payload } from '../../packages/sdk/src/generated';
+import { Payload, PayloadVecIndexErrorError } from '../../packages/sdk/src/generated';
 
 program
     .command("create")
@@ -56,32 +56,34 @@ program
     .option("-l, --log-level <string>", "log level", setLogLevel)
     .option("-n, --name <string>", "The name of the ruleset.")
     .option("-op, --operation <string>", "The operation to validate.")
-    .option("-da, --destination_address <string>", "The destination address.")
-    .option("-ds, --derived_seeds <items>", "The derivation seeds as a comma-separated list.")
-    .option("-am, --amount <int>", "The amount.")
-    .option("-tl, --tree_leaf <string>", "The merkle tree leaf.")
-    .option("-tp, --tree_proof <items>", "The merkle tree proof as a comma-separated list.")
+    .option("-m, --mint <string>", "The mint of the token being operated on.")
+    .option("-p, --payload [triplets...]", "Colon separated payload pairs.")
     .action(async (directory, cmd) => {
-        const { keypair, env, rpc, name,
-            operation, destination_address, derived_seeds, amount, tree_leaf, tree_proof } = cmd.opts();
+        const { keypair, env, rpc, name, operation, mint, payload } = cmd.opts();
         let payer = loadKeypair(keypair);
         const connection = new Connection(rpc, "finalized");
 
         console.log("Operation: " + operation);
-        console.log("Destination Address: " + destination_address);
-        console.log("Derived Seeds: " + derived_seeds);
-        console.log("Amount: " + amount);
-        console.log("Tree Leaf: " + tree_leaf);
-        console.log("Tree Proof: " + tree_proof);
+        console.log("Triplets: " + JSON.stringify(payload, null, 2));
 
-        // let payload: Payload = {
-        //     amount,
-        //     destinationKey: new PublicKey(destination_address),
-        //     derivedKeySeeds: null,
-        //     treeMatchLeaf: null,
-        // };
-        // payload.amount = amount;
-        // let result = await validateOperation(connection, payer, name, operation, payload);
+        let p: Payload = { map: new Map()};
+        let additional_accounts: PublicKey[] = [];
+        for (let pair of payload) {
+            let [key, type, value] = pair.split(":");
+            console.log("Key: ", key, "\nType: ", type, "\nValue: ", value);
+            if (type === "pubkey")
+            {
+                let pubkey = new PublicKey(value);
+                additional_accounts.push(pubkey);
+                p.map.set(key, { __kind: "Pubkey", fields: [pubkey]});
+            }
+            else if (type === "number")
+            {
+                p.map.set(key, { __kind: "Number", fields: [parseInt(value)]});
+            }
+        }
+
+        let result = await validateOperation(connection, payer, name, new PublicKey(mint), operation, p, additional_accounts);
         // console.log("Result: " + result);
     });
     

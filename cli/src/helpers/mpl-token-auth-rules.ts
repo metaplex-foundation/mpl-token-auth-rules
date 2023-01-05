@@ -47,6 +47,7 @@ export const validateOperation = async (
     mint: PublicKey,
     operation: string,
     payload: Payload,
+    additional_accounts: PublicKey[],
 ) => {
 
     const ruleSetAddress = await findRuleSetPDA(payer.publicKey, name);
@@ -68,6 +69,9 @@ export const validateOperation = async (
         PROGRAM_ID,
     );
 
+    for (let account of additional_accounts) {
+        validateIX.keys.push({pubkey: account, isWritable: false, isSigner: false});
+    }
     const tx = new Transaction().add(validateIX);
 
     const { blockhash } = await connection.getLatestBlockhash();
