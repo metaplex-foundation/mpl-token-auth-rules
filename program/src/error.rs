@@ -46,9 +46,9 @@ pub enum RuleSetError {
     #[error("Pubkey Tree Match check failed")]
     PubkeyTreeMatchCheckFailed,
 
-    /// 9 - Derived Key Match check failed
-    #[error("Derived Key Match check failed")]
-    DerivedKeyMatchCheckFailed,
+    /// 9 - PDA Match check failed
+    #[error("PDA Match check failed")]
+    PDAMatchCheckFailed,
 
     /// 10 - Program Owned check failed
     #[error("Program Owned check failed")]

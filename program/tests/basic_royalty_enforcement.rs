@@ -4,14 +4,12 @@ pub mod utils;
 
 use mpl_token_auth_rules::{
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
-    payload::{LeafInfo, Payload, PayloadType},
+    payload::{LeafInfo, Payload, PayloadType, SeedsVec},
     state::{Rule, RuleSet},
 };
+use solana_program::system_program;
 use solana_program_test::tokio;
-use solana_sdk::{
-    instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
-    transaction::Transaction,
-};
+use solana_sdk::{instruction::AccountMeta, signature::Signer, signer::keypair::Keypair};
 use utils::{
     create_rule_set_on_chain, process_passing_validate_ix, program_test, Operation, PayloadKey,
 };
@@ -23,10 +21,29 @@ async fn basic_royalty_enforcement() {
     // --------------------------------
     // Create RuleSet
     // --------------------------------
-    // Rule for Transfers: Allow transfers to a Token Owned Escrow account.
-    let owned_by_token_metadata = Rule::ProgramOwned {
-        program: mpl_token_metadata::id(),
-        field: PayloadKey::Target.to_string(),
+    let owned_by_mpl_auth_rules = Rule::ProgramOwned {
+        program: mpl_token_auth_rules::ID,
+        field: PayloadKey::Destination.to_string(),
+    };
+
+    let pda_match_rule = Rule::PDAMatch {
+        program: None,
+        pda_field: PayloadKey::Destination.to_string(),
+        seeds_field: PayloadKey::DestinationSeeds.to_string(),
+    };
+
+    let owned_by_system_program = Rule::ProgramOwned {
+        program: system_program::ID,
+        field: PayloadKey::Destination.to_string(),
+    };
+
+    let transfer_rule = Rule::Any {
+        rules: vec![
+            Rule::All {
+                rules: vec![owned_by_mpl_auth_rules, pda_match_rule],
+            },
+            owned_by_system_program,
+        ],
     };
 
     // Merkle tree root generated in a different test program.
@@ -39,7 +56,7 @@ async fn basic_royalty_enforcement() {
     // member of the marketplace Merkle tree.
     let leaf_in_marketplace_tree = Rule::PubkeyTreeMatch {
         root: marketplace_tree_root,
-        field: PayloadKey::Target.to_string(),
+        field: PayloadKey::Destination.to_string(),
     };
 
     // Create Basic Royalty Enforcement RuleSet.
@@ -48,7 +65,7 @@ async fn basic_royalty_enforcement() {
         context.payer.pubkey(),
     );
     basic_royalty_enforcement_rule_set
-        .add(Operation::Transfer.to_string(), owned_by_token_metadata)
+        .add(Operation::Transfer.to_string(), transfer_rule)
         .unwrap();
     basic_royalty_enforcement_rule_set
         .add(
@@ -77,42 +94,66 @@ async fn basic_royalty_enforcement() {
     .await;
 
     // --------------------------------
-    // Validate Transfer operation
+    // Validate Transfer to a PDA.
     // --------------------------------
-    // Create an account owned by token-metadata to simulate a Token-Owned Escrow account.
-    let fake_token_metadata_owned_escrow = Keypair::new();
-    let rent = context.banks_client.get_rent().await.unwrap();
-    let tx = Transaction::new_signed_with_payer(
-        &[system_instruction::create_account(
-            &context.payer.pubkey(),
-            &fake_token_metadata_owned_escrow.pubkey(),
-            rent.minimum_balance(0),
-            0,
-            &mpl_token_metadata::id(),
-        )],
-        Some(&context.payer.pubkey()),
-        &[&context.payer, &fake_token_metadata_owned_escrow],
-        context.last_blockhash,
-    );
-
-    context.banks_client.process_transaction(tx).await.unwrap();
-
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
+    // Our derived key is going to be an account owned by the
+    // mpl-token-auth-rules program. Any one will do so for convenience
+    // we just use the RuleSet.  These are the RuleSet seeds.
+    let seeds = vec![
+        mpl_token_auth_rules::pda::PREFIX.as_bytes().to_vec(),
+        context.payer.pubkey().as_ref().to_vec(),
+        "basic_royalty_enforcement".as_bytes().to_vec(),
+    ];
+
+    // Store the payload of data to validate against the rule definition.  In this case the
+    // `Destination` will be used to look up the `AccountInfo` and see and see who the owner
+    // is, and the `DestinationSeeds` provide the seeds for the PDA derivation.
+    let payload = Payload::from([
+        (
+            PayloadKey::Destination.to_string(),
+            PayloadType::Pubkey(rule_set_addr),
+        ),
+        (
+            PayloadKey::DestinationSeeds.to_string(),
+            PayloadType::Seeds(SeedsVec::new(seeds)),
+        ),
+    ]);
+
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(rule_set_addr, false)])
+        .build(ValidateArgs::V1 {
+            operation: Operation::Transfer.to_string(),
+            payload,
+            update_rule_state: false,
+        })
+        .unwrap()
+        .instruction();
+
+    // Validate Transfer operation.
+    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+
+    // --------------------------------
+    // Validate Transfer to a wallet.
+    // --------------------------------
     // Store the payload of data to validate against the rule definition.
     // In this case the Target will be used to look up the `AccountInfo`
     // and see who the owner is.
+    let wallet_account = Keypair::new();
     let payload = Payload::from([(
-        PayloadKey::Target.to_string(),
-        PayloadType::Pubkey(fake_token_metadata_owned_escrow.pubkey()),
+        PayloadKey::Destination.to_string(),
+        PayloadType::Pubkey(wallet_account.pubkey()),
     )]);
 
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
         .additional_rule_accounts(vec![AccountMeta::new_readonly(
-            fake_token_metadata_owned_escrow.pubkey(),
+            wallet_account.pubkey(),
             false,
         )])
         .build(ValidateArgs::V1 {
@@ -156,7 +197,7 @@ async fn basic_royalty_enforcement() {
     // Store the payload of data to validate against the rule definition.
     // In this case it is a leaf node and its associated Merkle proof.
     let payload = Payload::from([(
-        PayloadKey::Target.to_string(),
+        PayloadKey::Destination.to_string(),
         PayloadType::MerkleProof(leaf_info),
     )]);
 

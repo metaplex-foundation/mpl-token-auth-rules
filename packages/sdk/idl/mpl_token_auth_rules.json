@@ -323,8 +323,8 @@
     },
     {
       "code": 9,
-      "name": "DerivedKeyMatchCheckFailed",
-      "msg": "Derived Key Match check failed"
+      "name": "PDAMatchCheckFailed",
+      "msg": "PDA Match check failed"
     },
     {
       "code": 10,

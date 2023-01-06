@@ -15,6 +15,13 @@ pub struct SeedsVec {
     pub seeds: Vec<Vec<u8>>,
 }
 
+impl SeedsVec {
+    /// Create a new `SeedsVec`.
+    pub fn new(seeds: Vec<Vec<u8>>) -> Self {
+        Self { seeds }
+    }
+}
+
 #[repr(C)]
 #[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
@@ -40,7 +47,7 @@ impl LeafInfo {
 pub enum PayloadType {
     /// A plain `Pubkey`.
     Pubkey(Pubkey),
-    /// Derivation seeds.
+    /// PDA derivation seeds.
     Seeds(SeedsVec),
     /// A merkle leaf and proof.
     MerkleProof(LeafInfo),
