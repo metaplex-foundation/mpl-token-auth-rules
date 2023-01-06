@@ -1,7 +1,7 @@
 // @ts-check
 'use strict';
 const path = require('path');
-const accountProviders = require('./packages/sdk/dist/generated/accounts');
+const accountProviders = require('./packages/sdk/dist/src/generated/accounts');
 
 const localDeployDir = path.join(__dirname, 'program', 'target', 'deploy');
 const MY_PROGRAM_ID = require("./packages/sdk/idl/mpl_token_auth_rules.json").metadata.address;
