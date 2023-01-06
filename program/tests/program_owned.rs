@@ -28,7 +28,7 @@ async fn program_owned() {
     // Create a Rule.  The target must be owned by the program ID specified in the Rule.
     let rule = Rule::ProgramOwned {
         program: mpl_token_metadata::id(),
-        field: PayloadKey::Target.to_string(),
+        field: PayloadKey::Destination.to_string(),
     };
 
     // Create a RuleSet.
@@ -44,43 +44,25 @@ async fn program_owned() {
     // --------------------------------
     // Validate fail
     // --------------------------------
-    // Create an account owned by token-metadata to simulate a Token-Owned Escrow account.
-    let fake_token_metadata_owned_escrow = Keypair::new();
-    let rent = context.banks_client.get_rent().await.unwrap();
-    let tx = Transaction::new_signed_with_payer(
-        &[system_instruction::create_account(
-            &context.payer.pubkey(),
-            &fake_token_metadata_owned_escrow.pubkey(),
-            rent.minimum_balance(0),
-            0,
-            &mpl_token_metadata::id(),
-        )],
-        Some(&context.payer.pubkey()),
-        &[&context.payer, &fake_token_metadata_owned_escrow],
-        context.last_blockhash,
-    );
-
-    context.banks_client.process_transaction(tx).await.unwrap();
-
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
     // Store the payload of data to validate against the rule definition.
     // In this case the Target will be used to look up the `AccountInfo`
     // and see who the owner is.  Here we put in the WRONG Pubkey.
-    let wrong_rule_account = Keypair::new();
+    let wrong_account = Keypair::new();
     let payload = Payload::from([(
-        PayloadKey::Target.to_string(),
-        PayloadType::Pubkey(wrong_rule_account.pubkey()),
+        PayloadKey::Destination.to_string(),
+        PayloadType::Pubkey(wrong_account.pubkey()),
     )]);
 
     // We also pass the WRONG account as an additional rule account.
-    // It will be found by the Rule but will not be the owner.
+    // It will be found by the Rule but owner will be wrong.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
         .additional_rule_accounts(vec![AccountMeta::new_readonly(
-            wrong_rule_account.pubkey(),
+            wrong_account.pubkey(),
             false,
         )])
         .build(ValidateArgs::V1 {
@@ -100,10 +82,28 @@ async fn program_owned() {
     // --------------------------------
     // Validate pass
     // --------------------------------
+    // Create an account owned by this program.
+    let program_owned_account = Keypair::new();
+    let rent = context.banks_client.get_rent().await.unwrap();
+    let tx = Transaction::new_signed_with_payer(
+        &[system_instruction::create_account(
+            &context.payer.pubkey(),
+            &program_owned_account.pubkey(),
+            rent.minimum_balance(0),
+            0,
+            &mpl_token_metadata::id(),
+        )],
+        Some(&context.payer.pubkey()),
+        &[&context.payer, &program_owned_account],
+        context.last_blockhash,
+    );
+
+    context.banks_client.process_transaction(tx).await.unwrap();
+
     // This time put the CORRECT Pubkey into the Payload and the validate instruction.
     let payload = Payload::from([(
-        PayloadKey::Target.to_string(),
-        PayloadType::Pubkey(fake_token_metadata_owned_escrow.pubkey()),
+        PayloadKey::Destination.to_string(),
+        PayloadType::Pubkey(program_owned_account.pubkey()),
     )]);
 
     // Create a `validate` instruction.
@@ -111,7 +111,7 @@ async fn program_owned() {
         .rule_set_pda(rule_set_addr)
         .mint(mint)
         .additional_rule_accounts(vec![AccountMeta::new_readonly(
-            fake_token_metadata_owned_escrow.pubkey(),
+            program_owned_account.pubkey(),
             false,
         )])
         .build(ValidateArgs::V1 {
