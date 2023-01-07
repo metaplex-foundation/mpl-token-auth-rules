@@ -84,7 +84,7 @@ async fn program_owned() {
     // --------------------------------
     // Validate pass
     // --------------------------------
-    // Create an account owned by this program.
+    // Create an account owned mpl-token-metadata.
     let program_owned_account = Keypair::new();
     let rent = context.banks_client.get_rent().await.unwrap();
     let tx = Transaction::new_signed_with_payer(

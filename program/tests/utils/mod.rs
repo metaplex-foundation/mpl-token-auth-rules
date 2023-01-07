@@ -14,8 +14,10 @@ use solana_program::{
 };
 use solana_program_test::{BanksClientError, ProgramTest, ProgramTestContext};
 use solana_sdk::{
+    program_pack::Pack,
     signature::Signer,
     signer::keypair::Keypair,
+    system_instruction,
     transaction::{Transaction, TransactionError},
 };
 
@@ -191,4 +193,69 @@ pub fn assert_program_error(err: BanksClientError, program_error: ProgramError) 
         }
         _ => panic!("Unexpected error {:?}", err),
     }
+}
+
+pub async fn create_mint(
+    context: &mut ProgramTestContext,
+    mint: &Keypair,
+    manager: &Pubkey,
+    freeze_authority: Option<&Pubkey>,
+    decimals: u8,
+) -> Result<(), BanksClientError> {
+    let rent = context.banks_client.get_rent().await.unwrap();
+
+    let tx = Transaction::new_signed_with_payer(
+        &[
+            system_instruction::create_account(
+                &context.payer.pubkey(),
+                &mint.pubkey(),
+                rent.minimum_balance(spl_token::state::Mint::LEN),
+                spl_token::state::Mint::LEN as u64,
+                &spl_token::id(),
+            ),
+            spl_token::instruction::initialize_mint(
+                &spl_token::id(),
+                &mint.pubkey(),
+                manager,
+                freeze_authority,
+                decimals,
+            )
+            .unwrap(),
+        ],
+        Some(&context.payer.pubkey()),
+        &[&context.payer, mint],
+        context.last_blockhash,
+    );
+
+    context.banks_client.process_transaction(tx).await
+}
+
+pub async fn create_associated_token_account(
+    context: &mut ProgramTestContext,
+    wallet: &Keypair,
+    token_mint: &Pubkey,
+) -> Result<Pubkey, BanksClientError> {
+    let recent_blockhash = context.last_blockhash;
+
+    let tx = Transaction::new_signed_with_payer(
+        &[
+            spl_associated_token_account::instruction::create_associated_token_account(
+                &context.payer.pubkey(),
+                &wallet.pubkey(),
+                token_mint,
+                &spl_token::ID,
+            ),
+        ],
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        recent_blockhash,
+    );
+
+    // connection.send_and_confirm_transaction(&tx)?;
+    context.banks_client.process_transaction(tx).await.unwrap();
+
+    Ok(spl_associated_token_account::get_associated_token_address(
+        &wallet.pubkey(),
+        token_mint,
+    ))
 }
