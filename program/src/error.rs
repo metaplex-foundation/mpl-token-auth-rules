@@ -121,6 +121,10 @@ pub enum RuleSetError {
     /// 27 - Unsupported RuleSet version
     #[error("Unsupported RuleSet version")]
     UnsupportedRuleSetVersion,
+
+    /// 28 - Unexpected RuleSet failure
+    #[error("Unexpected RuleSet failure")]
+    UnexpectedRuleSetFailure,
 }
 
 impl PrintProgramError for RuleSetError {

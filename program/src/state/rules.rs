@@ -159,9 +159,7 @@ impl Rule {
         match self {
             Rule::All { rules } => {
                 msg!("Validating All");
-                let mut last = self.to_error();
                 for rule in rules {
-                    last = rule.to_error();
                     let result = rule.low_level_validate(
                         accounts,
                         payload,
@@ -173,13 +171,12 @@ impl Rule {
                         return result;
                     }
                 }
-                (true, last)
+                (true, self.to_error())
             }
             Rule::Any { rules } => {
                 msg!("Validating Any");
                 let mut last = self.to_error();
                 for rule in rules {
-                    last = rule.to_error();
                     let result = rule.low_level_validate(
                         accounts,
                         payload,
@@ -189,6 +186,8 @@ impl Rule {
                     );
                     if result.0 {
                         return result;
+                    } else {
+                        last = result.1;
                     }
                 }
                 (false, last)
@@ -412,7 +411,7 @@ impl Rule {
     pub fn to_error(&self) -> ProgramError {
         match self {
             Rule::All { .. } | Rule::Any { .. } | Rule::Not { .. } | Rule::Pass => {
-                RuleSetError::NotImplemented.into()
+                RuleSetError::UnexpectedRuleSetFailure.into()
             }
             Rule::AdditionalSigner { .. } => RuleSetError::AdditionalSignerCheckFailed.into(),
             Rule::PubkeyMatch { .. } => RuleSetError::PubkeyMatchCheckFailed.into(),
