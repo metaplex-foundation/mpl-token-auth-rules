@@ -81,8 +81,8 @@ async fn wallet_to_pda_or_pda_to_wallet() {
     // Create RuleSet
     // --------------------------------
     // Compose the Owner Transfer rule as follows:
-    // (source is a wallet && destination is on allow list && destination is a PDA) ||
-    // (source is on allow list && source is a PDA && destination is a wallet)
+    // (source is owned by system program && dest is on allow list && destination is a PDA) ||
+    // (source is on allow list && source is a PDA && dest is owned by system program)
     let transfer_rule = Rule::Any {
         rules: vec![
             Rule::All {
@@ -230,8 +230,8 @@ async fn wallet_or_pda_to_wallet_or_pda() {
     // Create RuleSet
     // --------------------------------
     // Compose the Owner Transfer rule as follows:
-    // (source is a wallet || (source is on allow list && source is a PDA) &&
-    // (dest is a wallet || (dest is on allow list && dest is a PDA)
+    // (source is owned by system program || (source is on allow list && source is a PDA) &&
+    // (dest is owned by system program || (dest is on allow list && dest is a PDA)
     let transfer_rule = Rule::All {
         rules: vec![
             Rule::Any {
@@ -591,7 +591,7 @@ async fn multiple_operations() {
     // Create RuleSet
     // --------------------------------
     // Compose the Owner Transfer rule as follows:
-    // (source is a wallet && dest is on allow list && dest is a PDA)
+    // (source is a owned by system program && dest is on allow list && dest is a PDA)
     let transfer_rule = Rule::All {
         rules: vec![
             source_owned_by_sys_program,
