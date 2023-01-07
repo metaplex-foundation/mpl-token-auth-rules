@@ -79,6 +79,30 @@ async fn basic_royalty_enforcement() {
         ],
     };
 
+    // Alternative RuleSet:
+    // (source is a wallet || (source is on allow list && source is a PDA) &&
+    // (dest is a wallet || (dest is on allow list && dest is a PDA)
+    // let transfer_rule = Rule::All {
+    //     rules: vec![
+    //         Rule::Any {
+    //             rules: vec![
+    //                 source_owned_by_sys_program,
+    //                 Rule::All {
+    //                     rules: vec![source_program_allow_list, source_pda_match],
+    //                 },
+    //             ],
+    //         },
+    //         Rule::Any {
+    //             rules: vec![
+    //                 dest_owned_by_sys_program,
+    //                 Rule::All {
+    //                     rules: vec![dest_program_allow_list, dest_pda_match],
+    //                 },
+    //             ],
+    //         },
+    //     ],
+    // };
+
     // Merkle tree root generated in a different test program.
     let marketplace_tree_root: [u8; 32] = [
         132, 141, 27, 31, 23, 154, 145, 128, 32, 62, 122, 224, 248, 128, 37, 139, 200, 46, 163,
