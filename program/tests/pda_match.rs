@@ -172,7 +172,7 @@ async fn test_pda_match_specified_owner() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .additional_rule_accounts(vec![AccountMeta::new_readonly(invalid_pda, false)])
+        .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
             operation: Operation::OwnerTransfer.to_string(),
             payload: payload.clone(),
@@ -210,7 +210,7 @@ async fn test_pda_match_specified_owner() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .additional_rule_accounts(vec![AccountMeta::new_readonly(rule_set_addr, false)])
+        .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
