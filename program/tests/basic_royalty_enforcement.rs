@@ -57,7 +57,7 @@ async fn basic_royalty_enforcement() {
         field: PayloadKey::Destination.to_string(),
     };
 
-    // Compose the transfer rule as follows:
+    // Compose the Owner Transfer rule as follows:
     // (source is a wallet && destination is on allow list && destination is a PDA) ||
     // (source is on allow list && source is a PDA && destination is a wallet)
     let transfer_rule = Rule::Any {
@@ -79,7 +79,7 @@ async fn basic_royalty_enforcement() {
         ],
     };
 
-    // Alternative RuleSet:
+    // Alternative Transfer Rule:
     // (source is a wallet || (source is on allow list && source is a PDA) &&
     // (dest is a wallet || (dest is on allow list && dest is a PDA)
     // let transfer_rule = Rule::All {
