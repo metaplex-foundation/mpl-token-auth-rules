@@ -7,7 +7,7 @@ use mpl_token_auth_rules::{
     payload::{LeafInfo, Payload, PayloadType, SeedsVec},
     state::{Rule, RuleSet},
 };
-use solana_program::system_program;
+use solana_program::{pubkey::Pubkey, system_program};
 use solana_program_test::tokio;
 use solana_sdk::{instruction::AccountMeta, signature::Signer, signer::keypair::Keypair};
 use utils::{
@@ -21,28 +21,61 @@ async fn basic_royalty_enforcement() {
     // --------------------------------
     // Create RuleSet
     // --------------------------------
-    let owned_by_mpl_auth_rules = Rule::ProgramOwned {
-        program: mpl_token_auth_rules::ID,
+    static PROGRAM_ALLOW_LIST: [Pubkey; 1] = [mpl_token_auth_rules::ID];
+
+    // OwnerTransfer out rules.
+    let source_owned_by_sys_program = Rule::ProgramOwned {
+        program: system_program::ID,
+        field: PayloadKey::Source.to_string(),
+    };
+
+    let dest_program_allow_list = Rule::ProgramOwnedList {
+        programs: PROGRAM_ALLOW_LIST.to_vec(),
         field: PayloadKey::Destination.to_string(),
     };
 
-    let pda_match_rule = Rule::PDAMatch {
+    let dest_pda_match = Rule::PDAMatch {
         program: None,
         pda_field: PayloadKey::Destination.to_string(),
         seeds_field: PayloadKey::DestinationSeeds.to_string(),
     };
 
-    let owned_by_system_program = Rule::ProgramOwned {
+    // OwnerTransfer back rules.
+    let source_program_allow_list = Rule::ProgramOwnedList {
+        programs: PROGRAM_ALLOW_LIST.to_vec(),
+        field: PayloadKey::Source.to_string(),
+    };
+
+    let source_pda_match = Rule::PDAMatch {
+        program: None,
+        pda_field: PayloadKey::Source.to_string(),
+        seeds_field: PayloadKey::SourceSeeds.to_string(),
+    };
+
+    let dest_owned_by_sys_program = Rule::ProgramOwned {
         program: system_program::ID,
         field: PayloadKey::Destination.to_string(),
     };
 
+    // Compose the transfer rule as follows:
+    // (source is a wallet && destination is on allow list && destination is a PDA) ||
+    // (source is on allow list && source is a PDA && destination is a wallet)
     let transfer_rule = Rule::Any {
         rules: vec![
             Rule::All {
-                rules: vec![owned_by_mpl_auth_rules, pda_match_rule],
+                rules: vec![
+                    source_owned_by_sys_program,
+                    dest_program_allow_list,
+                    dest_pda_match,
+                ],
             },
-            owned_by_system_program,
+            Rule::All {
+                rules: vec![
+                    source_program_allow_list,
+                    source_pda_match,
+                    dest_owned_by_sys_program,
+                ],
+            },
         ],
     };
 
@@ -65,7 +98,7 @@ async fn basic_royalty_enforcement() {
         context.payer.pubkey(),
     );
     basic_royalty_enforcement_rule_set
-        .add(Operation::Transfer.to_string(), transfer_rule)
+        .add(Operation::OwnerTransfer.to_string(), transfer_rule)
         .unwrap();
     basic_royalty_enforcement_rule_set
         .add(
@@ -96,6 +129,9 @@ async fn basic_royalty_enforcement() {
     // --------------------------------
     // Validate Transfer to a PDA.
     // --------------------------------
+    // Create a Keypair to simulate an owner's wallet.
+    let wallet = Keypair::new().pubkey();
+
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
@@ -112,22 +148,26 @@ async fn basic_royalty_enforcement() {
     // `Destination` will be used to look up the `AccountInfo` and see and see who the owner
     // is, and the `DestinationSeeds` provide the seeds for the PDA derivation.
     let payload = Payload::from([
+        (PayloadKey::Source.to_string(), PayloadType::Pubkey(wallet)),
         (
             PayloadKey::Destination.to_string(),
             PayloadType::Pubkey(rule_set_addr),
         ),
         (
             PayloadKey::DestinationSeeds.to_string(),
-            PayloadType::Seeds(SeedsVec::new(seeds)),
+            PayloadType::Seeds(SeedsVec::new(seeds.clone())),
         ),
     ]);
 
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .additional_rule_accounts(vec![AccountMeta::new_readonly(rule_set_addr, false)])
+        .additional_rule_accounts(vec![
+            AccountMeta::new_readonly(wallet, false),
+            AccountMeta::new_readonly(rule_set_addr, false),
+        ])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
         })
@@ -143,21 +183,30 @@ async fn basic_royalty_enforcement() {
     // Store the payload of data to validate against the rule definition.
     // In this case the Target will be used to look up the `AccountInfo`
     // and see who the owner is.
-    let wallet_account = Keypair::new();
-    let payload = Payload::from([(
-        PayloadKey::Destination.to_string(),
-        PayloadType::Pubkey(wallet_account.pubkey()),
-    )]);
+    let payload = Payload::from([
+        (
+            PayloadKey::Source.to_string(),
+            PayloadType::Pubkey(rule_set_addr),
+        ),
+        (
+            PayloadKey::SourceSeeds.to_string(),
+            PayloadType::Seeds(SeedsVec::new(seeds)),
+        ),
+        (
+            PayloadKey::Destination.to_string(),
+            PayloadType::Pubkey(wallet),
+        ),
+    ]);
 
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .additional_rule_accounts(vec![AccountMeta::new_readonly(
-            wallet_account.pubkey(),
-            false,
-        )])
+        .additional_rule_accounts(vec![
+            AccountMeta::new_readonly(rule_set_addr, false),
+            AccountMeta::new_readonly(wallet, false),
+        ])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
         })

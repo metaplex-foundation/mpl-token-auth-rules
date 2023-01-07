@@ -74,7 +74,7 @@ async fn test_payer_not_signer_fails() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
         })
@@ -136,7 +136,7 @@ async fn test_additional_signer_and_not_amount() {
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_string(), overall_rule)
+        .add(Operation::OwnerTransfer.to_string(), overall_rule)
         .unwrap();
 
     println!("{:#?}", rule_set);
@@ -163,7 +163,7 @@ async fn test_additional_signer_and_not_amount() {
             true,
         )])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload: payload.clone(),
             update_rule_state: false,
         })
@@ -188,7 +188,7 @@ async fn test_additional_signer_and_not_amount() {
             AccountMeta::new_readonly(second_signer.pubkey(), true),
         ])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
         })
@@ -213,7 +213,7 @@ async fn test_additional_signer_and_not_amount() {
             AccountMeta::new_readonly(second_signer.pubkey(), true),
         ])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
         })
@@ -240,7 +240,7 @@ async fn test_update_ruleset() {
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_string(), pass_rule)
+        .add(Operation::OwnerTransfer.to_string(), pass_rule)
         .unwrap();
 
     // Put the RuleSet on chain.
@@ -268,7 +268,7 @@ async fn test_update_ruleset() {
     // Create a new RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_string(), overall_rule)
+        .add(Operation::OwnerTransfer.to_string(), overall_rule)
         .unwrap();
 
     // Put the updated RuleSet on chain.

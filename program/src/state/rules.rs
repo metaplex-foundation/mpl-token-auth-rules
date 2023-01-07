@@ -85,6 +85,25 @@ pub enum Rule {
         /// The field in the `Payload` to be compared.
         field: String,
     },
+    /// The `Pubkey` must be owned by a program in the list
+    /// of `Pubkey`s.
+    ProgramOwnedList {
+        /// The program that must own the `Pubkey`.
+        programs: Vec<Pubkey>,
+        /// The field in the `Payload` to be compared.
+        field: String,
+    },
+    /// The `Pubkey` must be owned a member of the Merkle tree.
+    ProgramOwnedTree {
+        /// The root of the Merkle tree.
+        _root: [u8; 32],
+        /// The field in the `Payload` to be compared
+        /// when looking for the program.
+        _program_field: String,
+        /// The field in the `Payload` to be compared
+        /// when looking for the Merkle Proof.
+        _merkle_proof_field: String,
+    },
     /// Comparison against the amount of tokens being transferred.
     Amount {
         /// The amount to be compared against.
@@ -300,7 +319,6 @@ impl Rule {
                     (false, self.to_error())
                 }
             }
-
             Rule::ProgramOwned { program, field } => {
                 msg!("Validating ProgramOwned");
 
@@ -318,6 +336,33 @@ impl Rule {
                 }
 
                 (false, self.to_error())
+            }
+            Rule::ProgramOwnedList { programs, field } => {
+                msg!("Validating ProgramOwnedList");
+
+                let key = match payload.get_pubkey(field) {
+                    Some(pubkey) => pubkey,
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                };
+
+                let account = match accounts.get(key) {
+                    Some(account) => account,
+                    _ => return (false, RuleSetError::MissingAccount.into()),
+                };
+
+                if programs.iter().any(|program| *account.owner == *program) {
+                    (true, self.to_error())
+                } else {
+                    (false, self.to_error())
+                }
+            }
+            Rule::ProgramOwnedTree {
+                _root,
+                _program_field,
+                _merkle_proof_field,
+            } => {
+                msg!("Validating ProgramOwnedTree");
+                (false, RuleSetError::NotImplemented.into())
             }
             Rule::Amount {
                 amount: rule_amount,
@@ -375,6 +420,8 @@ impl Rule {
             Rule::PubkeyTreeMatch { .. } => RuleSetError::PubkeyTreeMatchCheckFailed.into(),
             Rule::PDAMatch { .. } => RuleSetError::PDAMatchCheckFailed.into(),
             Rule::ProgramOwned { .. } => RuleSetError::ProgramOwnedCheckFailed.into(),
+            Rule::ProgramOwnedList { .. } => RuleSetError::ProgramOwnedListCheckFailed.into(),
+            Rule::ProgramOwnedTree { .. } => RuleSetError::ProgramOwnedTreeCheckFailed.into(),
             Rule::Amount { .. } => RuleSetError::AmountCheckFailed.into(),
             Rule::Frequency { .. } => RuleSetError::FrequencyCheckFailed.into(),
         }

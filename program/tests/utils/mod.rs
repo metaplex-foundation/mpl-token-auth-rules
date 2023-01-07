@@ -22,7 +22,7 @@ use solana_sdk::{
 #[repr(C)]
 #[derive(ToPrimitive)]
 pub enum Operation {
-    Transfer,
+    OwnerTransfer,
     Delegate,
     SaleTransfer,
 }
@@ -30,7 +30,7 @@ pub enum Operation {
 impl ToString for Operation {
     fn to_string(&self) -> String {
         match self {
-            Operation::Transfer => "Transfer".to_string(),
+            Operation::OwnerTransfer => "OwnerTransfer".to_string(),
             Operation::Delegate => "Delegate".to_string(),
             Operation::SaleTransfer => "SaleTransfer".to_string(),
         }
@@ -46,12 +46,14 @@ pub enum PayloadKey {
     Authority,
     /// Seeds for a PDA authority of the operation, e.g. when the authority is a PDA.
     AuthoritySeeds,
+    /// The source of the operation, e.g. the owner initiating a transfer.
+    Source,
+    /// Seeds for a PDA source of the operation, e.g. when the source is a PDA.
+    SourceSeeds,
     /// The destination of the operation, e.g. the recipient of a transfer.
     Destination,
-    /// Seeds for a PDA destination of the operation, e.g. when the receipient is a PDA.
+    /// Seeds for a PDA destination of the operation, e.g. when the recipient is a PDA.
     DestinationSeeds,
-    /// The holder of the token, e.g. the sender of a transfer.
-    Holder,
 }
 
 impl ToString for PayloadKey {
@@ -60,9 +62,10 @@ impl ToString for PayloadKey {
             PayloadKey::Amount => "Amount".to_string(),
             PayloadKey::Authority => "Authority".to_string(),
             PayloadKey::AuthoritySeeds => "AuthoritySeeds".to_string(),
+            PayloadKey::Source => "Source".to_string(),
+            PayloadKey::SourceSeeds => "SourceSeeds".to_string(),
             PayloadKey::Destination => "Destination".to_string(),
             PayloadKey::DestinationSeeds => "DestinationSeeds".to_string(),
-            PayloadKey::Holder => "Holder".to_string(),
         }
     }
 }

@@ -29,12 +29,14 @@ async fn test_pubkey_list_match() {
 
     let rule = Rule::PubkeyListMatch {
         pubkeys: vec![target_1.pubkey(), target_2.pubkey(), target_3.pubkey()],
-        field: PayloadKey::Holder.to_string(),
+        field: PayloadKey::Authority.to_string(),
     };
 
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
-    rule_set.add(Operation::Transfer.to_string(), rule).unwrap();
+    rule_set
+        .add(Operation::OwnerTransfer.to_string(), rule)
+        .unwrap();
 
     println!("{:#?}", rule_set);
 
@@ -50,7 +52,7 @@ async fn test_pubkey_list_match() {
 
     // Store the payload of data to validate against the rule definition with WRONG Pubkey.
     let payload = Payload::from([(
-        PayloadKey::Holder.to_string(),
+        PayloadKey::Authority.to_string(),
         PayloadType::Pubkey(Keypair::new().pubkey()),
     )]);
 
@@ -60,7 +62,7 @@ async fn test_pubkey_list_match() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
         })
@@ -81,7 +83,7 @@ async fn test_pubkey_list_match() {
 
     // Store the payload of data to validate against the rule definition with CORRECT Pubkey.
     let payload = Payload::from([(
-        PayloadKey::Holder.to_string(),
+        PayloadKey::Authority.to_string(),
         PayloadType::Pubkey(target_2.pubkey()),
     )]);
 
@@ -91,7 +93,7 @@ async fn test_pubkey_list_match() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
         })
