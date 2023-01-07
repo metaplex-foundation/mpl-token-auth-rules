@@ -596,6 +596,29 @@ createErrorFromNameLookup.set(
 );
 
 /**
+ * UnexpectedRuleSetFailure: 'Unexpected RuleSet failure'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class UnexpectedRuleSetFailureError extends Error {
+  readonly code: number = 0x1c;
+  readonly name: string = 'UnexpectedRuleSetFailure';
+  constructor() {
+    super('Unexpected RuleSet failure');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, UnexpectedRuleSetFailureError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x1c, () => new UnexpectedRuleSetFailureError());
+createErrorFromNameLookup.set(
+  'UnexpectedRuleSetFailure',
+  () => new UnexpectedRuleSetFailureError(),
+);
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

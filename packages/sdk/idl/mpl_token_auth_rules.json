@@ -415,6 +415,11 @@
       "code": 27,
       "name": "UnsupportedRuleSetVersion",
       "msg": "Unsupported RuleSet version"
+    },
+    {
+      "code": 28,
+      "name": "UnexpectedRuleSetFailure",
+      "msg": "Unexpected RuleSet failure"
     }
   ],
   "metadata": {
