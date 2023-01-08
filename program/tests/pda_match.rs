@@ -11,10 +11,7 @@ use mpl_token_auth_rules::{
 use solana_program::{instruction::AccountMeta, pubkey::Pubkey};
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{
-    assert_rule_set_error, create_rule_set_on_chain, process_failing_validate_ix,
-    process_passing_validate_ix, program_test, Operation, PayloadKey,
-};
+use utils::{create_rule_set_on_chain, program_test, Operation, PayloadKey};
 
 #[tokio::test]
 async fn test_pda_match_assumed_owner() {
@@ -84,10 +81,10 @@ async fn test_pda_match_assumed_owner() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::PDAMatchCheckFailed);
+    assert_rule_set_error!(err, RuleSetError::PDAMatchCheckFailed);
 
     // --------------------------------
     // Validate pass
@@ -118,7 +115,7 @@ async fn test_pda_match_assumed_owner() {
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 }
 
 #[tokio::test]
@@ -182,10 +179,10 @@ async fn test_pda_match_specified_owner() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::PDAMatchCheckFailed);
+    assert_rule_set_error!(err, RuleSetError::PDAMatchCheckFailed);
 
     // --------------------------------
     // Validate pass
@@ -220,5 +217,5 @@ async fn test_pda_match_specified_owner() {
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 }

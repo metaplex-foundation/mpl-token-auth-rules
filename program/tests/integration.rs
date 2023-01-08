@@ -18,10 +18,7 @@ use solana_sdk::{
     signer::keypair::Keypair,
     transaction::{Transaction, TransactionError},
 };
-use utils::{
-    assert_rule_set_error, create_rule_set_on_chain, process_failing_validate_ix,
-    process_passing_validate_ix, program_test, Operation, PayloadKey,
-};
+use utils::{create_rule_set_on_chain, program_test, Operation, PayloadKey};
 
 #[tokio::test]
 async fn test_payer_not_signer_fails() {
@@ -171,10 +168,10 @@ async fn test_additional_signer_and_not_amount() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::MissingAccount);
+    assert_rule_set_error!(err, RuleSetError::MissingAccount);
 
     // --------------------------------
     // Validate pass
@@ -196,7 +193,7 @@ async fn test_additional_signer_and_not_amount() {
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![&second_signer]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![&second_signer]).await;
 
     // --------------------------------
     // Validate fail wrong amount
@@ -221,10 +218,10 @@ async fn test_additional_signer_and_not_amount() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![&second_signer]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![&second_signer]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::AmountCheckFailed);
+    assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
 }
 
 #[tokio::test]

@@ -9,7 +9,7 @@ use mpl_token_auth_rules::{
 };
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{create_rule_set_on_chain, process_passing_validate_ix, program_test, Operation};
+use utils::{create_rule_set_on_chain, program_test, Operation};
 
 #[tokio::test]
 async fn test_pass() {
@@ -53,5 +53,5 @@ async fn test_pass() {
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 }

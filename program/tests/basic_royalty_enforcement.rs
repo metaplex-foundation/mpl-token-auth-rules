@@ -15,8 +15,8 @@ use solana_sdk::{
     transaction::Transaction,
 };
 use utils::{
-    assert_rule_set_error, create_associated_token_account, create_mint, create_rule_set_on_chain,
-    process_failing_validate_ix, process_passing_validate_ix, program_test, Operation, PayloadKey,
+    create_associated_token_account, create_mint, create_rule_set_on_chain, program_test,
+    Operation, PayloadKey,
 };
 
 static PROGRAM_ALLOW_LIST: [Pubkey; 1] = [mpl_token_auth_rules::ID];
@@ -173,7 +173,7 @@ async fn wallet_to_pda_or_pda_to_wallet() {
         .instruction();
 
     // Validate OwnerTransfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
     // Validate PDA to wallet
@@ -210,7 +210,7 @@ async fn wallet_to_pda_or_pda_to_wallet() {
         .instruction();
 
     // Validate OwnerTransfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 }
 
 #[tokio::test]
@@ -310,7 +310,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
         .instruction();
 
     // Validate OwnerTransfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
     // Validate wallet to PDA
@@ -356,7 +356,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
         .instruction();
 
     // Validate OwnerTransfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
     // Validate PDA to PDA
@@ -411,7 +411,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
         .instruction();
 
     // Validate OwnerTransfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
     // Validate PDA to wallet
@@ -448,7 +448,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
         .instruction();
 
     // Validate OwnerTransfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
     // Validate fail unowned PDA
@@ -508,11 +508,11 @@ async fn wallet_or_pda_to_wallet_or_pda() {
         .instruction();
 
     // Fail to validate OwnerTransfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.  It should fail the ProgramOwnedList Rule since the
     // owner is not in the Rule.
-    assert_rule_set_error(err, RuleSetError::ProgramOwnedListCheckFailed);
+    assert_rule_set_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
 
     // --------------------------------
     // Validate fail program owned but not PDA
@@ -567,11 +567,11 @@ async fn wallet_or_pda_to_wallet_or_pda() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.  It should fail the PDAMatch Rule after passing
     // the ProgramOwnedList Rule, since the owner was correct but it is not a valid PDA.
-    assert_rule_set_error(err, RuleSetError::PDAMatchCheckFailed);
+    assert_rule_set_error!(err, RuleSetError::PDAMatchCheckFailed);
 }
 
 #[tokio::test]
@@ -694,7 +694,7 @@ async fn multiple_operations() {
         .instruction();
 
     // Validate OwnerTransfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
     // Validate fail wallet to wallet.
@@ -727,11 +727,11 @@ async fn multiple_operations() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.  The destination wallet is owned by the System Program
     // so in this case it doesn't match the ProgramOwnedList Rule.
-    assert_rule_set_error(err, RuleSetError::ProgramOwnedListCheckFailed);
+    assert_rule_set_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
 
     // --------------------------------
     // Validate Delegate operation
@@ -781,7 +781,7 @@ async fn multiple_operations() {
         .instruction();
 
     // Validate Delegate operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
     // Validate SaleTransfer operation
@@ -800,5 +800,5 @@ async fn multiple_operations() {
         .instruction();
 
     // Validate SaleTransfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 }

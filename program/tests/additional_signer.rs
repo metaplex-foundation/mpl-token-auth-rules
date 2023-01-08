@@ -11,10 +11,7 @@ use mpl_token_auth_rules::{
 use solana_program::instruction::AccountMeta;
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{
-    assert_rule_set_error, create_rule_set_on_chain, process_failing_validate_ix,
-    process_passing_validate_ix, program_test, Operation,
-};
+use utils::{create_rule_set_on_chain, program_test, Operation};
 
 #[tokio::test]
 async fn test_additional_signer() {
@@ -61,10 +58,10 @@ async fn test_additional_signer() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::MissingAccount);
+    assert_rule_set_error!(err, RuleSetError::MissingAccount);
 
     // --------------------------------
     // Validate fail not a signer
@@ -83,10 +80,10 @@ async fn test_additional_signer() {
         .instruction();
 
     // Validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::AdditionalSignerCheckFailed);
+    assert_rule_set_error!(err, RuleSetError::AdditionalSignerCheckFailed);
 
     // --------------------------------
     // Validate pass
@@ -105,5 +102,5 @@ async fn test_additional_signer() {
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![&adtl_signer]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![&adtl_signer]).await;
 }

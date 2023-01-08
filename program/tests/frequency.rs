@@ -12,10 +12,7 @@ use mpl_token_auth_rules::{
 use solana_program::program_error::ProgramError;
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{
-    assert_program_error, assert_rule_set_error, create_rule_set_on_chain,
-    process_failing_validate_ix, program_test, Operation,
-};
+use utils::{create_rule_set_on_chain, program_test, Operation};
 
 #[tokio::test]
 async fn test_frequency() {
@@ -62,10 +59,10 @@ async fn test_frequency() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_program_error(err, ProgramError::NotEnoughAccountKeys);
+    assert_program_error!(err, ProgramError::NotEnoughAccountKeys);
 
     // --------------------------------
     // Validate wrong authority
@@ -90,10 +87,10 @@ async fn test_frequency() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::RuleAuthorityIsNotSigner);
+    assert_rule_set_error!(err, RuleSetError::RuleAuthorityIsNotSigner);
 
     // --------------------------------
     // Validate not implemented
@@ -116,8 +113,8 @@ async fn test_frequency() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![&rule_authority]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![&rule_authority]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::NotImplemented);
+    assert_rule_set_error!(err, RuleSetError::NotImplemented);
 }

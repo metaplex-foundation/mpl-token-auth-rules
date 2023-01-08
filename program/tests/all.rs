@@ -11,10 +11,7 @@ use mpl_token_auth_rules::{
 use solana_program::instruction::AccountMeta;
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{
-    assert_rule_set_error, create_rule_set_on_chain, process_failing_validate_ix,
-    process_passing_validate_ix, program_test, Operation, PayloadKey,
-};
+use utils::{create_rule_set_on_chain, program_test, Operation, PayloadKey};
 
 #[tokio::test]
 async fn test_all() {
@@ -77,10 +74,10 @@ async fn test_all() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![&second_signer]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![&second_signer]).await;
 
     // Check that error is what we expect.  In this case we expect the first failure to roll up.
-    assert_rule_set_error(err, RuleSetError::AmountCheckFailed);
+    assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
 
     // --------------------------------
     // Validate pass
@@ -105,5 +102,5 @@ async fn test_all() {
         .instruction();
 
     // Validate Transfer operation since both Rule conditions were true.
-    process_passing_validate_ix(&mut context, validate_ix, vec![&second_signer]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![&second_signer]).await;
 }
