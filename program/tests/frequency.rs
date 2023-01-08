@@ -12,7 +12,7 @@ use mpl_token_auth_rules::{
 use solana_program::program_error::ProgramError;
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{create_rule_set_on_chain, program_test, Operation};
+use utils::{program_test, Operation};
 
 #[tokio::test]
 async fn test_frequency() {
@@ -37,7 +37,7 @@ async fn test_frequency() {
 
     // Put the RuleSet on chain.
     let rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
     // Validate missing accounts

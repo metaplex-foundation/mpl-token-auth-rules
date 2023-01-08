@@ -14,10 +14,7 @@ use solana_sdk::{
     instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
     transaction::Transaction,
 };
-use utils::{
-    create_associated_token_account, create_mint, create_rule_set_on_chain, program_test,
-    Operation, PayloadKey,
-};
+use utils::{create_associated_token_account, create_mint, program_test, Operation, PayloadKey};
 
 static PROGRAM_ALLOW_LIST: [Pubkey; 1] = [mpl_token_auth_rules::ID];
 
@@ -114,10 +111,10 @@ async fn wallet_to_pda_or_pda_to_wallet() {
     println!("{}", serde_json::to_string_pretty(&rule_set,).unwrap());
 
     // Put the RuleSet on chain.
-    let rule_set_addr = create_rule_set_on_chain(
+    let rule_set_addr = create_rule_set_on_chain!(
         &mut context,
         rule_set,
-        "basic_royalty_enforcement".to_string(),
+        "basic_royalty_enforcement".to_string()
     )
     .await;
 
@@ -265,10 +262,10 @@ async fn wallet_or_pda_to_wallet_or_pda() {
     println!("{}", serde_json::to_string_pretty(&rule_set,).unwrap());
 
     // Put the RuleSet on chain.
-    let rule_set_addr = create_rule_set_on_chain(
+    let rule_set_addr = create_rule_set_on_chain!(
         &mut context,
         rule_set.clone(),
-        "basic_royalty_enforcement".to_string(),
+        "basic_royalty_enforcement".to_string()
     )
     .await;
 
@@ -366,7 +363,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
     let second_rule_set = RuleSet::new("second_rule_set".to_string(), context.payer.pubkey());
 
     let second_rule_set_addr =
-        create_rule_set_on_chain(&mut context, second_rule_set, "second_rule_set".to_string())
+        create_rule_set_on_chain!(&mut context, second_rule_set, "second_rule_set".to_string())
             .await;
 
     let second_rule_set_seeds = vec![
@@ -637,10 +634,10 @@ async fn multiple_operations() {
     println!("{}", serde_json::to_string_pretty(&rule_set,).unwrap());
 
     // Put the RuleSet on chain.
-    let rule_set_addr = create_rule_set_on_chain(
+    let rule_set_addr = create_rule_set_on_chain!(
         &mut context,
         rule_set,
-        "basic_royalty_enforcement".to_string(),
+        "basic_royalty_enforcement".to_string()
     )
     .await;
 

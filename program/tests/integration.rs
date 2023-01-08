@@ -18,7 +18,7 @@ use solana_sdk::{
     signer::keypair::Keypair,
     transaction::{Transaction, TransactionError},
 };
-use utils::{create_rule_set_on_chain, program_test, Operation, PayloadKey};
+use utils::{program_test, Operation, PayloadKey};
 
 #[tokio::test]
 async fn test_payer_not_signer_fails() {
@@ -140,7 +140,7 @@ async fn test_additional_signer_and_not_amount() {
 
     // Put the RuleSet on chain.
     let rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
     // Validate fail missing account
@@ -242,7 +242,7 @@ async fn test_update_ruleset() {
 
     // Put the RuleSet on chain.
     let _rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
     // Update RuleSet
@@ -270,5 +270,5 @@ async fn test_update_ruleset() {
 
     // Put the updated RuleSet on chain.
     let _rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 }

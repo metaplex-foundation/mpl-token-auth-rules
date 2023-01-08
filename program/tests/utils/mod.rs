@@ -76,10 +76,27 @@ pub fn program_test() -> ProgramTest {
     ProgramTest::new("mpl_token_auth_rules", mpl_token_auth_rules::id(), None)
 }
 
-pub async fn create_rule_set_on_chain(
+#[macro_export]
+macro_rules! create_rule_set_on_chain {
+    ($context:expr, $rule_set:expr, $rule_set_name:expr) => {
+        $crate::utils::create_rule_set_on_chain_with_loc(
+            $context,
+            $rule_set,
+            $rule_set_name,
+            file!(),
+            line!(),
+            column!(),
+        )
+    };
+}
+
+pub async fn create_rule_set_on_chain_with_loc(
     context: &mut ProgramTestContext,
     rule_set: RuleSet,
     rule_set_name: String,
+    file: &str,
+    line: u32,
+    column: u32,
 ) -> Pubkey {
     // Find RuleSet PDA.
     let (rule_set_addr, _rule_set_bump) =
@@ -114,7 +131,12 @@ pub async fn create_rule_set_on_chain(
         .banks_client
         .process_transaction(create_tx)
         .await
-        .expect("creation should succeed");
+        .unwrap_or_else(|err| {
+            panic!(
+                "Creation error {:?}, create_rule_set_on_chain called at {}:{}:{}",
+                err, file, line, column
+            )
+        });
 
     rule_set_addr
 }
@@ -157,10 +179,10 @@ pub async fn process_passing_validate_ix_with_loc(
         .banks_client
         .process_transaction(validate_tx)
         .await
-        .unwrap_or_else(|_| {
+        .unwrap_or_else(|err| {
             panic!(
-                "Validation should succeed, process_passing_validate_ix called at {}:{}:{}",
-                file, line, column
+                "Validation error {:?}, process_passing_validate_ix called at {}:{}:{}",
+                err, file, line, column
             )
         });
 }
