@@ -21,11 +21,11 @@ static PROGRAM_ALLOW_LIST: [Pubkey; 1] = [mpl_token_auth_rules::ID];
 macro_rules! get_primitive_rules {
     (
         $source_owned_by_sys_program:ident,
-        $dest_program_allow_list:ident,
-        $dest_pda_match:ident,
         $source_program_allow_list:ident,
         $source_pda_match:ident,
         $dest_owned_by_sys_program:ident,
+        $dest_program_allow_list:ident,
+        $dest_pda_match:ident
     ) => {
         let $source_owned_by_sys_program = Rule::ProgramOwned {
             program: system_program::ID,
@@ -62,165 +62,16 @@ macro_rules! get_primitive_rules {
 }
 
 #[tokio::test]
-async fn wallet_to_pda_or_pda_to_wallet() {
+async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     let mut context = program_test().start_with_context().await;
 
     get_primitive_rules!(
         source_owned_by_sys_program,
-        dest_program_allow_list,
-        dest_pda_match,
         source_program_allow_list,
         source_pda_match,
         dest_owned_by_sys_program,
-    );
-
-    // --------------------------------
-    // Create RuleSet
-    // --------------------------------
-    // Compose the Owner Transfer rule as follows:
-    // (source is owned by system program && dest is on allow list && destination is a PDA) ||
-    // (source is on allow list && source is a PDA && dest is owned by system program)
-    let transfer_rule = Rule::Any {
-        rules: vec![
-            Rule::All {
-                rules: vec![
-                    source_owned_by_sys_program,
-                    dest_program_allow_list,
-                    dest_pda_match,
-                ],
-            },
-            Rule::All {
-                rules: vec![
-                    source_program_allow_list,
-                    source_pda_match,
-                    dest_owned_by_sys_program,
-                ],
-            },
-        ],
-    };
-
-    // Create RuleSet.
-    let mut rule_set = RuleSet::new(
-        "basic_royalty_enforcement".to_string(),
-        context.payer.pubkey(),
-    );
-    rule_set
-        .add(Operation::OwnerTransfer.to_string(), transfer_rule)
-        .unwrap();
-
-    println!("{}", serde_json::to_string_pretty(&rule_set,).unwrap());
-
-    // Put the RuleSet on chain.
-    let rule_set_addr = create_rule_set_on_chain!(
-        &mut context,
-        rule_set,
-        "basic_royalty_enforcement".to_string()
-    )
-    .await;
-
-    // --------------------------------
-    // Validate Wallet to a PDA
-    // --------------------------------
-    // Create a Keypair to simulate an owner's wallet.
-    let wallet = Keypair::new();
-
-    // Create a Keypair to simulate a token mint address.
-    let mint = Keypair::new();
-
-    // Our derived key is going to be an account owned by the
-    // mpl-token-auth-rules program. Any one will do so for convenience
-    // we just use the RuleSet.  These are the RuleSet seeds.
-    let seeds = vec![
-        mpl_token_auth_rules::pda::PREFIX.as_bytes().to_vec(),
-        context.payer.pubkey().as_ref().to_vec(),
-        "basic_royalty_enforcement".as_bytes().to_vec(),
-    ];
-
-    // Store the payload of data to validate against the rule definition.  In this case the
-    // `Destination` Pubkey will be used to look up the `AccountInfo` and see and see who the
-    // owner is, and the `DestinationSeeds` provide the seeds for the PDA derivation.
-    let payload = Payload::from([
-        (
-            PayloadKey::Source.to_string(),
-            PayloadType::Pubkey(wallet.pubkey()),
-        ),
-        (
-            PayloadKey::Destination.to_string(),
-            PayloadType::Pubkey(rule_set_addr),
-        ),
-        (
-            PayloadKey::DestinationSeeds.to_string(),
-            PayloadType::Seeds(SeedsVec::new(seeds.clone())),
-        ),
-    ]);
-
-    let validate_ix = ValidateBuilder::new()
-        .rule_set_pda(rule_set_addr)
-        .mint(mint.pubkey())
-        .additional_rule_accounts(vec![
-            AccountMeta::new_readonly(wallet.pubkey(), false),
-            AccountMeta::new_readonly(rule_set_addr, false),
-        ])
-        .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
-            payload,
-            update_rule_state: false,
-        })
-        .unwrap()
-        .instruction();
-
-    // Validate OwnerTransfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
-
-    // --------------------------------
-    // Validate PDA to wallet
-    // --------------------------------
-    // Store the payload of data to validate against the rule definition.
-    let payload = Payload::from([
-        (
-            PayloadKey::Source.to_string(),
-            PayloadType::Pubkey(rule_set_addr),
-        ),
-        (
-            PayloadKey::SourceSeeds.to_string(),
-            PayloadType::Seeds(SeedsVec::new(seeds)),
-        ),
-        (
-            PayloadKey::Destination.to_string(),
-            PayloadType::Pubkey(wallet.pubkey()),
-        ),
-    ]);
-
-    let validate_ix = ValidateBuilder::new()
-        .rule_set_pda(rule_set_addr)
-        .mint(mint.pubkey())
-        .additional_rule_accounts(vec![
-            AccountMeta::new_readonly(rule_set_addr, false),
-            AccountMeta::new_readonly(wallet.pubkey(), false),
-        ])
-        .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
-            payload,
-            update_rule_state: false,
-        })
-        .unwrap()
-        .instruction();
-
-    // Validate OwnerTransfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
-}
-
-#[tokio::test]
-async fn wallet_or_pda_to_wallet_or_pda() {
-    let mut context = program_test().start_with_context().await;
-
-    get_primitive_rules!(
-        source_owned_by_sys_program,
         dest_program_allow_list,
-        dest_pda_match,
-        source_program_allow_list,
-        source_pda_match,
-        dest_owned_by_sys_program,
+        dest_pda_match
     );
 
     // --------------------------------
@@ -270,11 +121,10 @@ async fn wallet_or_pda_to_wallet_or_pda() {
     .await;
 
     // --------------------------------
-    // Validate wallet to wallet
+    // Validate sys prog owned to sys prog owned
     // --------------------------------
-    // Create a Keypairs to simulate wallets.
-    let source_wallet = Keypair::new();
-    let dest_wallet = Keypair::new();
+    let source = Keypair::new();
+    let dest = Keypair::new();
 
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new();
@@ -283,11 +133,11 @@ async fn wallet_or_pda_to_wallet_or_pda() {
     let payload = Payload::from([
         (
             PayloadKey::Source.to_string(),
-            PayloadType::Pubkey(source_wallet.pubkey()),
+            PayloadType::Pubkey(source.pubkey()),
         ),
         (
             PayloadKey::Destination.to_string(),
-            PayloadType::Pubkey(dest_wallet.pubkey()),
+            PayloadType::Pubkey(dest.pubkey()),
         ),
     ]);
 
@@ -295,8 +145,8 @@ async fn wallet_or_pda_to_wallet_or_pda() {
         .rule_set_pda(rule_set_addr)
         .mint(mint.pubkey())
         .additional_rule_accounts(vec![
-            AccountMeta::new_readonly(source_wallet.pubkey(), false),
-            AccountMeta::new_readonly(dest_wallet.pubkey(), false),
+            AccountMeta::new_readonly(source.pubkey(), false),
+            AccountMeta::new_readonly(dest.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
             operation: Operation::OwnerTransfer.to_string(),
@@ -310,7 +160,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
     process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
-    // Validate wallet to PDA
+    // Validate sys prog owned to prog owned PDA
     // --------------------------------
     // Our derived key is going to be an account owned by the
     // mpl-token-auth-rules program. Any one will do so for convenience
@@ -325,7 +175,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
     let payload = Payload::from([
         (
             PayloadKey::Source.to_string(),
-            PayloadType::Pubkey(source_wallet.pubkey()),
+            PayloadType::Pubkey(source.pubkey()),
         ),
         (
             PayloadKey::DestinationSeeds.to_string(),
@@ -341,7 +191,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
         .rule_set_pda(rule_set_addr)
         .mint(mint.pubkey())
         .additional_rule_accounts(vec![
-            AccountMeta::new_readonly(source_wallet.pubkey(), false),
+            AccountMeta::new_readonly(source.pubkey(), false),
             AccountMeta::new_readonly(rule_set_addr, false),
         ])
         .build(ValidateArgs::V1 {
@@ -356,10 +206,10 @@ async fn wallet_or_pda_to_wallet_or_pda() {
     process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
-    // Validate PDA to PDA
+    // Validate prog owned PDA to prog owned PDA
     // --------------------------------
     // Create a second RuleSet on chain for the sole purpose of having
-    // another PDA that is owned mpl-token-auth-rules program.
+    // another PDA that is owned by the mpl-token-auth-rules program.
     let second_rule_set = RuleSet::new("second_rule_set".to_string(), context.payer.pubkey());
 
     let second_rule_set_addr =
@@ -411,7 +261,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
     process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
-    // Validate PDA to wallet
+    // Validate prog owned PDA to sys prog owned
     // --------------------------------
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
@@ -425,7 +275,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
         ),
         (
             PayloadKey::Destination.to_string(),
-            PayloadType::Pubkey(dest_wallet.pubkey()),
+            PayloadType::Pubkey(dest.pubkey()),
         ),
     ]);
 
@@ -434,7 +284,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
         .mint(mint.pubkey())
         .additional_rule_accounts(vec![
             AccountMeta::new_readonly(rule_set_addr, false),
-            AccountMeta::new_readonly(dest_wallet.pubkey(), false),
+            AccountMeta::new_readonly(dest.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
             operation: Operation::OwnerTransfer.to_string(),
@@ -448,27 +298,27 @@ async fn wallet_or_pda_to_wallet_or_pda() {
     process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
-    // Validate fail unowned PDA
+    // Validate fail not sys prog owned, valid PDA, but not prog owned
     // --------------------------------
     // Create an associated token account for the sole purpose of having
     // a valid PDA that is owned by a different program than what is in the Rule.
     create_mint(
         &mut context,
         &mint,
-        &source_wallet.pubkey(),
-        Some(&source_wallet.pubkey()),
+        &source.pubkey(),
+        Some(&source.pubkey()),
         0,
     )
     .await
     .unwrap();
 
     let associated_token_account =
-        create_associated_token_account(&mut context, &source_wallet, &mint.pubkey())
+        create_associated_token_account(&mut context, &source, &mint.pubkey())
             .await
             .unwrap();
 
     let associated_token_account_seeds = vec![
-        source_wallet.pubkey().to_bytes().to_vec(),
+        source.pubkey().to_bytes().to_vec(),
         spl_token::ID.to_bytes().to_vec(),
         mint.to_bytes().to_vec(),
     ];
@@ -477,7 +327,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
     let payload = Payload::from([
         (
             PayloadKey::Source.to_string(),
-            PayloadType::Pubkey(source_wallet.pubkey()),
+            PayloadType::Pubkey(source.pubkey()),
         ),
         (
             PayloadKey::DestinationSeeds.to_string(),
@@ -493,7 +343,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
         .rule_set_pda(rule_set_addr)
         .mint(mint.pubkey())
         .additional_rule_accounts(vec![
-            AccountMeta::new_readonly(source_wallet.pubkey(), false),
+            AccountMeta::new_readonly(source.pubkey(), false),
             AccountMeta::new_readonly(associated_token_account, false),
         ])
         .build(ValidateArgs::V1 {
@@ -512,9 +362,9 @@ async fn wallet_or_pda_to_wallet_or_pda() {
     assert_rule_set_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
 
     // --------------------------------
-    // Validate fail program owned but not PDA
+    // Validate fail prog owned but not PDA
     // --------------------------------
-    // Create a wallet account owned by this program.
+    // Create an account owned by mpl-token-auth-rules.
     let program_owned_account = Keypair::new();
     let rent = context.banks_client.get_rent().await.unwrap();
     let tx = Transaction::new_signed_with_payer(
@@ -536,7 +386,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
     let payload = Payload::from([
         (
             PayloadKey::Source.to_string(),
-            PayloadType::Pubkey(source_wallet.pubkey()),
+            PayloadType::Pubkey(source.pubkey()),
         ),
         (
             PayloadKey::DestinationSeeds.to_string(),
@@ -552,7 +402,7 @@ async fn wallet_or_pda_to_wallet_or_pda() {
         .rule_set_pda(rule_set_addr)
         .mint(mint.pubkey())
         .additional_rule_accounts(vec![
-            AccountMeta::new_readonly(source_wallet.pubkey(), false),
+            AccountMeta::new_readonly(source.pubkey(), false),
             AccountMeta::new_readonly(program_owned_account.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
@@ -577,11 +427,11 @@ async fn multiple_operations() {
 
     get_primitive_rules!(
         source_owned_by_sys_program,
-        dest_program_allow_list,
-        dest_pda_match,
         _source_program_allow_list,
         _source_pda_match,
         _dest_owned_by_sys_program,
+        dest_program_allow_list,
+        dest_pda_match
     );
 
     // --------------------------------
@@ -642,10 +492,9 @@ async fn multiple_operations() {
     .await;
 
     // --------------------------------
-    // Validate wallet to PDA
+    // Validate sys prog owned to PDA
     // --------------------------------
-    // Create a Keypair to simulate an owner's wallet.
-    let source_wallet = Keypair::new();
+    let source = Keypair::new();
 
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new();
@@ -663,7 +512,7 @@ async fn multiple_operations() {
     let payload = Payload::from([
         (
             PayloadKey::Source.to_string(),
-            PayloadType::Pubkey(source_wallet.pubkey()),
+            PayloadType::Pubkey(source.pubkey()),
         ),
         (
             PayloadKey::Destination.to_string(),
@@ -679,7 +528,7 @@ async fn multiple_operations() {
         .rule_set_pda(rule_set_addr)
         .mint(mint.pubkey())
         .additional_rule_accounts(vec![
-            AccountMeta::new_readonly(source_wallet.pubkey(), false),
+            AccountMeta::new_readonly(source.pubkey(), false),
             AccountMeta::new_readonly(rule_set_addr, false),
         ])
         .build(ValidateArgs::V1 {
@@ -694,17 +543,17 @@ async fn multiple_operations() {
     process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
-    // Validate fail wallet to wallet.
+    // Validate fail sys prog owned to sys prog owned
     // --------------------------------
-    let dest_wallet = Keypair::new();
+    let dest = Keypair::new();
     let payload = Payload::from([
         (
             PayloadKey::Source.to_string(),
-            PayloadType::Pubkey(source_wallet.pubkey()),
+            PayloadType::Pubkey(source.pubkey()),
         ),
         (
             PayloadKey::Destination.to_string(),
-            PayloadType::Pubkey(dest_wallet.pubkey()),
+            PayloadType::Pubkey(dest.pubkey()),
         ),
     ]);
 
@@ -712,8 +561,8 @@ async fn multiple_operations() {
         .rule_set_pda(rule_set_addr)
         .mint(mint.pubkey())
         .additional_rule_accounts(vec![
-            AccountMeta::new_readonly(source_wallet.pubkey(), false),
-            AccountMeta::new_readonly(dest_wallet.pubkey(), false),
+            AccountMeta::new_readonly(source.pubkey(), false),
+            AccountMeta::new_readonly(dest.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
             operation: Operation::OwnerTransfer.to_string(),
@@ -726,7 +575,7 @@ async fn multiple_operations() {
     // Fail to validate Transfer operation.
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
-    // Check that error is what we expect.  The destination wallet is owned by the System Program
+    // Check that error is what we expect.  The destination is owned by the System Program
     // so in this case it doesn't match the ProgramOwnedList Rule.
     assert_rule_set_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
 
