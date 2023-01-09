@@ -27,7 +27,7 @@ async fn test_pubkey_match() {
 
     let rule = Rule::PubkeyMatch {
         pubkey: target.pubkey(),
-        field: PayloadKey::Target.to_string(),
+        field: PayloadKey::Destination.to_string(),
     };
 
     // Create a RuleSet.
@@ -48,7 +48,7 @@ async fn test_pubkey_match() {
 
     // Store the payload of data to validate against the rule definition with WRONG Pubkey.
     let payload = Payload::from([(
-        PayloadKey::Target.to_string(),
+        PayloadKey::Destination.to_string(),
         PayloadType::Pubkey(Keypair::new().pubkey()),
     )]);
 
@@ -76,7 +76,7 @@ async fn test_pubkey_match() {
     // --------------------------------
     // Store the payload of data to validate against the rule definition with CORRECT Pubkey.
     let payload = Payload::from([(
-        PayloadKey::Target.to_string(),
+        PayloadKey::Destination.to_string(),
         PayloadType::Pubkey(target.pubkey()),
     )]);
 

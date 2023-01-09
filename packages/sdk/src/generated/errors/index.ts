@@ -201,27 +201,24 @@ createErrorFromNameLookup.set(
 );
 
 /**
- * DerivedKeyMatchCheckFailed: 'Derived Key Match check failed'
+ * PDAMatchCheckFailed: 'PDA Match check failed'
  *
  * @category Errors
  * @category generated
  */
-export class DerivedKeyMatchCheckFailedError extends Error {
+export class PDAMatchCheckFailedError extends Error {
   readonly code: number = 0x9;
-  readonly name: string = 'DerivedKeyMatchCheckFailed';
+  readonly name: string = 'PDAMatchCheckFailed';
   constructor() {
-    super('Derived Key Match check failed');
+    super('PDA Match check failed');
     if (typeof Error.captureStackTrace === 'function') {
-      Error.captureStackTrace(this, DerivedKeyMatchCheckFailedError);
+      Error.captureStackTrace(this, PDAMatchCheckFailedError);
     }
   }
 }
 
-createErrorFromCodeLookup.set(0x9, () => new DerivedKeyMatchCheckFailedError());
-createErrorFromNameLookup.set(
-  'DerivedKeyMatchCheckFailed',
-  () => new DerivedKeyMatchCheckFailedError(),
-);
+createErrorFromCodeLookup.set(0x9, () => new PDAMatchCheckFailedError());
+createErrorFromNameLookup.set('PDAMatchCheckFailed', () => new PDAMatchCheckFailedError());
 
 /**
  * ProgramOwnedCheckFailed: 'Program Owned check failed'

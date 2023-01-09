@@ -229,36 +229,6 @@ import { encode, decode } from '@msgpack/msgpack';
 import { createCreateInstruction, createTokenAuthorizationRules, PREFIX, PROGRAM_ID } from './helpers/mpl-token-auth-rules';
 import { Keypair, Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 
-const RULESET = [
-    {
-        "Transfer": {
-            "All": [
-                [
-                    {
-                        "All": [
-                            [
-                                {
-                                    "AdditionalSigner": [
-                                        [42, 157, 245, 156, 21, 37, 147, 96, 183, 190, 206, 14, 24, 1, 106, 49, 167, 236, 38, 73, 98, 53, 60, 9, 154, 164, 240, 126, 210, 197, 76, 235]
-                                    ]
-                                },
-                                {
-                                    "AdditionalSigner": [
-                                        [42, 157, 245, 156, 21, 37, 147, 96, 183, 190, 206, 14, 24, 1, 106, 49, 167, 236, 38, 73, 98, 53, 60, 9, 154, 164, 240, 126, 210, 197, 76, 235]
-                                    ]
-                                }
-                            ]
-                        ]
-                    },
-                    {
-                        "Amount": [1]
-                    }
-                ]
-            ]
-        }
-    }
-]
-
 export const findRuleSetPDA = async (payer: PublicKey, name: string) => {
     return await PublicKey.findProgramAddress(
         [
@@ -278,14 +248,14 @@ export const createTokenAuthorizationRules = async (
 ) => {
     const ruleSetAddress = await findRuleSetPDA(payer.publicKey, name);
 
-    let createIX = createCreateInstruction(
+    let createIX = createCreateOrUpdateInstruction(
         {
             payer: payer.publicKey,
-            rulesetPda: ruleSetAddress[0],
+            ruleSetPda: ruleSetAddress[0],
             systemProgram: SystemProgram.programId,
         },
         {
-            CreateOrUpdateArgs: { name, serializedRuleSet: data },
+            createOrUpdateArgs: {__kind: "V1", serializedRuleSet: data },
         },
         PROGRAM_ID,
     )
@@ -301,10 +271,10 @@ export const createTokenAuthorizationRules = async (
 }
 
 const connection = new Connection("<YOUR_RPC_HERE>", "finalized");
-let payer = Keypair.generate
+let payer = Keypair.generate()
 
 // Encode the file using msgpack so the pre-encoded data can be written directly to a Solana program account
-const encoded = encode(RULESET);
+const encoded = encode(JSON.parse(fs.readFileSync("./examples/pubkey_list_match.json")));
 // Create the ruleset
 await createTokenAuthorizationRules(connection, payer, name, encoded);
 ```

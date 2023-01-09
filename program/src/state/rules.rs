@@ -65,12 +65,18 @@ pub enum Rule {
         /// The field in the `Payload` to be compared.
         field: String,
     },
-    /// A resulting derivation of seeds must match to a `Pubkey`.
-    DerivedKeyMatch {
-        /// The `Pubkey` to be compared against.
-        account: Pubkey,
-        /// The field in the `Payload` to be compared.
-        field: String,
+    /// A resulting PDA derivation of seeds must prove
+    /// the account is a PDA.
+    PDAMatch {
+        /// The program used for the PDA derivation.  If
+        /// `None` then the account owner is used.
+        program: Option<Pubkey>,
+        /// The field in the `Payload` to be compared
+        /// when looking for the PDA.
+        pda_field: String,
+        /// The field in the `Payload` to be compared
+        /// when looking for the seeds.
+        seeds_field: String,
     },
     /// The `Pubkey` must be owned by a given program.
     ProgramOwned {
@@ -249,26 +255,52 @@ impl Rule {
                     (false, self.to_error())
                 }
             }
-            Rule::DerivedKeyMatch { account, field } => {
-                msg!("Validating DerivedKeyMatch");
+            Rule::PDAMatch {
+                program,
+                pda_field,
+                seeds_field,
+            } => {
+                msg!("Validating PDAMatch");
 
-                let seeds = match payload.get_seeds(field) {
+                // Get the PDA from the payload.
+                let account = match payload.get_pubkey(pda_field) {
+                    Some(pubkey) => pubkey,
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                };
+
+                // Get the derivation seeds from the payload.
+                let seeds = match payload.get_seeds(seeds_field) {
                     Some(seeds) => seeds,
                     _ => return (false, RuleSetError::MissingPayloadValue.into()),
                 };
 
+                // Get the program ID to use for the PDA derivation from the Rule.
+                let program = match program {
+                    // If the Pubkey is stored in the rule, use that value.
+                    Some(program) => program,
+                    None => {
+                        // If one is not stored, then assume the program ID is the account owner.
+                        match accounts.get(account) {
+                            Some(account) => account.owner,
+                            _ => return (false, RuleSetError::MissingAccount.into()),
+                        }
+                    }
+                };
+
+                // Convert the Vec of Vec into Vec of u8 slices.
                 let vec_of_slices = seeds
                     .seeds
                     .iter()
                     .map(Vec::as_slice)
                     .collect::<Vec<&[u8]>>();
-                let seeds = &vec_of_slices[..];
-                if let Ok(_bump) = assert_derivation(&crate::ID, account, seeds) {
+
+                if let Ok(_bump) = assert_derivation(program, account, &vec_of_slices) {
                     (true, self.to_error())
                 } else {
                     (false, self.to_error())
                 }
             }
+
             Rule::ProgramOwned { program, field } => {
                 msg!("Validating ProgramOwned");
 
@@ -341,7 +373,7 @@ impl Rule {
             Rule::PubkeyMatch { .. } => RuleSetError::PubkeyMatchCheckFailed.into(),
             Rule::PubkeyListMatch { .. } => RuleSetError::PubkeyListMatchCheckFailed.into(),
             Rule::PubkeyTreeMatch { .. } => RuleSetError::PubkeyTreeMatchCheckFailed.into(),
-            Rule::DerivedKeyMatch { .. } => RuleSetError::DerivedKeyMatchCheckFailed.into(),
+            Rule::PDAMatch { .. } => RuleSetError::PDAMatchCheckFailed.into(),
             Rule::ProgramOwned { .. } => RuleSetError::ProgramOwnedCheckFailed.into(),
             Rule::Amount { .. } => RuleSetError::AmountCheckFailed.into(),
             Rule::Frequency { .. } => RuleSetError::FrequencyCheckFailed.into(),

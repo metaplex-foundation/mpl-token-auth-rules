@@ -1,6 +1,6 @@
 [
     1,
-    "AmountRuleSet",
+    "AllRuleSet",
     [
       179,
       107,
@@ -37,10 +37,10 @@
     ],
     {
       "Transfer": {
-        "Amount": [
-          69,
-          "Eq",
-          "Amount"
+        "All": [
+          [
+            "Pass"
+          ]
         ]
       }
     }
