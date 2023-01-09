@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{LeafInfo, Payload, PayloadType, SeedsVec},
-    state::{Rule, RuleSet},
+    state::{CompareOp, Rule, RuleSet},
 };
 use solana_program::{pubkey::Pubkey, system_program};
 use solana_program_test::tokio;
@@ -20,6 +20,7 @@ static PROGRAM_ALLOW_LIST: [Pubkey; 1] = [mpl_token_auth_rules::ID];
 
 macro_rules! get_primitive_rules {
     (
+        $nft_amount:ident,
         $source_owned_by_sys_program:ident,
         $source_program_allow_list:ident,
         $source_pda_match:ident,
@@ -27,20 +28,15 @@ macro_rules! get_primitive_rules {
         $dest_program_allow_list:ident,
         $dest_pda_match:ident
     ) => {
+        let $nft_amount = Rule::Amount {
+            field: PayloadKey::Amount.to_string(),
+            amount: 1,
+            operator: CompareOp::Eq,
+        };
+
         let $source_owned_by_sys_program = Rule::ProgramOwned {
             program: system_program::ID,
             field: PayloadKey::Source.to_string(),
-        };
-
-        let $dest_program_allow_list = Rule::ProgramOwnedList {
-            programs: PROGRAM_ALLOW_LIST.to_vec(),
-            field: PayloadKey::Destination.to_string(),
-        };
-
-        let $dest_pda_match = Rule::PDAMatch {
-            program: None,
-            pda_field: PayloadKey::Destination.to_string(),
-            seeds_field: PayloadKey::DestinationSeeds.to_string(),
         };
 
         let $source_program_allow_list = Rule::ProgramOwnedList {
@@ -58,6 +54,17 @@ macro_rules! get_primitive_rules {
             program: system_program::ID,
             field: PayloadKey::Destination.to_string(),
         };
+
+        let $dest_program_allow_list = Rule::ProgramOwnedList {
+            programs: PROGRAM_ALLOW_LIST.to_vec(),
+            field: PayloadKey::Destination.to_string(),
+        };
+
+        let $dest_pda_match = Rule::PDAMatch {
+            program: None,
+            pda_field: PayloadKey::Destination.to_string(),
+            seeds_field: PayloadKey::DestinationSeeds.to_string(),
+        };
     };
 }
 
@@ -66,6 +73,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     let mut context = program_test().start_with_context().await;
 
     get_primitive_rules!(
+        nft_amount,
         source_owned_by_sys_program,
         source_program_allow_list,
         source_pda_match,
@@ -82,6 +90,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     // (dest is owned by system program || (dest is on allow list && dest is a PDA)
     let transfer_rule = Rule::All {
         rules: vec![
+            nft_amount,
             Rule::Any {
                 rules: vec![
                     source_owned_by_sys_program,
@@ -131,6 +140,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
 
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
+        (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
         (
             PayloadKey::Source.to_string(),
             PayloadType::Pubkey(source.pubkey()),
@@ -173,17 +183,18 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
 
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
+        (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
         (
             PayloadKey::Source.to_string(),
             PayloadType::Pubkey(source.pubkey()),
         ),
         (
-            PayloadKey::DestinationSeeds.to_string(),
-            PayloadType::Seeds(SeedsVec::new(seeds.clone())),
-        ),
-        (
             PayloadKey::Destination.to_string(),
             PayloadType::Pubkey(rule_set_addr),
+        ),
+        (
+            PayloadKey::DestinationSeeds.to_string(),
+            PayloadType::Seeds(SeedsVec::new(seeds.clone())),
         ),
     ]);
 
@@ -224,21 +235,22 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
 
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
-        (
-            PayloadKey::SourceSeeds.to_string(),
-            PayloadType::Seeds(SeedsVec::new(seeds.clone())),
-        ),
+        (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
         (
             PayloadKey::Source.to_string(),
             PayloadType::Pubkey(rule_set_addr),
         ),
         (
-            PayloadKey::DestinationSeeds.to_string(),
-            PayloadType::Seeds(SeedsVec::new(second_rule_set_seeds)),
+            PayloadKey::SourceSeeds.to_string(),
+            PayloadType::Seeds(SeedsVec::new(seeds.clone())),
         ),
         (
             PayloadKey::Destination.to_string(),
             PayloadType::Pubkey(second_rule_set_addr),
+        ),
+        (
+            PayloadKey::DestinationSeeds.to_string(),
+            PayloadType::Seeds(SeedsVec::new(second_rule_set_seeds)),
         ),
     ]);
 
@@ -265,13 +277,14 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     // --------------------------------
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
-        (
-            PayloadKey::SourceSeeds.to_string(),
-            PayloadType::Seeds(SeedsVec::new(seeds.clone())),
-        ),
+        (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
         (
             PayloadKey::Source.to_string(),
             PayloadType::Pubkey(rule_set_addr),
+        ),
+        (
+            PayloadKey::SourceSeeds.to_string(),
+            PayloadType::Seeds(SeedsVec::new(seeds.clone())),
         ),
         (
             PayloadKey::Destination.to_string(),
@@ -296,6 +309,46 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
 
     // Validate OwnerTransfer operation.
     process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
+
+    // --------------------------------
+    // Validate fail wrong amount
+    // --------------------------------
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new();
+
+    // Store the payload of data to validate against the rule definition.
+    let payload = Payload::from([
+        (PayloadKey::Amount.to_string(), PayloadType::Number(2)),
+        (
+            PayloadKey::Source.to_string(),
+            PayloadType::Pubkey(source.pubkey()),
+        ),
+        (
+            PayloadKey::Destination.to_string(),
+            PayloadType::Pubkey(dest.pubkey()),
+        ),
+    ]);
+
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint.pubkey())
+        .additional_rule_accounts(vec![
+            AccountMeta::new_readonly(source.pubkey(), false),
+            AccountMeta::new_readonly(dest.pubkey(), false),
+        ])
+        .build(ValidateArgs::V1 {
+            operation: Operation::OwnerTransfer.to_string(),
+            payload,
+            update_rule_state: false,
+        })
+        .unwrap()
+        .instruction();
+
+    // Fail to validate OwnerTransfer operation.
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+
+    // Check that error is what we expect.
+    assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
 
     // --------------------------------
     // Validate fail not sys prog owned, valid PDA, but not prog owned
@@ -325,17 +378,18 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
 
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
+        (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
         (
             PayloadKey::Source.to_string(),
             PayloadType::Pubkey(source.pubkey()),
         ),
         (
-            PayloadKey::DestinationSeeds.to_string(),
-            PayloadType::Seeds(SeedsVec::new(associated_token_account_seeds)),
-        ),
-        (
             PayloadKey::Destination.to_string(),
             PayloadType::Pubkey(associated_token_account),
+        ),
+        (
+            PayloadKey::DestinationSeeds.to_string(),
+            PayloadType::Seeds(SeedsVec::new(associated_token_account_seeds)),
         ),
     ]);
 
@@ -362,7 +416,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     assert_rule_set_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
 
     // --------------------------------
-    // Validate fail prog owned but not PDA
+    // Validate fail prog owned but not a PDA
     // --------------------------------
     // Create an account owned by mpl-token-auth-rules.
     let program_owned_account = Keypair::new();
@@ -384,17 +438,18 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
 
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
+        (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
         (
             PayloadKey::Source.to_string(),
             PayloadType::Pubkey(source.pubkey()),
         ),
         (
-            PayloadKey::DestinationSeeds.to_string(),
-            PayloadType::Seeds(SeedsVec::new(seeds)),
-        ),
-        (
             PayloadKey::Destination.to_string(),
             PayloadType::Pubkey(program_owned_account.pubkey()),
+        ),
+        (
+            PayloadKey::DestinationSeeds.to_string(),
+            PayloadType::Seeds(SeedsVec::new(seeds)),
         ),
     ]);
 
@@ -426,6 +481,7 @@ async fn multiple_operations() {
     let mut context = program_test().start_with_context().await;
 
     get_primitive_rules!(
+        _nft_amount,
         source_owned_by_sys_program,
         _source_program_allow_list,
         _source_pda_match,
