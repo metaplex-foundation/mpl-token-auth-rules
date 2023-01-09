@@ -10,7 +10,7 @@ readme = "../README.md"
 keywords = ["nft", "metaplex", "solana", "blockchain"]
 
 [dependencies]
-solana-program = "=1.13.5"
+solana-program = "1.14"
 shank = "0.0.11"
 borsh = "0.9.3"
 thiserror = "1.0"
@@ -28,10 +28,9 @@ serde-feature = ["serde_with"]
 
 [dev-dependencies]
 assert_matches = "1.5.0"
-solana-program-test = "=1.13.5"
-solana-sdk = "=1.13.5"
-solana-validator = "=1.13.5"
-solana-logger = "=1.13.5"
+solana-program-test = "1.14"
+solana-sdk = "1.14"
+solana-logger = "1.14"
 spl-token = { version = "3.5.0", features = [ "no-entrypoint" ] }
 mpl-token-metadata = { version = "1", features = [ "no-entrypoint" ] }
 serde_json = "1.0.87"
