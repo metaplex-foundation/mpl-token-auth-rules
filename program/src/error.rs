@@ -54,65 +54,77 @@ pub enum RuleSetError {
     #[error("Program Owned check failed")]
     ProgramOwnedCheckFailed,
 
-    /// 11 - Amount checked failed
+    /// 11 - Program Owned List check failed
+    #[error("Program Owned List check failed")]
+    ProgramOwnedListCheckFailed,
+
+    /// 12 - Program Owned Tree check failed
+    #[error("Program Owned Tree check failed")]
+    ProgramOwnedTreeCheckFailed,
+
+    /// 13 - Amount checked failed
     #[error("Amount checked failed")]
     AmountCheckFailed,
 
-    /// 12 - Frequency check failed
+    /// 14 - Frequency check failed
     #[error("Frequency check failed")]
     FrequencyCheckFailed,
 
-    /// 13 - Payer is not a signer
+    /// 15 - Payer is not a signer
     #[error("Payer is not a signer")]
     PayerIsNotSigner,
 
-    /// 14 - Feature is not implemented yet
+    /// 16 - Feature is not implemented yet
     #[error("Not implemented")]
     NotImplemented,
 
-    /// 15 - Borsh serialization error
+    /// 17 - Borsh serialization error
     #[error("Borsh serialization error")]
     BorshSerializationError,
 
-    /// 16 - Value in Payload or RuleSet is occupied
+    /// 18 - Value in Payload or RuleSet is occupied
     #[error("Value in Payload or RuleSet is occupied")]
     ValueOccupied,
 
-    /// 17 - Account data is empty
+    /// 19 - Account data is empty
     #[error("Account data is empty")]
     DataIsEmpty,
 
-    /// 18 - MessagePack deserialization error
+    /// 20 - MessagePack deserialization error
     #[error("MessagePack deserialization error")]
     MessagePackDeserializationError,
 
-    /// 19 - Missing account
+    /// 21 - Missing account
     #[error("Missing account")]
     MissingAccount,
 
-    /// 20 - Missing Payload value
+    /// 22 - Missing Payload value
     #[error("Missing Payload value")]
     MissingPayloadValue,
 
-    /// 21 - RuleSet owner must be payer
+    /// 23 - RuleSet owner must be payer
     #[error("RuleSet owner must be payer")]
     RuleSetOwnerMismatch,
 
-    /// 22 - Name too long
+    /// 24 - Name too long
     #[error("Name too long")]
     NameTooLong,
 
-    /// 23 - Name too long
+    /// 25 - Name too long
     #[error("The operation retrieved is not in the selected RuleSet")]
     OperationNotFound,
 
-    /// 24 - Rule authority is not signer
+    /// 26 - Rule authority is not signer
     #[error("Rule authority is not signer")]
     RuleAuthorityIsNotSigner,
 
-    /// 25 - Unsupported RuleSet version
+    /// 27 - Unsupported RuleSet version
     #[error("Unsupported RuleSet version")]
     UnsupportedRuleSetVersion,
+
+    /// 28 - Unexpected RuleSet failure
+    #[error("Unexpected RuleSet failure")]
+    UnexpectedRuleSetFailure,
 }
 
 impl PrintProgramError for RuleSetError {

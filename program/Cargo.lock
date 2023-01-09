@@ -2459,6 +2459,7 @@ dependencies = [
  "solana-program-test",
  "solana-sdk",
  "solana-validator",
+ "spl-associated-token-account",
  "spl-token",
  "thiserror",
 ]

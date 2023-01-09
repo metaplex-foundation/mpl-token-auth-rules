@@ -149,7 +149,7 @@ fn main() {
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_string(), overall_rule)
+        .add(Operation::OwnerTransfer.to_string(), overall_rule)
         .unwrap();
 
     println!("{:#?}", rule_set);
@@ -198,7 +198,7 @@ fn main() {
         .mint(mint)
         .additional_rule_accounts(vec![AccountMeta::new_readonly(adtl_signer.pubkey(), true)])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
         })
