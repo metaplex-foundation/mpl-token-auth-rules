@@ -10,10 +10,7 @@ use mpl_token_auth_rules::{
 };
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{
-    assert_rule_set_error, create_rule_set_on_chain, process_failing_validate_ix,
-    process_passing_validate_ix, program_test, Operation, PayloadKey,
-};
+use utils::{program_test, Operation, PayloadKey};
 
 #[tokio::test]
 async fn test_pubkey_list_match() {
@@ -42,7 +39,7 @@ async fn test_pubkey_list_match() {
 
     // Put the RuleSet on chain.
     let rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
     // Validate fail
@@ -70,10 +67,10 @@ async fn test_pubkey_list_match() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::PubkeyListMatchCheckFailed);
+    assert_rule_set_error!(err, RuleSetError::PubkeyListMatchCheckFailed);
 
     // --------------------------------
     // Validate pass
@@ -101,5 +98,5 @@ async fn test_pubkey_list_match() {
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 }
