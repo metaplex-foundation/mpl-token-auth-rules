@@ -86,8 +86,12 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     // Create RuleSet
     // --------------------------------
     // Compose the Owner Transfer rule as follows:
+    // amount is 1 &&
     // (source is owned by system program || (source is on allow list && source is a PDA) &&
     // (dest is owned by system program || (dest is on allow list && dest is a PDA)
+    //
+    // NOTE ownership by System Program is NOT sufficient to prove an account is a wallet
+    // (on-curve) instead of a PDA!
     let transfer_rule = Rule::All {
         rules: vec![
             nft_amount,
