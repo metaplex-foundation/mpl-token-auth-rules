@@ -72,7 +72,7 @@ use mpl_token_auth_rules::{
         builders::{CreateOrUpdateBuilder, ValidateBuilder},
         CreateOrUpdateArgs, InstructionBuilder, ValidateArgs,
     },
-    payload::{Payload, PayloadKey, PayloadType},
+    payload::{Payload, PayloadType},
     state::{CompareOp, Rule, RuleSet},
 };
 use num_derive::ToPrimitive;
@@ -87,7 +87,7 @@ use solana_sdk::{
 #[repr(C)]
 #[derive(ToPrimitive)]
 pub enum Operation {
-    Transfer,
+    OwnerTransfer,
     Delegate,
     SaleTransfer,
 }
@@ -95,7 +95,7 @@ pub enum Operation {
 impl ToString for Operation {
     fn to_string(&self) -> String {
         match self {
-            Operation::Transfer => "Transfer".to_string(),
+            Operation::OwnerTransfer => "OwnerTransfer".to_string(),
             Operation::Delegate => "Delegate".to_string(),
             Operation::SaleTransfer => "SaleTransfer".to_string(),
         }
@@ -140,6 +140,7 @@ fn main() {
     let amount_rule = Rule::Amount {
         amount: 1,
         operator: CompareOp::LtEq,
+        field: "Amount".to_string(),
     };
 
     let overall_rule = Rule::All {
@@ -190,7 +191,7 @@ fn main() {
     let mint = Keypair::new().pubkey();
 
     // Store the payload of data to validate against the rule definition.
-    let payload = Payload::from([(PayloadKey::Amount, PayloadType::Number(1))]);
+    let payload = Payload::from([("Amount".to_string(), PayloadType::Number(1))]);
 
     // Create a `validate` instruction with the additional signer.
     let validate_ix = ValidateBuilder::new()
