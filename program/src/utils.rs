@@ -11,7 +11,7 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-use crate::error::RuleSetError;
+use crate::{error::RuleSetError, payload::ProofInfo};
 
 /// Create account almost from scratch, lifted from
 /// <https://github.com/solana-labs/solana-program-library/tree/master/associated-token-account/program/src/processor.rs#L51-L98>
@@ -107,4 +107,23 @@ pub fn assert_owned_by(account: &AccountInfo, owner: &Pubkey) -> ProgramResult {
     } else {
         Ok(())
     }
+}
+
+/// Compute the root of a Merkle tree given a leaf and a proof.  Uses a constant value
+/// of 0x01 as an input to the hashing function along with the values to be hashed.
+pub fn compute_merkle_root(leaf: &Pubkey, merkle_proof: &ProofInfo) -> [u8; 32] {
+    let mut computed_hash = leaf.to_bytes();
+    for proof_element in merkle_proof.proof.iter() {
+        if computed_hash <= *proof_element {
+            // Hash(current computed hash + current element of the proof).
+            computed_hash =
+                solana_program::keccak::hashv(&[&[0x01], &computed_hash, proof_element]).0;
+        } else {
+            // Hash(current element of the proof + current computed hash).
+            computed_hash =
+                solana_program::keccak::hashv(&[&[0x01], proof_element, &computed_hash]).0;
+        }
+    }
+
+    computed_hash
 }
