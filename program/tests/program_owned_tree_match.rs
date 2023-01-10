@@ -10,11 +10,14 @@ use mpl_token_auth_rules::{
 };
 use solana_program::pubkey::Pubkey;
 use solana_program_test::tokio;
-use solana_sdk::{signature::Signer, signer::keypair::Keypair};
+use solana_sdk::{
+    instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
+    transaction::Transaction,
+};
 use utils::{program_test, Operation, PayloadKey};
 
 #[tokio::test]
-async fn pubkey_tree_match() {
+async fn program_owned_tree_match() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------
@@ -28,7 +31,7 @@ async fn pubkey_tree_match() {
 
     // Create a Rule: The provided leaf node must be a
     // member of the marketplace Merkle tree.
-    let rule = Rule::PubkeyTreeMatch {
+    let rule = Rule::ProgramOwnedTree {
         root: tree_root,
         pubkey_field: PayloadKey::Authority.to_string(),
         proof_field: PayloadKey::AuthorityProof.to_string(),
@@ -47,19 +50,94 @@ async fn pubkey_tree_match() {
         create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
-    // Validate fail
+    // Validate fail incorrect owner, correct proof
     // --------------------------------
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
+    // CORRECT Merkle tree proof generated in a different test program.
+    let correct_proof: Vec<[u8; 32]> = vec![
+        [
+            246, 54, 96, 185, 234, 119, 124, 220, 54, 137, 25, 200, 18, 12, 114, 75, 211, 203, 154,
+            229, 197, 53, 164, 84, 38, 56, 20, 74, 192, 119, 37, 175,
+        ],
+        [
+            193, 84, 33, 232, 119, 107, 227, 166, 30, 233, 40, 10, 51, 229, 90, 59, 165, 212, 67,
+            193, 159, 126, 26, 200, 13, 209, 162, 98, 52, 125, 240, 77,
+        ],
+        [
+            238, 14, 13, 214, 124, 172, 89, 7, 66, 168, 226, 88, 92, 22, 18, 17, 94, 96, 37, 234,
+            101, 96, 129, 26, 137, 222, 96, 86, 245, 11, 199, 140,
+        ],
+    ];
+
+    let correct_proof_info = ProofInfo::new(correct_proof);
+
+    // Store the payload of data to validate against the rule definition, with a CORRECT proof
+    // but an account not owned by the correct owner.
+    let wrong_account = Keypair::new();
+    let payload = Payload::from([
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(wrong_account.pubkey()),
+        ),
+        (
+            PayloadKey::AuthorityProof.to_string(),
+            PayloadType::MerkleProof(correct_proof_info.clone()),
+        ),
+    ]);
+
+    // Create a `validate` instruction.
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(
+            wrong_account.pubkey(),
+            false,
+        )])
+        .build(ValidateArgs::V1 {
+            operation: Operation::OwnerTransfer.to_string(),
+            payload,
+            update_rule_state: false,
+        })
+        .unwrap()
+        .instruction();
+
+    // Validate Transfer operation.
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+
+    // Check that error is what we expect.
+    assert_rule_set_error!(err, RuleSetError::ProgramOwnedTreeCheckFailed);
+
+    // --------------------------------
+    // Validate fail correct owner, incorrect proof
+    // --------------------------------
     // Merkle tree leaf node generated in a different test program.
     let leaf: [u8; 32] = [
         2, 157, 245, 156, 21, 37, 147, 96, 42, 190, 206, 14, 24, 1, 106, 49, 167, 236, 38, 73, 98,
         53, 60, 9, 154, 31, 240, 126, 210, 197, 76, 7,
     ];
 
-    // Convert it to a Pubkey.
-    let leaf = Pubkey::from(leaf);
+    // Convert it to a Pubkey.  The leaf will be the owner of the account we are checking.
+    let owner = Pubkey::from(leaf);
+
+    // Create an account owned by our leaf.
+    let program_owned_account = Keypair::new();
+    let rent = context.banks_client.get_rent().await.unwrap();
+    let tx = Transaction::new_signed_with_payer(
+        &[system_instruction::create_account(
+            &context.payer.pubkey(),
+            &program_owned_account.pubkey(),
+            rent.minimum_balance(0),
+            0,
+            &owner,
+        )],
+        Some(&context.payer.pubkey()),
+        &[&context.payer, &program_owned_account],
+        context.last_blockhash,
+    );
+
+    context.banks_client.process_transaction(tx).await.unwrap();
 
     // INCORRECT Merkle tree proof generated in a different test program.  One value is corrupted.
     let incorrect_proof: Vec<[u8; 32]> = vec![
@@ -81,7 +159,10 @@ async fn pubkey_tree_match() {
 
     // Store the payload of data to validate against the rule definition, with an INCORRECT proof.
     let payload = Payload::from([
-        (PayloadKey::Authority.to_string(), PayloadType::Pubkey(leaf)),
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(program_owned_account.pubkey()),
+        ),
         (
             PayloadKey::AuthorityProof.to_string(),
             PayloadType::MerkleProof(incorrect_proof_info),
@@ -92,7 +173,10 @@ async fn pubkey_tree_match() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .additional_rule_accounts(vec![])
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(
+            program_owned_account.pubkey(),
+            false,
+        )])
         .build(ValidateArgs::V1 {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
@@ -105,32 +189,17 @@ async fn pubkey_tree_match() {
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::PubkeyTreeMatchCheckFailed);
+    assert_rule_set_error!(err, RuleSetError::ProgramOwnedTreeCheckFailed);
 
     // --------------------------------
     // Validate pass
     // --------------------------------
-    // CORRECT Merkle tree proof generated in a different test program.
-    let correct_proof: Vec<[u8; 32]> = vec![
-        [
-            246, 54, 96, 185, 234, 119, 124, 220, 54, 137, 25, 200, 18, 12, 114, 75, 211, 203, 154,
-            229, 197, 53, 164, 84, 38, 56, 20, 74, 192, 119, 37, 175,
-        ],
-        [
-            193, 84, 33, 232, 119, 107, 227, 166, 30, 233, 40, 10, 51, 229, 90, 59, 165, 212, 67,
-            193, 159, 126, 26, 200, 13, 209, 162, 98, 52, 125, 240, 77,
-        ],
-        [
-            238, 14, 13, 214, 124, 172, 89, 7, 66, 168, 226, 88, 92, 22, 18, 17, 94, 96, 37, 234,
-            101, 96, 129, 26, 137, 222, 96, 86, 245, 11, 199, 140,
-        ],
-    ];
-
-    let correct_proof_info = ProofInfo::new(correct_proof);
-
     // Store the payload of data to validate against the rule definition, with a CORRECT proof.
     let payload = Payload::from([
-        (PayloadKey::Authority.to_string(), PayloadType::Pubkey(leaf)),
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(program_owned_account.pubkey()),
+        ),
         (
             PayloadKey::AuthorityProof.to_string(),
             PayloadType::MerkleProof(correct_proof_info),
@@ -141,7 +210,10 @@ async fn pubkey_tree_match() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .additional_rule_accounts(vec![])
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(
+            program_owned_account.pubkey(),
+            false,
+        )])
         .build(ValidateArgs::V1 {
             operation: Operation::OwnerTransfer.to_string(),
             payload,

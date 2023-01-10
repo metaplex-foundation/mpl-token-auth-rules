@@ -96,7 +96,7 @@ async fn test_payer_not_signer_fails() {
 }
 
 #[tokio::test]
-async fn test_additional_signer_and_not_amount() {
+async fn test_composed_rule() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------

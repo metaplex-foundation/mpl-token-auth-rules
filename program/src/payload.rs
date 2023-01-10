@@ -26,17 +26,15 @@ impl SeedsVec {
 #[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 /// A proof type used by the `PubkeyTreeMatch` rule.
-pub struct LeafInfo {
-    /// The leaf the pubkey exists on.
-    pub leaf: [u8; 32],
-    /// The merkle proof for the leaf.
+pub struct ProofInfo {
+    /// The merkle proof.
     pub proof: Vec<[u8; 32]>,
 }
 
-impl LeafInfo {
-    /// Create a new `LeafInfo`.
-    pub fn new(leaf: [u8; 32], proof: Vec<[u8; 32]>) -> Self {
-        Self { leaf, proof }
+impl ProofInfo {
+    /// Create a new `ProofInfo`.
+    pub fn new(proof: Vec<[u8; 32]>) -> Self {
+        Self { proof }
     }
 }
 
@@ -49,8 +47,8 @@ pub enum PayloadType {
     Pubkey(Pubkey),
     /// PDA derivation seeds.
     Seeds(SeedsVec),
-    /// A merkle leaf and proof.
-    MerkleProof(LeafInfo),
+    /// A merkle proof.
+    MerkleProof(ProofInfo),
     /// A plain `u64` used for `Amount`.
     Number(u64),
 }
@@ -132,13 +130,13 @@ impl Payload {
         }
     }
 
-    /// Get a reference to the `LeafInfo` associated with a key, if and only if the `Payload` value
+    /// Get a reference to the `ProofInfo` associated with a key, if and only if the `Payload` value
     /// is the `PayloadType::MerkleProof` variant.  Returns `None` if the key is not present in the
     /// `Payload` or the value is a different `PayloadType` variant.
-    pub fn get_merkle_proof(&self, key: &String) -> Option<&LeafInfo> {
+    pub fn get_merkle_proof(&self, key: &String) -> Option<&ProofInfo> {
         if let Some(val) = self.map.get(key) {
             match val {
-                PayloadType::MerkleProof(leaf_info) => Some(leaf_info),
+                PayloadType::MerkleProof(proof_info) => Some(proof_info),
                 _ => None,
             }
         } else {

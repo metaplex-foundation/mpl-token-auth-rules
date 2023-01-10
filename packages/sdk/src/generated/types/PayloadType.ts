@@ -9,7 +9,7 @@ import * as web3 from '@solana/web3.js';
 import * as beet from '@metaplex-foundation/beet';
 import * as beetSolana from '@metaplex-foundation/beet-solana';
 import { SeedsVec, seedsVecBeet } from './SeedsVec';
-import { LeafInfo, leafInfoBeet } from './LeafInfo';
+import { ProofInfo, proofInfoBeet } from './ProofInfo';
 /**
  * This type is used to derive the {@link PayloadType} type as well as the de/serializer.
  * However don't refer to it in your code but use the {@link PayloadType} type instead.
@@ -22,7 +22,7 @@ import { LeafInfo, leafInfoBeet } from './LeafInfo';
 export type PayloadTypeRecord = {
   Pubkey: { fields: [web3.PublicKey] };
   Seeds: { fields: [SeedsVec] };
-  MerkleProof: { fields: [LeafInfo] };
+  MerkleProof: { fields: [ProofInfo] };
   Number: { fields: [beet.bignum] };
 };
 
@@ -71,7 +71,7 @@ export const payloadTypeBeet = beet.dataEnum<PayloadTypeRecord>([
   [
     'MerkleProof',
     new beet.FixableBeetArgsStruct<PayloadTypeRecord['MerkleProof']>(
-      [['fields', beet.tuple([leafInfoBeet])]],
+      [['fields', beet.tuple([proofInfoBeet])]],
       'PayloadTypeRecord["MerkleProof"]',
     ),
   ],

@@ -5,7 +5,7 @@ pub mod utils;
 use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
-    payload::{LeafInfo, Payload, PayloadType, SeedsVec},
+    payload::{Payload, PayloadType, ProofInfo, SeedsVec},
     state::{CompareOp, Rule, RuleSet},
 };
 use solana_program::{pubkey::Pubkey, system_program};
@@ -516,7 +516,8 @@ async fn multiple_operations() {
     // The provided leaf node must be a member of the marketplace Merkle tree.
     let leaf_in_marketplace_tree = Rule::PubkeyTreeMatch {
         root: marketplace_tree_root,
-        field: PayloadKey::Destination.to_string(),
+        pubkey_field: PayloadKey::Destination.to_string(),
+        proof_field: PayloadKey::DestinationProof.to_string(),
     };
 
     // Create RuleSet.
@@ -642,11 +643,14 @@ async fn multiple_operations() {
     // --------------------------------
     // Validate Delegate operation
     // --------------------------------
-    // Merkle tree leaf node.
+    // Merkle tree leaf node generated in a different test program.
     let leaf: [u8; 32] = [
         2, 157, 245, 156, 21, 37, 147, 96, 42, 190, 206, 14, 24, 1, 106, 49, 167, 236, 38, 73, 98,
         53, 60, 9, 154, 31, 240, 126, 210, 197, 76, 7,
     ];
+
+    // Convert it to a Pubkey.
+    let leaf = Pubkey::from(leaf);
 
     // Merkle tree proof generated in a different test program.
     let proof: Vec<[u8; 32]> = vec![
@@ -664,14 +668,20 @@ async fn multiple_operations() {
         ],
     ];
 
-    let leaf_info = LeafInfo::new(leaf, proof);
+    let proof_info = ProofInfo::new(proof);
 
     // Store the payload of data to validate against the rule definition.
     // In this case it is a leaf node and its associated Merkle proof.
-    let payload = Payload::from([(
-        PayloadKey::Destination.to_string(),
-        PayloadType::MerkleProof(leaf_info),
-    )]);
+    let payload = Payload::from([
+        (
+            PayloadKey::Destination.to_string(),
+            PayloadType::Pubkey(leaf),
+        ),
+        (
+            PayloadKey::DestinationProof.to_string(),
+            PayloadType::MerkleProof(proof_info),
+        ),
+    ]);
 
     // Create a `validate` instruction for a `Delegate` operation.
     let validate_ix = ValidateBuilder::new()
