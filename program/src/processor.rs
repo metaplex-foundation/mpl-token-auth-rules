@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use crate::{
     error::RuleSetError,
     instruction::{
-        builders::AppendToRuleSet, AppendToRuleSetArgs, Context, CreateOrUpdate,
-        CreateOrUpdateArgs, RuleSetInstruction, Validate, ValidateArgs,
+        Context, CreateOrUpdate, CreateOrUpdateArgs, RuleSetInstruction, Validate, ValidateArgs,
+        WriteToBuffer, WriteToBufferArgs,
     },
     pda::{PREFIX, STATE_PDA},
     state::{RuleSet, RULE_SET_VERSION},
@@ -41,9 +41,9 @@ impl Processor {
                 msg!("Instruction: Validate");
                 validate(program_id, accounts, args)
             }
-            RuleSetInstruction::AppendToRuleSet(args) => {
-                msg!("Instruction: AppendToRuleSet");
-                append_to_rule_set(program_id, accounts, args)
+            RuleSetInstruction::WriteToBuffer(args) => {
+                msg!("Instruction: WriteToBuffer");
+                write_to_buffer(program_id, accounts, args)
             }
         }
     }
@@ -113,6 +113,11 @@ fn create_or_update_v1(
         &[bump],
     ];
 
+    let serialized_data = match ctx.accounts.buffer_pda_info {
+        Some(account_info) => account_info.data.borrow().to_vec(),
+        None => serialized_rule_set,
+    };
+
     // Create or allocate, resize or reallocate RuleSet PDA.
     if ctx.accounts.rule_set_pda_info.data_is_empty() {
         create_or_allocate_account_raw(
@@ -120,7 +125,7 @@ fn create_or_update_v1(
             ctx.accounts.rule_set_pda_info,
             ctx.accounts.system_program_info,
             ctx.accounts.payer_info,
-            serialized_rule_set.len(),
+            serialized_data.len(),
             rule_set_seeds,
         )?;
     } else {
@@ -128,7 +133,7 @@ fn create_or_update_v1(
             ctx.accounts.rule_set_pda_info,
             ctx.accounts.payer_info,
             ctx.accounts.system_program_info,
-            serialized_rule_set.len(),
+            serialized_data.len(),
         )?;
     }
 
@@ -139,8 +144,8 @@ fn create_or_update_v1(
             .rule_set_pda_info
             .try_borrow_mut_data()
             .unwrap(),
-        &serialized_rule_set,
-        serialized_rule_set.len(),
+        &serialized_data,
+        serialized_data.len(),
     );
 
     Ok(())
@@ -261,24 +266,84 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
 }
 
 // Function to match on `CreateOrUpdateArgs` version and call correct implementation.
-fn append_to_rule_set<'a>(
+fn write_to_buffer<'a>(
     program_id: &Pubkey,
     accounts: &'a [AccountInfo<'a>],
-    args: AppendToRuleSetArgs,
+    args: WriteToBufferArgs,
 ) -> ProgramResult {
-    let context = AppendToRuleSet::as_context(accounts)?;
+    let context = WriteToBuffer::as_context(accounts)?;
 
     match args {
-        AppendToRuleSetArgs::V1 { .. } => append_to_rule_set_v1(program_id, context, args),
+        WriteToBufferArgs::V1 { .. } => write_to_buffer_v1(program_id, context, args),
     }
 }
 
 /// V1 implementation of the `validate` instruction.
-fn append_to_rule_set_v1(
+fn write_to_buffer_v1(
     program_id: &Pubkey,
-    ctx: Context<AppendToRuleSet>,
-    args: AppendToRuleSetArgs,
+    ctx: Context<WriteToBuffer>,
+    args: WriteToBufferArgs,
 ) -> ProgramResult {
+    let WriteToBufferArgs::V1 {
+        serialized_rule_set,
+        overwrite,
+    } = args;
+
+    if !ctx.accounts.payer_info.is_signer {
+        return Err(RuleSetError::PayerIsNotSigner.into());
+    }
+
+    // Check buffer account info derivation.
+    let bump = assert_derivation(
+        program_id,
+        ctx.accounts.buffer_pda_info.key,
+        &[PREFIX.as_bytes(), ctx.accounts.payer_info.key.as_ref()],
+    )?;
+
+    let buffer_seeds = &[
+        PREFIX.as_ref(),
+        ctx.accounts.payer_info.key.as_ref(),
+        &[bump],
+    ];
+
+    // Create or allocate, resize or reallocate buffer PDA.
+    if ctx.accounts.buffer_pda_info.data_is_empty() {
+        create_or_allocate_account_raw(
+            *program_id,
+            ctx.accounts.buffer_pda_info,
+            ctx.accounts.system_program_info,
+            ctx.accounts.payer_info,
+            serialized_rule_set.len(),
+            buffer_seeds,
+        )?;
+    } else if overwrite {
+        resize_or_reallocate_account_raw(
+            ctx.accounts.buffer_pda_info,
+            ctx.accounts.payer_info,
+            ctx.accounts.system_program_info,
+            serialized_rule_set.len(),
+        )?;
+    } else {
+        resize_or_reallocate_account_raw(
+            ctx.accounts.buffer_pda_info,
+            ctx.accounts.payer_info,
+            ctx.accounts.system_program_info,
+            ctx.accounts
+                .buffer_pda_info
+                .data_len()
+                .checked_add(serialized_rule_set.len())
+                .ok_or(RuleSetError::NumericalOverflow)?,
+        )?;
+    }
+
+    // Copy user-pre-serialized RuleSet to PDA account.
+    sol_memcpy(
+        &mut ctx.accounts.buffer_pda_info.try_borrow_mut_data().unwrap()
+            [ctx.accounts.buffer_pda_info.data_len()..],
+        &serialized_rule_set,
+        serialized_rule_set.len(),
+    );
+
     Ok(())
 }
 
