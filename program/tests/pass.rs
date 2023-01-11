@@ -9,7 +9,7 @@ use mpl_token_auth_rules::{
 };
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{create_rule_set_on_chain, process_passing_validate_ix, program_test, Operation};
+use utils::{program_test, Operation};
 
 #[tokio::test]
 async fn test_pass() {
@@ -24,14 +24,14 @@ async fn test_pass() {
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_string(), pass_rule)
+        .add(Operation::OwnerTransfer.to_string(), pass_rule)
         .unwrap();
 
     println!("{:#?}", rule_set);
 
     // Put the RuleSet on chain.
     let rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
     // Validate pass
@@ -45,7 +45,7 @@ async fn test_pass() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
         })
@@ -53,5 +53,5 @@ async fn test_pass() {
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 }

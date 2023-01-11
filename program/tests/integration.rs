@@ -18,10 +18,7 @@ use solana_sdk::{
     signer::keypair::Keypair,
     transaction::{Transaction, TransactionError},
 };
-use utils::{
-    assert_rule_set_error, create_rule_set_on_chain, process_failing_validate_ix,
-    process_passing_validate_ix, program_test, Operation, PayloadKey,
-};
+use utils::{program_test, Operation, PayloadKey};
 
 #[tokio::test]
 async fn test_payer_not_signer_fails() {
@@ -74,7 +71,7 @@ async fn test_payer_not_signer_fails() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
         })
@@ -136,14 +133,14 @@ async fn test_additional_signer_and_not_amount() {
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_string(), overall_rule)
+        .add(Operation::OwnerTransfer.to_string(), overall_rule)
         .unwrap();
 
     println!("{:#?}", rule_set);
 
     // Put the RuleSet on chain.
     let rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
     // Validate fail missing account
@@ -163,7 +160,7 @@ async fn test_additional_signer_and_not_amount() {
             true,
         )])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload: payload.clone(),
             update_rule_state: false,
         })
@@ -171,10 +168,10 @@ async fn test_additional_signer_and_not_amount() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::MissingAccount);
+    assert_rule_set_error!(err, RuleSetError::MissingAccount);
 
     // --------------------------------
     // Validate pass
@@ -188,7 +185,7 @@ async fn test_additional_signer_and_not_amount() {
             AccountMeta::new_readonly(second_signer.pubkey(), true),
         ])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
         })
@@ -196,7 +193,7 @@ async fn test_additional_signer_and_not_amount() {
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![&second_signer]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![&second_signer]).await;
 
     // --------------------------------
     // Validate fail wrong amount
@@ -213,7 +210,7 @@ async fn test_additional_signer_and_not_amount() {
             AccountMeta::new_readonly(second_signer.pubkey(), true),
         ])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
         })
@@ -221,10 +218,10 @@ async fn test_additional_signer_and_not_amount() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![&second_signer]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![&second_signer]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::AmountCheckFailed);
+    assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
 }
 
 #[tokio::test]
@@ -240,12 +237,12 @@ async fn test_update_ruleset() {
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_string(), pass_rule)
+        .add(Operation::OwnerTransfer.to_string(), pass_rule)
         .unwrap();
 
     // Put the RuleSet on chain.
     let _rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
     // Update RuleSet
@@ -268,10 +265,10 @@ async fn test_update_ruleset() {
     // Create a new RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_string(), overall_rule)
+        .add(Operation::OwnerTransfer.to_string(), overall_rule)
         .unwrap();
 
     // Put the updated RuleSet on chain.
     let _rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 }

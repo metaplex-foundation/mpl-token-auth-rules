@@ -85,6 +85,25 @@ pub enum Rule {
         /// The field in the `Payload` to be compared.
         field: String,
     },
+    /// The `Pubkey` must be owned by a program in the list
+    /// of `Pubkey`s.
+    ProgramOwnedList {
+        /// The program that must own the `Pubkey`.
+        programs: Vec<Pubkey>,
+        /// The field in the `Payload` to be compared.
+        field: String,
+    },
+    /// The `Pubkey` must be owned a member of the Merkle tree.
+    ProgramOwnedTree {
+        /// The root of the Merkle tree.
+        _root: [u8; 32],
+        /// The field in the `Payload` to be compared
+        /// when looking for the program.
+        _program_field: String,
+        /// The field in the `Payload` to be compared
+        /// when looking for the Merkle Proof.
+        _merkle_proof_field: String,
+    },
     /// Comparison against the amount of tokens being transferred.
     Amount {
         /// The amount to be compared against.
@@ -140,9 +159,7 @@ impl Rule {
         match self {
             Rule::All { rules } => {
                 msg!("Validating All");
-                let mut last = self.to_error();
                 for rule in rules {
-                    last = rule.to_error();
                     let result = rule.low_level_validate(
                         accounts,
                         payload,
@@ -154,13 +171,12 @@ impl Rule {
                         return result;
                     }
                 }
-                (true, last)
+                (true, self.to_error())
             }
             Rule::Any { rules } => {
                 msg!("Validating Any");
                 let mut last = self.to_error();
                 for rule in rules {
-                    last = rule.to_error();
                     let result = rule.low_level_validate(
                         accounts,
                         payload,
@@ -170,6 +186,8 @@ impl Rule {
                     );
                     if result.0 {
                         return result;
+                    } else {
+                        last = result.1;
                     }
                 }
                 (false, last)
@@ -300,7 +318,6 @@ impl Rule {
                     (false, self.to_error())
                 }
             }
-
             Rule::ProgramOwned { program, field } => {
                 msg!("Validating ProgramOwned");
 
@@ -318,6 +335,33 @@ impl Rule {
                 }
 
                 (false, self.to_error())
+            }
+            Rule::ProgramOwnedList { programs, field } => {
+                msg!("Validating ProgramOwnedList");
+
+                let key = match payload.get_pubkey(field) {
+                    Some(pubkey) => pubkey,
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                };
+
+                let account = match accounts.get(key) {
+                    Some(account) => account,
+                    _ => return (false, RuleSetError::MissingAccount.into()),
+                };
+
+                if programs.iter().any(|program| *account.owner == *program) {
+                    (true, self.to_error())
+                } else {
+                    (false, self.to_error())
+                }
+            }
+            Rule::ProgramOwnedTree {
+                _root,
+                _program_field,
+                _merkle_proof_field,
+            } => {
+                msg!("Validating ProgramOwnedTree");
+                (false, RuleSetError::NotImplemented.into())
             }
             Rule::Amount {
                 amount: rule_amount,
@@ -367,7 +411,7 @@ impl Rule {
     pub fn to_error(&self) -> ProgramError {
         match self {
             Rule::All { .. } | Rule::Any { .. } | Rule::Not { .. } | Rule::Pass => {
-                RuleSetError::NotImplemented.into()
+                RuleSetError::UnexpectedRuleSetFailure.into()
             }
             Rule::AdditionalSigner { .. } => RuleSetError::AdditionalSignerCheckFailed.into(),
             Rule::PubkeyMatch { .. } => RuleSetError::PubkeyMatchCheckFailed.into(),
@@ -375,6 +419,8 @@ impl Rule {
             Rule::PubkeyTreeMatch { .. } => RuleSetError::PubkeyTreeMatchCheckFailed.into(),
             Rule::PDAMatch { .. } => RuleSetError::PDAMatchCheckFailed.into(),
             Rule::ProgramOwned { .. } => RuleSetError::ProgramOwnedCheckFailed.into(),
+            Rule::ProgramOwnedList { .. } => RuleSetError::ProgramOwnedListCheckFailed.into(),
+            Rule::ProgramOwnedTree { .. } => RuleSetError::ProgramOwnedTreeCheckFailed.into(),
             Rule::Amount { .. } => RuleSetError::AmountCheckFailed.into(),
             Rule::Frequency { .. } => RuleSetError::FrequencyCheckFailed.into(),
         }

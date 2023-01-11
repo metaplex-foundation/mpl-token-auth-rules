@@ -1,5 +1,5 @@
 {
-  "version": "0.2.1",
+  "version": "0.2.2",
   "name": "mpl_token_auth_rules",
   "instructions": [
     {
@@ -333,78 +333,93 @@
     },
     {
       "code": 11,
+      "name": "ProgramOwnedListCheckFailed",
+      "msg": "Program Owned List check failed"
+    },
+    {
+      "code": 12,
+      "name": "ProgramOwnedTreeCheckFailed",
+      "msg": "Program Owned Tree check failed"
+    },
+    {
+      "code": 13,
       "name": "AmountCheckFailed",
       "msg": "Amount checked failed"
     },
     {
-      "code": 12,
+      "code": 14,
       "name": "FrequencyCheckFailed",
       "msg": "Frequency check failed"
     },
     {
-      "code": 13,
+      "code": 15,
       "name": "PayerIsNotSigner",
       "msg": "Payer is not a signer"
     },
     {
-      "code": 14,
+      "code": 16,
       "name": "NotImplemented",
       "msg": "Not implemented"
     },
     {
-      "code": 15,
+      "code": 17,
       "name": "BorshSerializationError",
       "msg": "Borsh serialization error"
     },
     {
-      "code": 16,
+      "code": 18,
       "name": "ValueOccupied",
       "msg": "Value in Payload or RuleSet is occupied"
     },
     {
-      "code": 17,
+      "code": 19,
       "name": "DataIsEmpty",
       "msg": "Account data is empty"
     },
     {
-      "code": 18,
+      "code": 20,
       "name": "MessagePackDeserializationError",
       "msg": "MessagePack deserialization error"
     },
     {
-      "code": 19,
+      "code": 21,
       "name": "MissingAccount",
       "msg": "Missing account"
     },
     {
-      "code": 20,
+      "code": 22,
       "name": "MissingPayloadValue",
       "msg": "Missing Payload value"
     },
     {
-      "code": 21,
+      "code": 23,
       "name": "RuleSetOwnerMismatch",
       "msg": "RuleSet owner must be payer"
     },
     {
-      "code": 22,
+      "code": 24,
       "name": "NameTooLong",
       "msg": "Name too long"
     },
     {
-      "code": 23,
+      "code": 25,
       "name": "OperationNotFound",
       "msg": "The operation retrieved is not in the selected RuleSet"
     },
     {
-      "code": 24,
+      "code": 26,
       "name": "RuleAuthorityIsNotSigner",
       "msg": "Rule authority is not signer"
     },
     {
-      "code": 25,
+      "code": 27,
       "name": "UnsupportedRuleSetVersion",
       "msg": "Unsupported RuleSet version"
+    },
+    {
+      "code": 28,
+      "name": "UnexpectedRuleSetFailure",
+      "msg": "Unexpected RuleSet failure"
     }
   ],
   "metadata": {

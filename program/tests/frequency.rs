@@ -12,10 +12,7 @@ use mpl_token_auth_rules::{
 use solana_program::program_error::ProgramError;
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{
-    assert_program_error, assert_rule_set_error, create_rule_set_on_chain,
-    process_failing_validate_ix, program_test, Operation,
-};
+use utils::{program_test, Operation};
 
 #[tokio::test]
 async fn test_frequency() {
@@ -32,13 +29,15 @@ async fn test_frequency() {
 
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
-    rule_set.add(Operation::Transfer.to_string(), rule).unwrap();
+    rule_set
+        .add(Operation::OwnerTransfer.to_string(), rule)
+        .unwrap();
 
     println!("{:#?}", rule_set);
 
     // Put the RuleSet on chain.
     let rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
     // Validate missing accounts
@@ -52,7 +51,7 @@ async fn test_frequency() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
         })
@@ -60,10 +59,10 @@ async fn test_frequency() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_program_error(err, ProgramError::NotEnoughAccountKeys);
+    assert_program_error!(err, ProgramError::NotEnoughAccountKeys);
 
     // --------------------------------
     // Validate wrong authority
@@ -80,7 +79,7 @@ async fn test_frequency() {
         .rule_set_state_pda(rule_set_state_addr)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
         })
@@ -88,10 +87,10 @@ async fn test_frequency() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::RuleAuthorityIsNotSigner);
+    assert_rule_set_error!(err, RuleSetError::RuleAuthorityIsNotSigner);
 
     // --------------------------------
     // Validate not implemented
@@ -106,7 +105,7 @@ async fn test_frequency() {
         .rule_set_state_pda(rule_set_state_addr)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
         })
@@ -114,8 +113,8 @@ async fn test_frequency() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![&rule_authority]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![&rule_authority]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::NotImplemented);
+    assert_rule_set_error!(err, RuleSetError::NotImplemented);
 }

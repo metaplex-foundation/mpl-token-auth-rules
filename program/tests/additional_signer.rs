@@ -11,10 +11,7 @@ use mpl_token_auth_rules::{
 use solana_program::instruction::AccountMeta;
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{
-    assert_rule_set_error, create_rule_set_on_chain, process_failing_validate_ix,
-    process_passing_validate_ix, program_test, Operation,
-};
+use utils::{program_test, Operation};
 
 #[tokio::test]
 async fn test_additional_signer() {
@@ -32,14 +29,14 @@ async fn test_additional_signer() {
     // Create a RuleSet.
     let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::Transfer.to_string(), adtl_signer_rule)
+        .add(Operation::OwnerTransfer.to_string(), adtl_signer_rule)
         .unwrap();
 
     println!("{:#?}", rule_set);
 
     // Put the RuleSet on chain.
     let rule_set_addr =
-        create_rule_set_on_chain(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
     // Validate fail missing account
@@ -53,7 +50,7 @@ async fn test_additional_signer() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
         })
@@ -61,10 +58,10 @@ async fn test_additional_signer() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::MissingAccount);
+    assert_rule_set_error!(err, RuleSetError::MissingAccount);
 
     // --------------------------------
     // Validate fail not a signer
@@ -75,7 +72,7 @@ async fn test_additional_signer() {
         .mint(mint)
         .additional_rule_accounts(vec![AccountMeta::new_readonly(adtl_signer.pubkey(), false)])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
         })
@@ -83,10 +80,10 @@ async fn test_additional_signer() {
         .instruction();
 
     // Validate Transfer operation.
-    let err = process_failing_validate_ix(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error(err, RuleSetError::AdditionalSignerCheckFailed);
+    assert_rule_set_error!(err, RuleSetError::AdditionalSignerCheckFailed);
 
     // --------------------------------
     // Validate pass
@@ -97,7 +94,7 @@ async fn test_additional_signer() {
         .mint(mint)
         .additional_rule_accounts(vec![AccountMeta::new_readonly(adtl_signer.pubkey(), true)])
         .build(ValidateArgs::V1 {
-            operation: Operation::Transfer.to_string(),
+            operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
         })
@@ -105,5 +102,5 @@ async fn test_additional_signer() {
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix(&mut context, validate_ix, vec![&adtl_signer]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![&adtl_signer]).await;
 }
