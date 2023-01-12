@@ -1,4 +1,8 @@
-use crate::{error::RuleSetError, payload::Payload, utils::assert_derivation};
+use crate::{
+    error::RuleSetError,
+    payload::Payload,
+    utils::{assert_derivation, compute_merkle_root},
+};
 use serde::{Deserialize, Serialize};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
@@ -39,34 +43,53 @@ pub enum Rule {
         /// The Rule contained under Not.
         rule: Box<Rule>,
     },
-    /// An additional signer must be present.
+    /// An additional signer must be present.  When the `Validate` instruction is called, this rule
+    /// does not require any `Payload` values, but the additional signer account must be provided
+    /// to `Validate` via the `additional_rule_accounts` argument so that whether it is a signer
+    /// can be retrieved from its `AccountInfo` struct.
     AdditionalSigner {
         /// The public key that must have also signed the transaction.
         account: Pubkey,
     },
-    /// Direct comparison between Pubkeys.
+    /// Direct comparison between `Pubkey`s.  When the `Validate` instruction is called, this rule
+    /// requires a `PayloadType` value of `PayloadType::Pubkey`.  The `field` value in the rule is
+    /// used to locate the `Pubkey` in the payload to compare to the `Pubkey` in the rule.
     PubkeyMatch {
         /// The public key to be compared against.
         pubkey: Pubkey,
         /// The field in the `Payload` to be compared.
         field: String,
     },
-    /// The comparing `Pubkey` must be in the list of `Pubkey`s.
+    /// The comparing `Pubkey` must be in the list of `Pubkey`s.  When the `Validate` instruction
+    /// is called, this rule requires a `PayloadType` value of `PayloadType::Pubkey`.  The `field`
+    /// value in the Rule is used to locate the `Pubkey` in the payload to compare to the `Pubkey`
+    /// list in the rule.
     PubkeyListMatch {
         /// The list of public keys to be compared against.
         pubkeys: Vec<Pubkey>,
         /// The field in the `Payload` to be compared.
         field: String,
     },
-    /// The pubkey must be a member of the Merkle tree.
+    /// The comparing `Pubkey` must be a member of the Merkle tree in the rule.  When the
+    /// `Validate` instruction is called, this rule requires `PayloadType` values of
+    /// `PayloadType::Pubkey` and `PayloadType::MerkleProof`.  The `field` values in the Rule are
+    /// used to locate them in the `Payload`.  The `Pubkey` and the proof are used to calculate
+    /// a Merkle root which is compared against the root stored in the rule.
     PubkeyTreeMatch {
         /// The root of the Merkle tree.
         root: [u8; 32],
-        /// The field in the `Payload` to be compared.
-        field: String,
+        /// The field in the `Payload` to be compared
+        /// when looking for the `Pubkey`.
+        pubkey_field: String,
+        /// The field in the `Payload` to be compared
+        /// when looking for the Merkle proof.
+        proof_field: String,
     },
-    /// A resulting PDA derivation of seeds must prove
-    /// the account is a PDA.
+    /// A resulting PDA derivation of seeds must prove the account is a PDA.  When the `Validate`
+    /// instruction is called, this rule requires `PayloadType` values of `PayloadType::Seeds`.
+    /// The `field` values in the Rule are used to locate them in the `Payload`.  The seeds in the
+    /// `Payload` and the program ID stored in the Rule are used to derive the PDA from the
+    /// `Payload`.
     PDAMatch {
         /// The program used for the PDA derivation.  If
         /// `None` then the account owner is used.
@@ -78,33 +101,51 @@ pub enum Rule {
         /// when looking for the seeds.
         seeds_field: String,
     },
-    /// The `Pubkey` must be owned by a given program.
+    /// The `Pubkey` must be owned by a given program.  When the `Validate` instruction is called,
+    /// this rule requires a `PayloadType` value of `PayloadType::Pubkey`.  The `field` value in
+    /// the rule is used to locate the `Pubkey` in the payload for which the owner must be the
+    /// program in the rule.  Note this same `Pubkey` account must also be provided to `Validate`
+    /// via the `additional_rule_accounts` argument.  This is so that the `Pubkey`'s owner can be
+    /// found from its `AccountInfo` struct.
     ProgramOwned {
         /// The program that must own the `Pubkey`.
         program: Pubkey,
         /// The field in the `Payload` to be compared.
         field: String,
     },
-    /// The `Pubkey` must be owned by a program in the list
-    /// of `Pubkey`s.
+    /// The `Pubkey` must be owned by a program in the list of `Pubkey`s.  When the `Validate`
+    /// instruction is called, this rule requires a `PayloadType` value of `PayloadType::Pubkey`.
+    /// The `field` value in the rule is used to locate the `Pubkey` in the payload for which the
+    /// owner must be a program in the list in the rule.  Note this same `Pubkey` account must also
+    /// be provided to `Validate` via the `additional_rule_accounts` argument.  This is so that the
+    /// `Pubkey`'s owner can be found from its `AccountInfo` struct.
     ProgramOwnedList {
         /// The program that must own the `Pubkey`.
         programs: Vec<Pubkey>,
         /// The field in the `Payload` to be compared.
         field: String,
     },
-    /// The `Pubkey` must be owned a member of the Merkle tree.
+    /// The `Pubkey` must be owned by a member of the Merkle tree in the rule.  When the `Validate`
+    /// instruction is called, this rule requires `PayloadType` values of `PayloadType::Pubkey` and
+    /// `PayloadType::MerkleProof`.  The `field` values in the Rule are used to locate them in the
+    /// `Payload`.  Note this same `Pubkey` account must also be provided to `Validate` via the
+    /// `additional_rule_accounts` argument.  This is so that the `Pubkey`'s owner can be found
+    /// from its `AccountInfo` struct.  The owner and the proof are then used to calculate a Merkle
+    /// root, which is compared against the root stored in the rule.
     ProgramOwnedTree {
         /// The root of the Merkle tree.
-        _root: [u8; 32],
+        root: [u8; 32],
         /// The field in the `Payload` to be compared
-        /// when looking for the program.
-        _program_field: String,
+        /// when looking for the `Pubkey`.
+        pubkey_field: String,
         /// The field in the `Payload` to be compared
-        /// when looking for the Merkle Proof.
-        _merkle_proof_field: String,
+        /// when looking for the Merkle proof.
+        proof_field: String,
     },
-    /// Comparison against the amount of tokens being transferred.
+    /// Comparison against the amount of tokens being transferred.   When the `Validate`
+    /// instruction is called, this rule requires a `PayloadType` value of `PayloadType::Amount`.
+    /// The `field` value in the Rule is used to locate the numerical amount in the payload to
+    /// compare to the amount stored in the rule, using the comparison operator stored in the rule.
     Amount {
         /// The amount to be compared against.
         amount: u64,
@@ -113,7 +154,10 @@ pub enum Rule {
         /// The field the amount is stored in.
         field: String,
     },
-    /// Comparison based on time between operations.
+    /// Comparison based on time between operations.  Currently not implemented.  This rule
+    /// is planned check to ensure a certain amount of time has passed.  This rule will make use
+    /// of the `rule_set_state_pda` optional account passed into `Validate`, and will require
+    /// the optional `rule_authority` account to sign.
     Frequency {
         /// The authority of the frequency account.
         authority: Pubkey,
@@ -238,36 +282,28 @@ impl Rule {
                     (false, self.to_error())
                 }
             }
-            Rule::PubkeyTreeMatch { root, field } => {
+            Rule::PubkeyTreeMatch {
+                root,
+                pubkey_field,
+                proof_field,
+            } => {
                 msg!("Validating PubkeyTreeMatch");
 
-                let merkle_proof = match payload.get_merkle_proof(field) {
+                // Get the `Pubkey` we are checking from the payload.
+                let leaf = match payload.get_pubkey(pubkey_field) {
+                    Some(pubkey) => pubkey,
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                };
+
+                // Get the Merkle proof from the payload.
+                let merkle_proof = match payload.get_merkle_proof(proof_field) {
                     Some(merkle_proof) => merkle_proof,
                     _ => return (false, RuleSetError::MissingPayloadValue.into()),
                 };
 
-                let mut computed_hash = merkle_proof.leaf;
-                for proof_element in merkle_proof.proof.iter() {
-                    if computed_hash <= *proof_element {
-                        // Hash(current computed hash + current element of the proof)
-                        computed_hash = solana_program::keccak::hashv(&[
-                            &[0x01],
-                            &computed_hash,
-                            proof_element,
-                        ])
-                        .0;
-                    } else {
-                        // Hash(current element of the proof + current computed hash)
-                        computed_hash = solana_program::keccak::hashv(&[
-                            &[0x01],
-                            proof_element,
-                            &computed_hash,
-                        ])
-                        .0;
-                    }
-                }
-                // Check if the computed hash (root) is equal to the provided root
-                if computed_hash == *root {
+                // Check if the computed hash (root) is equal to the root in the rule.
+                let computed_root = compute_merkle_root(leaf, merkle_proof);
+                if computed_root == *root {
                     (true, self.to_error())
                 } else {
                     (false, self.to_error())
@@ -356,12 +392,40 @@ impl Rule {
                 }
             }
             Rule::ProgramOwnedTree {
-                _root,
-                _program_field,
-                _merkle_proof_field,
+                root,
+                pubkey_field,
+                proof_field,
             } => {
                 msg!("Validating ProgramOwnedTree");
-                (false, RuleSetError::NotImplemented.into())
+
+                // Get the `Pubkey` we are checking from the payload.
+                let key = match payload.get_pubkey(pubkey_field) {
+                    Some(pubkey) => pubkey,
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                };
+
+                // Get the `AccountInfo` struct for the `Pubkey`.
+                let account = match accounts.get(key) {
+                    Some(account) => account,
+                    _ => return (false, RuleSetError::MissingAccount.into()),
+                };
+
+                // The account owner is the leaf.
+                let leaf = account.owner;
+
+                // Get the Merkle proof from the payload.
+                let merkle_proof = match payload.get_merkle_proof(proof_field) {
+                    Some(merkle_proof) => merkle_proof,
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                };
+
+                // Check if the computed hash (root) is equal to the root in the rule.
+                let computed_root = compute_merkle_root(leaf, merkle_proof);
+                if computed_root == *root {
+                    (true, self.to_error())
+                } else {
+                    (false, self.to_error())
+                }
             }
             Rule::Amount {
                 amount: rule_amount,

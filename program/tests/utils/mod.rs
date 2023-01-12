@@ -48,14 +48,23 @@ pub enum PayloadKey {
     Authority,
     /// Seeds for a PDA authority of the operation, e.g. when the authority is a PDA.
     AuthoritySeeds,
+    /// Merkle proof for the source of the operation, e.g. when the authority is a member
+    /// of a Merkle tree.
+    AuthorityProof,
     /// The source of the operation, e.g. the owner initiating a transfer.
     Source,
     /// Seeds for a PDA source of the operation, e.g. when the source is a PDA.
     SourceSeeds,
+    /// Merkle proof for the source of the operation, e.g. when the source is a member
+    /// of a Merkle tree.
+    SourceProof,
     /// The destination of the operation, e.g. the recipient of a transfer.
     Destination,
     /// Seeds for a PDA destination of the operation, e.g. when the recipient is a PDA.
     DestinationSeeds,
+    /// Merkle proof for the destination of the operation, e.g. when the distination
+    /// is a member of a Merkle tree.
+    DestinationProof,
 }
 
 impl ToString for PayloadKey {
@@ -64,10 +73,13 @@ impl ToString for PayloadKey {
             PayloadKey::Amount => "Amount".to_string(),
             PayloadKey::Authority => "Authority".to_string(),
             PayloadKey::AuthoritySeeds => "AuthoritySeeds".to_string(),
+            PayloadKey::AuthorityProof => "AuthorityProof".to_string(),
             PayloadKey::Source => "Source".to_string(),
             PayloadKey::SourceSeeds => "SourceSeeds".to_string(),
+            PayloadKey::SourceProof => "SourceProof".to_string(),
             PayloadKey::Destination => "Destination".to_string(),
             PayloadKey::DestinationSeeds => "DestinationSeeds".to_string(),
+            PayloadKey::DestinationProof => "DestinationProof".to_string(),
         }
     }
 }

@@ -6,8 +6,7 @@
  */
 
 import * as beet from '@metaplex-foundation/beet';
-export type LeafInfo = {
-  leaf: number[] /* size: 32 */;
+export type ProofInfo = {
   proof: number[] /* size: 32 */[];
 };
 
@@ -15,10 +14,7 @@ export type LeafInfo = {
  * @category userTypes
  * @category generated
  */
-export const leafInfoBeet = new beet.FixableBeetArgsStruct<LeafInfo>(
-  [
-    ['leaf', beet.uniformFixedSizeArray(beet.u8, 32)],
-    ['proof', beet.array(beet.uniformFixedSizeArray(beet.u8, 32))],
-  ],
-  'LeafInfo',
+export const proofInfoBeet = new beet.FixableBeetArgsStruct<ProofInfo>(
+  [['proof', beet.array(beet.uniformFixedSizeArray(beet.u8, 32))]],
+  'ProofInfo',
 );
