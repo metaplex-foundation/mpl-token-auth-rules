@@ -78,8 +78,12 @@ fn create_or_update_v1(
     }
 
     // Deserialize RuleSet.
-    let rule_set: RuleSet = rmp_serde::from_slice(&serialized_rule_set)
-        .map_err(|_| RuleSetError::MessagePackDeserializationError)?;
+    let rule_set: RuleSet = match ctx.accounts.buffer_pda_info {
+        Some(account_info) => rmp_serde::from_slice(&account_info.data.borrow())
+            .map_err(|_| RuleSetError::MessagePackDeserializationError)?,
+        None => rmp_serde::from_slice(&serialized_rule_set)
+            .map_err(|_| RuleSetError::MessagePackDeserializationError)?,
+    };
 
     if rule_set.name().len() > MAX_NAME_LENGTH {
         return Err(RuleSetError::NameTooLong.into());
@@ -113,9 +117,9 @@ fn create_or_update_v1(
         &[bump],
     ];
 
-    let serialized_data = match ctx.accounts.buffer_pda_info {
-        Some(account_info) => account_info.data.borrow().to_vec(),
-        None => serialized_rule_set,
+    let data_len = match ctx.accounts.buffer_pda_info {
+        Some(account_info) => account_info.data_len(),
+        None => serialized_rule_set.len(),
     };
 
     // Create or allocate, resize or reallocate RuleSet PDA.
@@ -125,7 +129,7 @@ fn create_or_update_v1(
             ctx.accounts.rule_set_pda_info,
             ctx.accounts.system_program_info,
             ctx.accounts.payer_info,
-            serialized_data.len(),
+            data_len,
             rule_set_seeds,
         )?;
     } else {
@@ -133,20 +137,38 @@ fn create_or_update_v1(
             ctx.accounts.rule_set_pda_info,
             ctx.accounts.payer_info,
             ctx.accounts.system_program_info,
-            serialized_data.len(),
+            data_len,
         )?;
     }
 
-    // Copy user-pre-serialized RuleSet to PDA account.
-    sol_memcpy(
-        &mut ctx
-            .accounts
-            .rule_set_pda_info
-            .try_borrow_mut_data()
-            .unwrap(),
-        &serialized_data,
-        serialized_data.len(),
-    );
+    match ctx.accounts.buffer_pda_info {
+        Some(account_info) => {
+            msg!("Using buffer account for RuleSet serialization.");
+            // Copy user-pre-serialized RuleSet to PDA account.
+            sol_memcpy(
+                &mut ctx
+                    .accounts
+                    .rule_set_pda_info
+                    .try_borrow_mut_data()
+                    .unwrap(),
+                &account_info.data.borrow(),
+                data_len,
+            );
+            msg!("RuleSet serialized to buffer account.");
+        }
+        None => {
+            // Copy user-pre-serialized RuleSet to PDA account.
+            sol_memcpy(
+                &mut ctx
+                    .accounts
+                    .rule_set_pda_info
+                    .try_borrow_mut_data()
+                    .unwrap(),
+                &serialized_rule_set,
+                data_len,
+            );
+        }
+    }
 
     Ok(())
 }
@@ -306,6 +328,9 @@ fn write_to_buffer_v1(
         &[bump],
     ];
 
+    // Fetch the offset before we realloc so we get the accurate account length.
+    let offset = ctx.accounts.buffer_pda_info.data_len();
+
     // Create or allocate, resize or reallocate buffer PDA.
     if ctx.accounts.buffer_pda_info.data_is_empty() {
         create_or_allocate_account_raw(
@@ -336,10 +361,14 @@ fn write_to_buffer_v1(
         )?;
     }
 
+    msg!(
+        "Writing {:?} bytes at offset {:?}",
+        serialized_rule_set.len(),
+        offset
+    );
     // Copy user-pre-serialized RuleSet to PDA account.
     sol_memcpy(
-        &mut ctx.accounts.buffer_pda_info.try_borrow_mut_data().unwrap()
-            [ctx.accounts.buffer_pda_info.data_len()..],
+        &mut ctx.accounts.buffer_pda_info.try_borrow_mut_data().unwrap()[offset..],
         &serialized_rule_set,
         serialized_rule_set.len(),
     );

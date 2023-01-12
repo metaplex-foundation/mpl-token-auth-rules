@@ -38,6 +38,7 @@ export const CreateOrUpdateStruct = new beet.FixableBeetArgsStruct<
  *
  * @property [_writable_, **signer**] payer Payer and creator of the RuleSet
  * @property [_writable_] ruleSetPda The PDA account where the RuleSet is stored
+ * @property [] bufferPda (optional) The buffer to copy a complete ruleset from
  * @category Instructions
  * @category CreateOrUpdate
  * @category generated
@@ -46,12 +47,18 @@ export type CreateOrUpdateInstructionAccounts = {
   payer: web3.PublicKey;
   ruleSetPda: web3.PublicKey;
   systemProgram?: web3.PublicKey;
+  bufferPda?: web3.PublicKey;
 };
 
 export const createOrUpdateInstructionDiscriminator = 0;
 
 /**
  * Creates a _CreateOrUpdate_ instruction.
+ *
+ * Optional accounts that are not provided will be omitted from the accounts
+ * array passed with the instruction.
+ * An optional account that is set cannot follow an optional account that is unset.
+ * Otherwise an Error is raised.
  *
  * @param accounts that will be accessed while the instruction is processed
  * @param args to provide as instruction data to the program
@@ -86,6 +93,14 @@ export function createCreateOrUpdateInstruction(
       isSigner: false,
     },
   ];
+
+  if (accounts.bufferPda != null) {
+    keys.push({
+      pubkey: accounts.bufferPda,
+      isWritable: false,
+      isSigner: false,
+    });
+  }
 
   const ix = new web3.TransactionInstruction({
     programId,
