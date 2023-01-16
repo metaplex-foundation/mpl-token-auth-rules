@@ -6,7 +6,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
-    pubkey::Pubkey,
+    pubkey::Pubkey, system_program,
 };
 use std::collections::HashMap;
 
@@ -161,6 +161,16 @@ pub enum Rule {
     Frequency {
         /// The authority of the frequency account.
         authority: Pubkey,
+    },
+    /// A rule that checks whether an account is a wallet, where wallet is defined as being owned
+    /// by the System Program and the address is on-curve (not a PDA).  The `field` value in
+    /// the rule is used to locate the `Pubkey` in the payload that must be on-curve and for which
+    /// the owner must be the System Program.  Note this same `Pubkey` account must also be provided
+    /// to `Validate` via the `additional_rule_accounts` argument.  This is so that the `Pubkey`'s
+    /// owner can be found from its `AccountInfo` struct.
+    IsWallet {
+        /// The field in the `Payload` to be checked.
+        field: String,
     },
     /// An operation that always succeeds.
     Pass,
@@ -464,6 +474,28 @@ impl Rule {
 
                 (false, RuleSetError::NotImplemented.into())
             }
+            Rule::IsWallet { field } => {
+                msg!("Validating IsWallet");
+
+                // Get the `Pubkey` we are checking from the payload.
+                let key = match payload.get_pubkey(field) {
+                    Some(pubkey) => pubkey,
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                };
+
+                // Get the `AccountInfo` struct for the `Pubkey` and verify that
+                // its owner is the System Program.
+                if let Some(account) = accounts.get(key) {
+                    if *account.owner != system_program::ID {
+                        return (false, self.to_error());
+                    }
+                } else {
+                    return (false, RuleSetError::MissingAccount.into());
+                }
+
+                // TODO: Implement on-curve check here.
+                (false, RuleSetError::NotImplemented.into())
+            }
             Rule::Pass => {
                 msg!("Validating Pass");
                 (true, self.to_error())
@@ -487,6 +519,7 @@ impl Rule {
             Rule::ProgramOwnedTree { .. } => RuleSetError::ProgramOwnedTreeCheckFailed.into(),
             Rule::Amount { .. } => RuleSetError::AmountCheckFailed.into(),
             Rule::Frequency { .. } => RuleSetError::FrequencyCheckFailed.into(),
+            Rule::IsWallet { .. } => RuleSetError::IsWalletCheckFailed.into(),
         }
     }
 }

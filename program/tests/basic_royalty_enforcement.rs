@@ -24,7 +24,9 @@ macro_rules! get_primitive_rules {
         $source_program_allow_list:ident,
         $source_pda_match:ident,
         $dest_program_allow_list:ident,
-        $dest_pda_match:ident
+        $dest_pda_match:ident,
+        $source_is_wallet:ident,
+        $dest_is_wallet:ident
     ) => {
         let $nft_amount = Rule::Amount {
             field: PayloadKey::Amount.to_string(),
@@ -53,6 +55,14 @@ macro_rules! get_primitive_rules {
             pda_field: PayloadKey::Destination.to_string(),
             seeds_field: PayloadKey::DestinationSeeds.to_string(),
         };
+
+        let $source_is_wallet = Rule::IsWallet {
+            field: PayloadKey::Source.to_string(),
+        };
+
+        let $dest_is_wallet = Rule::IsWallet {
+            field: PayloadKey::Destination.to_string(),
+        };
     };
 }
 
@@ -65,7 +75,9 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
         source_program_allow_list,
         source_pda_match,
         dest_program_allow_list,
-        dest_pda_match
+        dest_pda_match,
+        source_is_wallet,
+        dest_is_wallet
     );
 
     // --------------------------------
@@ -74,7 +86,8 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     // Compose the Owner Transfer rule as follows:
     // amount is 1 &&
     // (source is on allow list && source is a PDA) ||
-    // (dest is on allow list && dest is a PDA)
+    // (dest is on allow list && dest is a PDA) ||
+    // (source is wallet && dest is wallet)
     let transfer_rule = Rule::All {
         rules: vec![
             nft_amount,
@@ -85,6 +98,9 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
                     },
                     Rule::All {
                         rules: vec![dest_program_allow_list, dest_pda_match],
+                    },
+                    Rule::All {
+                        rules: vec![source_is_wallet, dest_is_wallet],
                     },
                 ],
             },
@@ -150,9 +166,9 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     // Validate OwnerTransfer operation.
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
-    // Check that error is what we expect.  It should fail the ProgramOwnedList Rule since the
-    // owner is not in the Rule.
-    assert_rule_set_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
+    // Check that error is what we expect.  It should fail the `IsWallet` Rules since those rules
+    // are not implemented yet.
+    assert_rule_set_error!(err, RuleSetError::NotImplemented);
 
     // --------------------------------
     // Validate wallet to prog owned PDA
@@ -470,7 +486,9 @@ async fn multiple_operations() {
         _source_program_allow_list,
         _source_pda_match,
         dest_program_allow_list,
-        dest_pda_match
+        dest_pda_match,
+        _source_is_wallet,
+        _dest_is_wallet
     );
 
     // --------------------------------
