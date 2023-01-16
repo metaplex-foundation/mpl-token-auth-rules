@@ -35,3 +35,8 @@ pub fn find_rule_set_state_address(
         &crate::ID,
     )
 }
+
+/// Find the PDA for the Rule Set buffer account.
+pub fn find_buffer_address(creator: Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(&[PREFIX.as_bytes(), creator.as_ref()], &crate::ID)
+}
