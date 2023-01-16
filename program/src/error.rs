@@ -30,101 +30,101 @@ pub enum RuleSetError {
     #[error("Derived key invalid")]
     DerivedKeyInvalid,
 
-    /// 5 - Additional Signer check failed
-    #[error("Additional Signer check failed")]
-    AdditionalSignerCheckFailed,
-
-    /// 6 - Pubkey Match check failed
-    #[error("Pubkey Match check failed")]
-    PubkeyMatchCheckFailed,
-
-    /// 7 - Pubkey List Match check failed
-    #[error("Pubkey List Match check failed")]
-    PubkeyListMatchCheckFailed,
-
-    /// 8 - Pubkey Tree Match check failed
-    #[error("Pubkey Tree Match check failed")]
-    PubkeyTreeMatchCheckFailed,
-
-    /// 9 - PDA Match check failed
-    #[error("PDA Match check failed")]
-    PDAMatchCheckFailed,
-
-    /// 10 - Program Owned check failed
-    #[error("Program Owned check failed")]
-    ProgramOwnedCheckFailed,
-
-    /// 11 - Program Owned List check failed
-    #[error("Program Owned List check failed")]
-    ProgramOwnedListCheckFailed,
-
-    /// 12 - Program Owned Tree check failed
-    #[error("Program Owned Tree check failed")]
-    ProgramOwnedTreeCheckFailed,
-
-    /// 13 - Amount checked failed
-    #[error("Amount checked failed")]
-    AmountCheckFailed,
-
-    /// 14 - Frequency check failed
-    #[error("Frequency check failed")]
-    FrequencyCheckFailed,
-
-    /// 15 - Payer is not a signer
+    /// 5 - Payer is not a signer
     #[error("Payer is not a signer")]
     PayerIsNotSigner,
 
-    /// 16 - Feature is not implemented yet
+    /// 6 - Feature is not implemented yet
     #[error("Not implemented")]
     NotImplemented,
 
-    /// 17 - Borsh serialization error
+    /// 7 - Borsh serialization error
     #[error("Borsh serialization error")]
     BorshSerializationError,
 
-    /// 18 - Value in Payload or RuleSet is occupied
+    /// 8 - Value in Payload or RuleSet is occupied
     #[error("Value in Payload or RuleSet is occupied")]
     ValueOccupied,
 
-    /// 19 - Account data is empty
+    /// 9 - Account data is empty
     #[error("Account data is empty")]
     DataIsEmpty,
 
-    /// 20 - MessagePack deserialization error
+    /// 10 - MessagePack deserialization error
     #[error("MessagePack deserialization error")]
     MessagePackDeserializationError,
 
-    /// 21 - Missing account
+    /// 11 - Missing account
     #[error("Missing account")]
     MissingAccount,
 
-    /// 22 - Missing Payload value
+    /// 12 - Missing Payload value
     #[error("Missing Payload value")]
     MissingPayloadValue,
 
-    /// 23 - RuleSet owner must be payer
+    /// 13 - RuleSet owner must be payer
     #[error("RuleSet owner must be payer")]
     RuleSetOwnerMismatch,
 
-    /// 24 - Name too long
+    /// 14 - Name too long
     #[error("Name too long")]
     NameTooLong,
 
-    /// 25 - Name too long
+    /// 15 - Name too long
     #[error("The operation retrieved is not in the selected RuleSet")]
     OperationNotFound,
 
-    /// 26 - Rule authority is not signer
+    /// 16 - Rule authority is not signer
     #[error("Rule authority is not signer")]
     RuleAuthorityIsNotSigner,
 
-    /// 27 - Unsupported RuleSet version
+    /// 17 - Unsupported RuleSet version
     #[error("Unsupported RuleSet version")]
     UnsupportedRuleSetVersion,
 
-    /// 28 - Unexpected RuleSet failure
+    /// 18 - Unexpected RuleSet failure
     #[error("Unexpected RuleSet failure")]
     UnexpectedRuleSetFailure,
+
+    /// 19 - Additional Signer check failed
+    #[error("Additional Signer check failed")]
+    AdditionalSignerCheckFailed,
+
+    /// 20 - Pubkey Match check failed
+    #[error("Pubkey Match check failed")]
+    PubkeyMatchCheckFailed,
+
+    /// 21 - Pubkey List Match check failed
+    #[error("Pubkey List Match check failed")]
+    PubkeyListMatchCheckFailed,
+
+    /// 22 - Pubkey Tree Match check failed
+    #[error("Pubkey Tree Match check failed")]
+    PubkeyTreeMatchCheckFailed,
+
+    /// 23 - PDA Match check failed
+    #[error("PDA Match check failed")]
+    PDAMatchCheckFailed,
+
+    /// 24 - Program Owned check failed
+    #[error("Program Owned check failed")]
+    ProgramOwnedCheckFailed,
+
+    /// 25 - Program Owned List check failed
+    #[error("Program Owned List check failed")]
+    ProgramOwnedListCheckFailed,
+
+    /// 26 - Program Owned Tree check failed
+    #[error("Program Owned Tree check failed")]
+    ProgramOwnedTreeCheckFailed,
+
+    /// 27 - Amount checked failed
+    #[error("Amount checked failed")]
+    AmountCheckFailed,
+
+    /// 28 - Frequency check failed
+    #[error("Frequency check failed")]
+    FrequencyCheckFailed,
 }
 
 impl PrintProgramError for RuleSetError {

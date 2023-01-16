@@ -8,7 +8,7 @@ use mpl_token_auth_rules::{
     payload::{Payload, PayloadType, ProofInfo, SeedsVec},
     state::{CompareOp, Rule, RuleSet},
 };
-use solana_program::{pubkey::Pubkey, system_program};
+use solana_program::pubkey::Pubkey;
 use solana_program_test::tokio;
 use solana_sdk::{
     instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
@@ -21,10 +21,8 @@ static PROGRAM_ALLOW_LIST: [Pubkey; 1] = [mpl_token_auth_rules::ID];
 macro_rules! get_primitive_rules {
     (
         $nft_amount:ident,
-        $source_owned_by_sys_program:ident,
         $source_program_allow_list:ident,
         $source_pda_match:ident,
-        $dest_owned_by_sys_program:ident,
         $dest_program_allow_list:ident,
         $dest_pda_match:ident
     ) => {
@@ -32,11 +30,6 @@ macro_rules! get_primitive_rules {
             field: PayloadKey::Amount.to_string(),
             amount: 1,
             operator: CompareOp::Eq,
-        };
-
-        let $source_owned_by_sys_program = Rule::ProgramOwned {
-            program: system_program::ID,
-            field: PayloadKey::Source.to_string(),
         };
 
         let $source_program_allow_list = Rule::ProgramOwnedList {
@@ -48,11 +41,6 @@ macro_rules! get_primitive_rules {
             program: None,
             pda_field: PayloadKey::Source.to_string(),
             seeds_field: PayloadKey::SourceSeeds.to_string(),
-        };
-
-        let $dest_owned_by_sys_program = Rule::ProgramOwned {
-            program: system_program::ID,
-            field: PayloadKey::Destination.to_string(),
         };
 
         let $dest_program_allow_list = Rule::ProgramOwnedList {
@@ -74,10 +62,8 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
 
     get_primitive_rules!(
         nft_amount,
-        source_owned_by_sys_program,
         source_program_allow_list,
         source_pda_match,
-        dest_owned_by_sys_program,
         dest_program_allow_list,
         dest_pda_match
     );
@@ -87,25 +73,16 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     // --------------------------------
     // Compose the Owner Transfer rule as follows:
     // amount is 1 &&
-    // (source is owned by system program || (source is on allow list && source is a PDA) &&
-    // (dest is owned by system program || (dest is on allow list && dest is a PDA)
-    //
-    // NOTE ownership by System Program is NOT sufficient to prove an account is a wallet
-    // (on-curve) instead of a PDA!
+    // (source is on allow list && source is a PDA) ||
+    // (dest is on allow list && dest is a PDA)
     let transfer_rule = Rule::All {
         rules: vec![
             nft_amount,
             Rule::Any {
                 rules: vec![
-                    source_owned_by_sys_program,
                     Rule::All {
                         rules: vec![source_program_allow_list, source_pda_match],
                     },
-                ],
-            },
-            Rule::Any {
-                rules: vec![
-                    dest_owned_by_sys_program,
                     Rule::All {
                         rules: vec![dest_program_allow_list, dest_pda_match],
                     },
@@ -134,7 +111,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     .await;
 
     // --------------------------------
-    // Validate sys prog owned to sys prog owned
+    // Validate fail wallet to wallet
     // --------------------------------
     let source = Keypair::new();
     let dest = Keypair::new();
@@ -171,10 +148,14 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
         .instruction();
 
     // Validate OwnerTransfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+
+    // Check that error is what we expect.  It should fail the ProgramOwnedList Rule since the
+    // owner is not in the Rule.
+    assert_rule_set_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
 
     // --------------------------------
-    // Validate sys prog owned to prog owned PDA
+    // Validate wallet to prog owned PDA
     // --------------------------------
     // Our derived key is going to be an account owned by the
     // mpl-token-auth-rules program. Any one will do so for convenience
@@ -277,7 +258,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
 
     // --------------------------------
-    // Validate prog owned PDA to sys prog owned
+    // Validate prog owned PDA to wallet
     // --------------------------------
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
@@ -355,7 +336,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
 
     // --------------------------------
-    // Validate fail not sys prog owned, valid PDA, but not prog owned
+    // Validate fail valid PDA, but not prog owned
     // --------------------------------
     // Create an associated token account for the sole purpose of having
     // a valid PDA that is owned by a different program than what is in the Rule.
@@ -486,10 +467,8 @@ async fn multiple_operations() {
 
     get_primitive_rules!(
         _nft_amount,
-        source_owned_by_sys_program,
         _source_program_allow_list,
         _source_pda_match,
-        _dest_owned_by_sys_program,
         dest_program_allow_list,
         dest_pda_match
     );
@@ -500,11 +479,7 @@ async fn multiple_operations() {
     // Compose the Owner Transfer rule as follows:
     // (source is a owned by system program && dest is on allow list && dest is a PDA)
     let transfer_rule = Rule::All {
-        rules: vec![
-            source_owned_by_sys_program,
-            dest_program_allow_list,
-            dest_pda_match,
-        ],
+        rules: vec![dest_program_allow_list, dest_pda_match],
     };
 
     // Merkle tree root generated in a different test program.
