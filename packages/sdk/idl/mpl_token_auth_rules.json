@@ -357,123 +357,123 @@
     },
     {
       "code": 5,
-      "name": "AdditionalSignerCheckFailed",
-      "msg": "Additional Signer check failed"
-    },
-    {
-      "code": 6,
-      "name": "PubkeyMatchCheckFailed",
-      "msg": "Pubkey Match check failed"
-    },
-    {
-      "code": 7,
-      "name": "PubkeyListMatchCheckFailed",
-      "msg": "Pubkey List Match check failed"
-    },
-    {
-      "code": 8,
-      "name": "PubkeyTreeMatchCheckFailed",
-      "msg": "Pubkey Tree Match check failed"
-    },
-    {
-      "code": 9,
-      "name": "PDAMatchCheckFailed",
-      "msg": "PDA Match check failed"
-    },
-    {
-      "code": 10,
-      "name": "ProgramOwnedCheckFailed",
-      "msg": "Program Owned check failed"
-    },
-    {
-      "code": 11,
-      "name": "ProgramOwnedListCheckFailed",
-      "msg": "Program Owned List check failed"
-    },
-    {
-      "code": 12,
-      "name": "ProgramOwnedTreeCheckFailed",
-      "msg": "Program Owned Tree check failed"
-    },
-    {
-      "code": 13,
-      "name": "AmountCheckFailed",
-      "msg": "Amount checked failed"
-    },
-    {
-      "code": 14,
-      "name": "FrequencyCheckFailed",
-      "msg": "Frequency check failed"
-    },
-    {
-      "code": 15,
       "name": "PayerIsNotSigner",
       "msg": "Payer is not a signer"
     },
     {
-      "code": 16,
+      "code": 6,
       "name": "NotImplemented",
       "msg": "Not implemented"
     },
     {
-      "code": 17,
+      "code": 7,
       "name": "BorshSerializationError",
       "msg": "Borsh serialization error"
     },
     {
-      "code": 18,
+      "code": 8,
       "name": "ValueOccupied",
       "msg": "Value in Payload or RuleSet is occupied"
     },
     {
-      "code": 19,
+      "code": 9,
       "name": "DataIsEmpty",
       "msg": "Account data is empty"
     },
     {
-      "code": 20,
+      "code": 10,
       "name": "MessagePackDeserializationError",
       "msg": "MessagePack deserialization error"
     },
     {
-      "code": 21,
+      "code": 11,
       "name": "MissingAccount",
       "msg": "Missing account"
     },
     {
-      "code": 22,
+      "code": 12,
       "name": "MissingPayloadValue",
       "msg": "Missing Payload value"
     },
     {
-      "code": 23,
+      "code": 13,
       "name": "RuleSetOwnerMismatch",
       "msg": "RuleSet owner must be payer"
     },
     {
-      "code": 24,
+      "code": 14,
       "name": "NameTooLong",
       "msg": "Name too long"
     },
     {
-      "code": 25,
+      "code": 15,
       "name": "OperationNotFound",
       "msg": "The operation retrieved is not in the selected RuleSet"
     },
     {
-      "code": 26,
+      "code": 16,
       "name": "RuleAuthorityIsNotSigner",
       "msg": "Rule authority is not signer"
     },
     {
-      "code": 27,
+      "code": 17,
       "name": "UnsupportedRuleSetVersion",
       "msg": "Unsupported RuleSet version"
     },
     {
-      "code": 28,
+      "code": 18,
       "name": "UnexpectedRuleSetFailure",
       "msg": "Unexpected RuleSet failure"
+    },
+    {
+      "code": 19,
+      "name": "AdditionalSignerCheckFailed",
+      "msg": "Additional Signer check failed"
+    },
+    {
+      "code": 20,
+      "name": "PubkeyMatchCheckFailed",
+      "msg": "Pubkey Match check failed"
+    },
+    {
+      "code": 21,
+      "name": "PubkeyListMatchCheckFailed",
+      "msg": "Pubkey List Match check failed"
+    },
+    {
+      "code": 22,
+      "name": "PubkeyTreeMatchCheckFailed",
+      "msg": "Pubkey Tree Match check failed"
+    },
+    {
+      "code": 23,
+      "name": "PDAMatchCheckFailed",
+      "msg": "PDA Match check failed"
+    },
+    {
+      "code": 24,
+      "name": "ProgramOwnedCheckFailed",
+      "msg": "Program Owned check failed"
+    },
+    {
+      "code": 25,
+      "name": "ProgramOwnedListCheckFailed",
+      "msg": "Program Owned List check failed"
+    },
+    {
+      "code": 26,
+      "name": "ProgramOwnedTreeCheckFailed",
+      "msg": "Program Owned Tree check failed"
+    },
+    {
+      "code": 27,
+      "name": "AmountCheckFailed",
+      "msg": "Amount checked failed"
+    },
+    {
+      "code": 28,
+      "name": "FrequencyCheckFailed",
+      "msg": "Frequency check failed"
     }
   ],
   "metadata": {
