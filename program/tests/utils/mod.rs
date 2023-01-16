@@ -284,11 +284,6 @@ pub async fn create_big_rule_set_on_chain_with_loc(
         .unwrap()
         .data;
 
-    assert!(
-        cmp_vec(&data, &serialized_rule_set),
-        "The buffer doesn't match the serialized rule set.",
-    );
-
     rule_set_addr
 }
 
@@ -525,7 +520,7 @@ pub async fn create_associated_token_account(
     ))
 }
 
-fn cmp_vec<T: PartialEq>(a: &Vec<T>, b: &Vec<T>) -> bool {
+pub fn cmp_vec<T: PartialEq>(a: &Vec<T>, b: &Vec<T>) -> bool {
     let matching = a.iter().zip(b.iter()).filter(|&(a, b)| a == b).count();
     matching == a.len() && matching == b.len()
 }

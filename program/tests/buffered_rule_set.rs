@@ -8,10 +8,12 @@ use mpl_token_auth_rules::{
     payload::{Payload, PayloadType},
     state::{Rule, RuleSet},
 };
+use rmp_serde::Serializer;
+use serde::Serialize;
 use solana_program::system_program;
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{program_test, Operation, PayloadKey};
+use utils::{cmp_vec, program_test, Operation, PayloadKey};
 
 #[tokio::test]
 async fn buffered_rule_set() {
@@ -33,12 +35,30 @@ async fn buffered_rule_set() {
     rule_set
         .add(Operation::OwnerTransfer.to_string(), rule)
         .unwrap();
-
-    println!("{:#?}", rule_set);
+    let test_rule_set = rule_set.clone();
 
     // Put the RuleSet on chain.
     let rule_set_addr =
         create_big_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
+
+    // Serialize the RuleSet using RMP serde.
+    let mut serialized_rule_set = Vec::new();
+    test_rule_set
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
+        .unwrap();
+
+    let data = context
+        .banks_client
+        .get_account(rule_set_addr)
+        .await
+        .unwrap()
+        .unwrap()
+        .data;
+
+    assert!(
+        cmp_vec(&data, &serialized_rule_set),
+        "The buffer doesn't match the serialized rule set.",
+    );
 
     // --------------------------------
     // Validate fail

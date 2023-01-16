@@ -154,7 +154,6 @@ fn create_or_update_v1(
                 &account_info.data.borrow(),
                 data_len,
             );
-            msg!("RuleSet serialized to buffer account.");
         }
         None => {
             // Copy user-pre-serialized RuleSet to PDA account.
@@ -287,7 +286,7 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
     Ok(())
 }
 
-// Function to match on `CreateOrUpdateArgs` version and call correct implementation.
+// Function to match on `WriteToBuffer` version and call correct implementation.
 fn write_to_buffer<'a>(
     program_id: &Pubkey,
     accounts: &'a [AccountInfo<'a>],
@@ -300,7 +299,7 @@ fn write_to_buffer<'a>(
     }
 }
 
-/// V1 implementation of the `validate` instruction.
+/// V1 implementation of the `write_to_buffer` instruction.
 fn write_to_buffer_v1(
     program_id: &Pubkey,
     ctx: Context<WriteToBuffer>,
