@@ -288,14 +288,6 @@ pub async fn create_big_rule_set_on_chain_with_loc(
             )
         });
 
-    let data = context
-        .banks_client
-        .get_account(rule_set_addr)
-        .await
-        .unwrap()
-        .unwrap()
-        .data;
-
     rule_set_addr
 }
 
