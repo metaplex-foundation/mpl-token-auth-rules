@@ -1,7 +1,13 @@
 use crate::{
     error::RuleSetError,
+<<<<<<< HEAD
     payload::Payload,
     utils::{assert_derivation, compute_merkle_root},
+=======
+    payload::{Payload, PayloadKey},
+    pda::FREQ_PDA,
+    utils::{is_on_curve, assert_derivation},
+>>>>>>> 99b7472 (add zk token crate and syscalls)
 };
 use serde::{Deserialize, Serialize};
 use solana_program::{
@@ -161,6 +167,10 @@ pub enum Rule {
     Frequency {
         /// The authority of the frequency account.
         authority: Pubkey,
+    },
+    /// The true test if a pubkey can be signed from a client and therefore is a true wallet account
+    IsWallet {
+        account: Pubkey,
     },
     /// An operation that always succeeds.
     Pass,
@@ -468,6 +478,15 @@ impl Rule {
                 msg!("Validating Pass");
                 (true, self.to_error())
             }
+            Rule::IsWallet { account } => {
+                msg!("Validating IsWallet");
+                if is_on_curve(account) {
+                    return (true, self.to_error());
+                } else {
+                    return (false, RuleSetError::IsWalletRuleFailed.into());
+                }
+                (false, self.to_error())
+            }
         }
     }
 
@@ -487,6 +506,7 @@ impl Rule {
             Rule::ProgramOwnedTree { .. } => RuleSetError::ProgramOwnedTreeCheckFailed.into(),
             Rule::Amount { .. } => RuleSetError::AmountCheckFailed.into(),
             Rule::Frequency { .. } => RuleSetError::FrequencyCheckFailed.into(),
+            Rule::IsWallet { .. } => RuleSetError::IsWalletRuleFailed.into(),
         }
     }
 }

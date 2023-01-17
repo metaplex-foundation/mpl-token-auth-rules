@@ -11,7 +11,7 @@ keywords = ["nft", "metaplex", "solana", "blockchain"]
 
 [dependencies]
 solana-program = "1.14"
-shank = "0.0.11"
+shank = "0.0.12"
 borsh = "0.9.3"
 thiserror = "1.0"
 num-derive = "0.3.3"
@@ -19,6 +19,8 @@ num-traits = "0.2"
 serde = { version = "1.0.149", features = ["derive"]}
 rmp-serde = "1.1.1"
 mpl-token-metadata-context-derive = "0.0.1"
+solana-zk-token-sdk = "1.14"
+
 
 [features]
 no-entrypoint = []
