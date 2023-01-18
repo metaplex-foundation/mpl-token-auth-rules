@@ -1792,6 +1792,7 @@ dependencies = [
  "num-traits",
  "rmp-serde",
  "serde",
+ "serde-big-array",
  "serde_json",
  "shank",
  "solana-logger",
@@ -2832,6 +2833,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fed41fc1a24994d044e6db6935e69511a1153b52c15eb42493b26fa87feba0"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-big-array"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3323f09a748af288c3dc2474ea6803ee81f118321775bffa3ac8f7e65c5e90e7"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

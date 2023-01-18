@@ -6,14 +6,14 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
-    state::{Rule, RuleSet},
+    state::{Rule, RuleSet, RULE_SET_SERIALIZED_HEADER_LEN},
 };
 use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_program::system_program;
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{cmp_vec, program_test, Operation, PayloadKey};
+use utils::{cmp_slice, program_test, Operation, PayloadKey};
 
 #[tokio::test]
 async fn buffered_rule_set() {
@@ -55,8 +55,12 @@ async fn buffered_rule_set() {
         .unwrap()
         .data;
 
+    // Because there is only one RuleSet we can assume it exists right after the header.
     assert!(
-        cmp_vec(&data, &serialized_rule_set),
+        cmp_slice(
+            &data[RULE_SET_SERIALIZED_HEADER_LEN..],
+            &serialized_rule_set
+        ),
         "The buffer doesn't match the serialized rule set.",
     );
 

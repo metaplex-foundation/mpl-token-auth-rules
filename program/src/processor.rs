@@ -8,11 +8,13 @@ use crate::{
         WriteToBuffer, WriteToBufferArgs,
     },
     pda::{PREFIX, STATE_PDA},
-    state::{RuleSet, RULE_SET_VERSION},
+    state::{
+        RuleSet, RuleSetHeader, MAX_RULE_SETS, RULE_SET_LIB_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
+    },
     utils::{assert_derivation, create_or_allocate_account_raw, resize_or_reallocate_account_raw},
     MAX_NAME_LENGTH,
 };
-use borsh::BorshDeserialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
@@ -90,7 +92,7 @@ fn create_or_update_v1(
     }
 
     // Make sure we know how to work with this RuleSet.
-    if rule_set.version() != RULE_SET_VERSION {
+    if rule_set.lib_version() != RULE_SET_LIB_VERSION {
         return Err(RuleSetError::UnsupportedRuleSetVersion.into());
     }
 
@@ -117,9 +119,37 @@ fn create_or_update_v1(
         &[bump],
     ];
 
-    let data_len = match ctx.accounts.buffer_pda_info {
+    let new_rule_set_data_len = match ctx.accounts.buffer_pda_info {
         Some(account_info) => account_info.data_len(),
         None => serialized_rule_set.len(),
+    };
+
+    // Create a new `RuleSetHeader` or deserialize the existing one.
+    let header = if ctx.accounts.rule_set_pda_info.data_is_empty() {
+        let mut header = RuleSetHeader::default();
+
+        // Update header to initial values.
+        header.rule_set_locs[0] = RULE_SET_SERIALIZED_HEADER_LEN;
+        header.max_version = 0;
+        header
+    } else {
+        let data = ctx
+            .accounts
+            .rule_set_pda_info
+            .data
+            .try_borrow()
+            .map_err(|_| ProgramError::AccountBorrowFailed)?;
+
+        let mut header = RuleSetHeader::try_from_slice(&data[..RULE_SET_SERIALIZED_HEADER_LEN])?;
+
+        if header.max_version == MAX_RULE_SETS - 1 {
+            return Err(RuleSetError::MaxVersionsOfRuleSetReached.into());
+        }
+
+        // Increment max version and save new version location.
+        header.max_version += 1;
+        header.rule_set_locs[header.max_version] = ctx.accounts.rule_set_pda_info.data_len();
+        header
     };
 
     // Create or allocate, resize or reallocate RuleSet PDA.
@@ -129,7 +159,7 @@ fn create_or_update_v1(
             ctx.accounts.rule_set_pda_info,
             ctx.accounts.system_program_info,
             ctx.accounts.payer_info,
-            data_len,
+            RULE_SET_SERIALIZED_HEADER_LEN + new_rule_set_data_len,
             rule_set_seeds,
         )?;
     } else {
@@ -137,34 +167,60 @@ fn create_or_update_v1(
             ctx.accounts.rule_set_pda_info,
             ctx.accounts.payer_info,
             ctx.accounts.system_program_info,
-            data_len,
+            ctx.accounts.rule_set_pda_info.data_len() + new_rule_set_data_len,
         )?;
     }
 
+    // Serialize the header.
+    // RMP Serde
+    // let header = RuleSetHeader::new();
+    // let serialized_header =
+    //     rmp_serde::to_vec(&header).map_err(|_| RuleSetError::MessagePackSerializationError)?;
+
+    // RMP Serde alternate
+    // let header = RuleSetHeader::new();
+    //let mut serialized_header = Vec::new();
+    // header
+    //     .serialize(&mut Serializer::new(&mut serialized_header))
+    //     .map_err(|_| RuleSetError::MessagePackSerializationError)?;
+
+    // Borsh - gives const len.
+    let mut serialized_header = Vec::new();
+    header
+        .serialize(&mut serialized_header)
+        .map_err(|_| RuleSetError::BorshSerializationError)?;
+
+    // msg!(
+    //     "RULESET HEADER LEN {}",
+    //     serialized_header.len()
+    // );
+
+    // Get reference to the PDA data.
+    let data = &mut ctx
+        .accounts
+        .rule_set_pda_info
+        .try_borrow_mut_data()
+        .unwrap();
+
+    // Copy the header to PDA account.
+    sol_memcpy(data, &serialized_header, RULE_SET_SERIALIZED_HEADER_LEN);
+
+    // Copy user-pre-serialized RuleSet to PDA account, starting at
+    // the offset stored in the header for the max version.
+    let starting_loc = header.rule_set_locs[header.max_version];
     match ctx.accounts.buffer_pda_info {
         Some(account_info) => {
-            msg!("Using buffer account for RuleSet serialization.");
-            // Copy user-pre-serialized RuleSet to PDA account.
             sol_memcpy(
-                &mut ctx
-                    .accounts
-                    .rule_set_pda_info
-                    .try_borrow_mut_data()
-                    .unwrap(),
+                &mut data[starting_loc..],
                 &account_info.data.borrow(),
-                data_len,
+                new_rule_set_data_len,
             );
         }
         None => {
-            // Copy user-pre-serialized RuleSet to PDA account.
             sol_memcpy(
-                &mut ctx
-                    .accounts
-                    .rule_set_pda_info
-                    .try_borrow_mut_data()
-                    .unwrap(),
+                &mut data[starting_loc..],
                 &serialized_rule_set,
-                data_len,
+                new_rule_set_data_len,
             );
         }
     }
@@ -221,12 +277,21 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         .accounts
         .rule_set_pda_info
         .data
-        .try_borrow()
+        .try_borrow_mut()
         .map_err(|_| RuleSetError::DataTypeMismatch)?;
 
-    // Deserialize RuleSet.
-    let rule_set: RuleSet =
-        rmp_serde::from_slice(&data).map_err(|_| RuleSetError::MessagePackDeserializationError)?;
+    // Get header.
+    let header = RuleSetHeader::try_from_slice(&mut &data[..RULE_SET_SERIALIZED_HEADER_LEN])?;
+    //msg!("HEADER IS {:?}", header);
+
+    // Deserialize RuleSet starting at max version location stored in header.
+    let starting_loc = header.rule_set_locs[header.max_version];
+    //msg!("RULESET STARTING LOC IS {:?}", starting_loc);
+
+    let rule_set: RuleSet = rmp_serde::from_slice(&data[starting_loc..])
+        .map_err(|_| RuleSetError::MessagePackDeserializationError)?;
+
+    //msg!("RULESET IS: {:?}", rule_set);
 
     // Check RuleSet account info derivation.
     let _bump = assert_derivation(

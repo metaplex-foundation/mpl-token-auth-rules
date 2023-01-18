@@ -17,6 +17,7 @@ thiserror = "1.0"
 num-derive = "0.3.3"
 num-traits = "0.2"
 serde = { version = "1.0.149", features = ["derive"]}
+serde-big-array = "0.4.1"
 rmp-serde = "1.1.1"
 mpl-token-metadata-context-derive = "0.0.1"
 

@@ -17,6 +17,7 @@ use solana_program::{
 };
 use solana_program_test::{BanksClientError, ProgramTest, ProgramTestContext};
 use solana_sdk::{
+    compute_budget::ComputeBudgetInstruction,
     program_pack::Pack,
     signature::Signer,
     signer::keypair::Keypair,
@@ -209,6 +210,9 @@ pub async fn create_big_rule_set_on_chain_with_loc(
             .unwrap()
             .instruction();
 
+        // Increase compute budget for this one.
+        //let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(200_000);
+
         // Add it to a transaction.
         let create_tx = Transaction::new_signed_with_payer(
             &[create_ix],
@@ -248,7 +252,7 @@ pub async fn create_big_rule_set_on_chain_with_loc(
         .data;
 
     assert!(
-        cmp_vec(&data, &serialized_rule_set),
+        cmp_slice(&data, &serialized_rule_set),
         "The buffer doesn't match the serialized rule set.",
     );
 
@@ -316,6 +320,9 @@ pub async fn process_passing_validate_ix_with_loc(
     let mut signing_keypairs = vec![&context.payer];
     signing_keypairs.extend(additional_signers);
 
+    // Increase compute budget for this one.
+    //let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(200_000);
+
     // Add ix to a transaction.
     let validate_tx = Transaction::new_signed_with_payer(
         &[validate_ix],
@@ -361,6 +368,9 @@ pub async fn process_failing_validate_ix_with_loc(
 ) -> BanksClientError {
     let mut signing_keypairs = vec![&context.payer];
     signing_keypairs.extend(additional_signers);
+
+    // Increase compute budget for this one.
+    //let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(200_000);
 
     // Add ix to a transaction.
     let validate_tx = Transaction::new_signed_with_payer(
@@ -524,7 +534,7 @@ pub async fn create_associated_token_account(
     ))
 }
 
-pub fn cmp_vec<T: PartialEq>(a: &Vec<T>, b: &Vec<T>) -> bool {
+pub fn cmp_slice<T: PartialEq>(a: &[T], b: &[T]) -> bool {
     let matching = a.iter().zip(b.iter()).filter(|&(a, b)| a == b).count();
     matching == a.len() && matching == b.len()
 }

@@ -1,10 +1,47 @@
 use crate::{error::RuleSetError, state::Rule};
 use serde::{Deserialize, Serialize};
+use serde_big_array::BigArray;
 use solana_program::{entrypoint::ProgramResult, pubkey::Pubkey};
 use std::collections::HashMap;
 
+/// Version of the `RuleSetHeader` struct.
+pub const RULE_SET_LIB_HEADER_VERSION: u8 = 1;
+
 /// Version of the `RuleSet` struct.
-pub const RULE_SET_VERSION: u32 = 1;
+pub const RULE_SET_LIB_VERSION: u32 = 1;
+
+/// Max number of `RuleSet`s that can be saved.
+pub const MAX_RULE_SETS: usize = 64;
+
+/// Size of `RuleSetHeader` when Borsh serialized.
+pub const RULE_SET_SERIALIZED_HEADER_LEN: usize = 521;
+
+use borsh::{BorshDeserialize, BorshSerialize};
+
+#[repr(C)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+/// Header used to keep track of where RuleSets are stored in the PDA.
+pub struct RuleSetHeader {
+    /// Version of the RuleSetHeader.  This is not a user version, but the version
+    /// of this lib, to be used for future backwards compatibility.
+    lib_version: u8,
+    /// Array used to map a RuleSet version number to its offset in the PDA.
+    #[serde(with = "BigArray")]
+    pub rule_set_locs: [usize; MAX_RULE_SETS],
+    /// The current maximum version stored in the PDA.
+    pub max_version: usize,
+}
+
+impl Default for RuleSetHeader {
+    fn default() -> Self {
+        Self {
+            lib_version: 1,
+            rule_set_locs: [0; MAX_RULE_SETS],
+            max_version: 0,
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default)]
 #[serde(rename_all = "camelCase")]
@@ -12,7 +49,7 @@ pub const RULE_SET_VERSION: u32 = 1;
 pub struct RuleSet {
     /// Version of the RuleSet.  This is not a user version, but the version
     /// of this lib, to be used for future backwards compatibility.
-    version: u32,
+    lib_version: u32,
     /// Name of the RuleSet, used in PDA derivation.
     rule_set_name: String,
     /// Owner (creator) of the RuleSet.
@@ -25,7 +62,7 @@ impl RuleSet {
     /// Create a new empty `RuleSet`.
     pub fn new(rule_set_name: String, owner: Pubkey) -> Self {
         Self {
-            version: RULE_SET_VERSION,
+            lib_version: RULE_SET_LIB_VERSION,
             rule_set_name,
             owner,
             operations: HashMap::new(),
@@ -38,8 +75,8 @@ impl RuleSet {
     }
 
     /// Get the version of the `RuleSet`.
-    pub fn version(&self) -> u32 {
-        self.version
+    pub fn lib_version(&self) -> u32 {
+        self.lib_version
     }
 
     /// Get the owner of the `RuleSet`.

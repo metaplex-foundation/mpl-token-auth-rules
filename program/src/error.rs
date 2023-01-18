@@ -42,89 +42,101 @@ pub enum RuleSetError {
     #[error("Borsh serialization error")]
     BorshSerializationError,
 
-    /// 8 - Value in Payload or RuleSet is occupied
+    /// 8 - Borsh deserialization error
+    #[error("Borsh deserialization error")]
+    BorshDeserializationError,
+
+    /// 9 - Value in Payload or RuleSet is occupied
     #[error("Value in Payload or RuleSet is occupied")]
     ValueOccupied,
 
-    /// 9 - Account data is empty
+    /// 10 - Account data is empty
     #[error("Account data is empty")]
     DataIsEmpty,
 
-    /// 10 - MessagePack deserialization error
+    /// 11 - MessagePack serialization error
+    #[error("MessagePack serialization error")]
+    MessagePackSerializationError,
+
+    /// 12 - MessagePack deserialization error
     #[error("MessagePack deserialization error")]
     MessagePackDeserializationError,
 
-    /// 11 - Missing account
+    /// 13 - Missing account
     #[error("Missing account")]
     MissingAccount,
 
-    /// 12 - Missing Payload value
+    /// 14 - Missing Payload value
     #[error("Missing Payload value")]
     MissingPayloadValue,
 
-    /// 13 - RuleSet owner must be payer
+    /// 15 - RuleSet owner must be payer
     #[error("RuleSet owner must be payer")]
     RuleSetOwnerMismatch,
 
-    /// 14 - Name too long
+    /// 16 - Name too long
     #[error("Name too long")]
     NameTooLong,
 
-    /// 15 - Name too long
+    /// 17 - Name too long
     #[error("The operation retrieved is not in the selected RuleSet")]
     OperationNotFound,
 
-    /// 16 - Rule authority is not signer
+    /// 18 - Rule authority is not signer
     #[error("Rule authority is not signer")]
     RuleAuthorityIsNotSigner,
 
-    /// 17 - Unsupported RuleSet version
+    /// 19 - Unsupported RuleSet version
     #[error("Unsupported RuleSet version")]
     UnsupportedRuleSetVersion,
 
-    /// 18 - Unexpected RuleSet failure
+    /// 20 - Unexpected RuleSet failure
     #[error("Unexpected RuleSet failure")]
     UnexpectedRuleSetFailure,
 
-    /// 19 - Additional Signer check failed
+    /// 21 - Additional Signer check failed
     #[error("Additional Signer check failed")]
     AdditionalSignerCheckFailed,
 
-    /// 20 - Pubkey Match check failed
+    /// 22 - Pubkey Match check failed
     #[error("Pubkey Match check failed")]
     PubkeyMatchCheckFailed,
 
-    /// 21 - Pubkey List Match check failed
+    /// 23 - Pubkey List Match check failed
     #[error("Pubkey List Match check failed")]
     PubkeyListMatchCheckFailed,
 
-    /// 22 - Pubkey Tree Match check failed
+    /// 24 - Pubkey Tree Match check failed
     #[error("Pubkey Tree Match check failed")]
     PubkeyTreeMatchCheckFailed,
 
-    /// 23 - PDA Match check failed
+    /// 25 - PDA Match check failed
     #[error("PDA Match check failed")]
     PDAMatchCheckFailed,
 
-    /// 24 - Program Owned check failed
+    /// 26 - Program Owned check failed
     #[error("Program Owned check failed")]
     ProgramOwnedCheckFailed,
 
-    /// 25 - Program Owned List check failed
+    /// 27 - Program Owned List check failed
     #[error("Program Owned List check failed")]
     ProgramOwnedListCheckFailed,
 
-    /// 26 - Program Owned Tree check failed
+    /// 28 - Program Owned Tree check failed
     #[error("Program Owned Tree check failed")]
     ProgramOwnedTreeCheckFailed,
 
-    /// 27 - Amount checked failed
+    /// 29 - Amount checked failed
     #[error("Amount checked failed")]
     AmountCheckFailed,
 
-    /// 28 - Frequency check failed
+    /// 30 - Frequency check failed
     #[error("Frequency check failed")]
     FrequencyCheckFailed,
+
+    /// 30 - Max versions of RuleSets reached
+    #[error("Max versions of RuleSets reached")]
+    MaxVersionsOfRuleSetReached,
 }
 
 impl PrintProgramError for RuleSetError {
