@@ -74,7 +74,7 @@ async fn test_payer_not_signer_fails() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -164,7 +164,7 @@ async fn test_composed_rule() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: payload.clone(),
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -190,7 +190,7 @@ async fn test_composed_rule() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -216,7 +216,7 @@ async fn test_composed_rule() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();

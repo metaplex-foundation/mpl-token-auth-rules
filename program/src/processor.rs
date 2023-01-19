@@ -233,7 +233,7 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         operation,
         payload,
         update_rule_state,
-        rule_set_version,
+        rule_set_revision,
     } = args;
 
     // If state is being updated for any `Rule`s, the payer must be present and must be a signer so
@@ -258,21 +258,35 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         return Err(RuleSetError::DataIsEmpty.into());
     }
 
-    let data_len = ctx.accounts.rule_set_pda_info.data_len();
-
     // Get existing revision map and its serialized length.
-    let (revision_map, _) = get_existing_revision_map(ctx.accounts.rule_set_pda_info)?;
+    let (revision_map, rev_map_location) =
+        get_existing_revision_map(ctx.accounts.rule_set_pda_info)?;
 
     // Use the user-provided revision number to look up the `RuleSet` revision location in the PDA.
-    let starting_loc = match rule_set_version {
-        Some(version) => revision_map
-            .rule_set_revisions
-            .get(version)
-            .ok_or(RuleSetError::RuleSetRevNotAvailable)?,
-        None => revision_map
-            .rule_set_revisions
-            .last()
-            .ok_or(RuleSetError::RuleSetRevNotAvailable)?,
+    let (start, end) = match rule_set_revision {
+        Some(revision) => {
+            let start = revision_map
+                .rule_set_revisions
+                .get(revision)
+                .ok_or(RuleSetError::RuleSetRevNotAvailable)?;
+
+            let end_index = revision
+                .checked_add(1)
+                .ok_or(RuleSetError::NumericalOverflow)?;
+
+            let end = revision_map
+                .rule_set_revisions
+                .get(end_index)
+                .unwrap_or(&rev_map_location);
+            (*start, *end)
+        }
+        None => {
+            let start = revision_map
+                .rule_set_revisions
+                .last()
+                .ok_or(RuleSetError::RuleSetRevNotAvailable)?;
+            (*start, rev_map_location)
+        }
     };
 
     // Mutably borrow the existing `RuleSet` PDA data.
@@ -284,16 +298,16 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         .map_err(|_| ProgramError::AccountBorrowFailed)?;
 
     // Check `RuleSet` lib version.
-    let rule_set = match data.get(*starting_loc) {
+    let rule_set = match data.get(start) {
         Some(&RULE_SET_LIB_VERSION) => {
             // Increment starting location by size of lib version.
-            let starting_loc = starting_loc
+            let start = start
                 .checked_add(1)
                 .ok_or(RuleSetError::NumericalOverflow)?;
 
             // Deserialize `RuleSet`.
-            if data_len > starting_loc {
-                rmp_serde::from_slice::<RuleSetV1>(&data[starting_loc..])
+            if end < ctx.accounts.rule_set_pda_info.data_len() {
+                rmp_serde::from_slice::<RuleSetV1>(&data[start..end])
                     .map_err(|_| RuleSetError::MessagePackDeserializationError)?
             } else {
                 return Err(RuleSetError::DataTypeMismatch.into());

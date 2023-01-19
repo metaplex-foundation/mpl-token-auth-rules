@@ -143,7 +143,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -195,7 +195,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -252,7 +252,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -291,7 +291,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -329,7 +329,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -394,7 +394,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -455,7 +455,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -578,7 +578,7 @@ async fn multiple_operations() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -612,7 +612,7 @@ async fn multiple_operations() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -676,7 +676,7 @@ async fn multiple_operations() {
             operation: Operation::Delegate.to_string(),
             payload: payload.clone(),
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -696,7 +696,7 @@ async fn multiple_operations() {
             operation: Operation::SaleTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();

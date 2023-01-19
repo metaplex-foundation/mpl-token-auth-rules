@@ -69,7 +69,7 @@ async fn test_all() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: payload.clone(),
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -99,7 +99,7 @@ async fn test_all() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();

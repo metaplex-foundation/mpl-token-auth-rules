@@ -60,7 +60,7 @@ async fn test_pubkey_match() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -89,7 +89,7 @@ async fn test_pubkey_match() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();

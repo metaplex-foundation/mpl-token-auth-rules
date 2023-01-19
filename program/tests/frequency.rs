@@ -54,7 +54,7 @@ async fn test_frequency() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -83,7 +83,7 @@ async fn test_frequency() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -110,7 +110,7 @@ async fn test_frequency() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
-            rule_set_version: None,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();

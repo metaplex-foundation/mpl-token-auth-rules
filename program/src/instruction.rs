@@ -30,8 +30,8 @@ pub enum ValidateArgs {
         payload: Payload,
         /// Update any relevant state stored in Rule, such as the Frequency `last_update` time value.
         update_rule_state: bool,
-        /// Optional version of the `RuleSet` to use.  If `None`, the latest version is used.
-        rule_set_version: Option<usize>,
+        /// Optional revision of the `RuleSet` to use.  If `None`, the latest revision is used.
+        rule_set_revision: Option<usize>,
     },
 }
 
