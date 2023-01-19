@@ -18,111 +18,131 @@ pub enum RuleSetError {
     #[error("Data type mismatch")]
     DataTypeMismatch,
 
-    /// 2 - Incorrect account owner
+    /// 2 - Data slice unexpected index error
+    #[error("Data slice unexpected index error")]
+    DataSliceUnexpectedIndexError,
+
+    /// 3 - Incorrect account owner
     #[error("Incorrect account owner")]
     IncorrectOwner,
 
-    /// 3 - PayloadVec Index error.
+    /// 4 - PayloadVec Index error.
     #[error("Could not index into PayloadVec")]
     PayloadVecIndexError,
 
-    /// 4 - Derived key invalid
+    /// 5 - Derived key invalid
     #[error("Derived key invalid")]
     DerivedKeyInvalid,
 
-    /// 5 - Payer is not a signer
+    /// 6 - Payer is not a signer
     #[error("Payer is not a signer")]
     PayerIsNotSigner,
 
-    /// 6 - Feature is not implemented yet
+    /// 7 - Feature is not implemented yet
     #[error("Not implemented")]
     NotImplemented,
 
-    /// 7 - Borsh serialization error
+    /// 8 - Borsh serialization error
     #[error("Borsh serialization error")]
     BorshSerializationError,
 
-    /// 8 - Value in Payload or RuleSet is occupied
+    /// 9 - Borsh deserialization error
+    #[error("Borsh deserialization error")]
+    BorshDeserializationError,
+
+    /// 10 - Value in Payload or RuleSet is occupied
     #[error("Value in Payload or RuleSet is occupied")]
     ValueOccupied,
 
-    /// 9 - Account data is empty
+    /// 11 - Account data is empty
     #[error("Account data is empty")]
     DataIsEmpty,
 
-    /// 10 - MessagePack deserialization error
+    /// 12 - MessagePack serialization error
+    #[error("MessagePack serialization error")]
+    MessagePackSerializationError,
+
+    /// 13 - MessagePack deserialization error
     #[error("MessagePack deserialization error")]
     MessagePackDeserializationError,
 
-    /// 11 - Missing account
+    /// 14 - Missing account
     #[error("Missing account")]
     MissingAccount,
 
-    /// 12 - Missing Payload value
+    /// 15 - Missing Payload value
     #[error("Missing Payload value")]
     MissingPayloadValue,
 
-    /// 13 - RuleSet owner must be payer
+    /// 16 - RuleSet owner must be payer
     #[error("RuleSet owner must be payer")]
     RuleSetOwnerMismatch,
 
-    /// 14 - Name too long
+    /// 17 - Name too long
     #[error("Name too long")]
     NameTooLong,
 
-    /// 15 - Name too long
+    /// 18 - Name too long
     #[error("The operation retrieved is not in the selected RuleSet")]
     OperationNotFound,
 
-    /// 16 - Rule authority is not signer
+    /// 19 - Rule authority is not signer
     #[error("Rule authority is not signer")]
     RuleAuthorityIsNotSigner,
 
-    /// 17 - Unsupported RuleSet version
+    /// 20 - Unsupported RuleSet header version
+    #[error("Unsupported RuleSet header version")]
+    UnsupportedRuleSetHeaderVersion,
+
+    /// 21 - Unsupported RuleSet version
     #[error("Unsupported RuleSet version")]
     UnsupportedRuleSetVersion,
 
-    /// 18 - Unexpected RuleSet failure
+    /// 22 - Unexpected RuleSet failure
     #[error("Unexpected RuleSet failure")]
     UnexpectedRuleSetFailure,
 
-    /// 19 - Additional Signer check failed
+    /// 23 - RuleSet revision not available
+    #[error("RuleSet revision not available")]
+    RuleSetRevNotAvailable,
+
+    /// 24 - Additional Signer check failed
     #[error("Additional Signer check failed")]
     AdditionalSignerCheckFailed,
 
-    /// 20 - Pubkey Match check failed
+    /// 25 - Pubkey Match check failed
     #[error("Pubkey Match check failed")]
     PubkeyMatchCheckFailed,
 
-    /// 21 - Pubkey List Match check failed
+    /// 26 - Pubkey List Match check failed
     #[error("Pubkey List Match check failed")]
     PubkeyListMatchCheckFailed,
 
-    /// 22 - Pubkey Tree Match check failed
+    /// 27 - Pubkey Tree Match check failed
     #[error("Pubkey Tree Match check failed")]
     PubkeyTreeMatchCheckFailed,
 
-    /// 23 - PDA Match check failed
+    /// 28 - PDA Match check failed
     #[error("PDA Match check failed")]
     PDAMatchCheckFailed,
 
-    /// 24 - Program Owned check failed
+    /// 29 - Program Owned check failed
     #[error("Program Owned check failed")]
     ProgramOwnedCheckFailed,
 
-    /// 25 - Program Owned List check failed
+    /// 30 - Program Owned List check failed
     #[error("Program Owned List check failed")]
     ProgramOwnedListCheckFailed,
 
-    /// 26 - Program Owned Tree check failed
+    /// 31 - Program Owned Tree check failed
     #[error("Program Owned Tree check failed")]
     ProgramOwnedTreeCheckFailed,
 
-    /// 27 - Amount checked failed
+    /// 32 - Amount checked failed
     #[error("Amount checked failed")]
     AmountCheckFailed,
 
-    /// 28 - Frequency check failed
+    /// 33 - Frequency check failed
     #[error("Frequency check failed")]
     FrequencyCheckFailed,
 }

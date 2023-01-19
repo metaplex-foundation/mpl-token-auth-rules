@@ -9,7 +9,7 @@ use mpl_token_auth_rules::{
         CreateOrUpdateArgs, InstructionBuilder, ValidateArgs,
     },
     payload::{Payload, PayloadType},
-    state::{CompareOp, Rule, RuleSet},
+    state::{CompareOp, Rule, RuleSetV1},
 };
 use solana_program::instruction::AccountMeta;
 use solana_program_test::{tokio, BanksClientError};
@@ -74,6 +74,7 @@ async fn test_payer_not_signer_fails() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
+            rule_set_version: None,
         })
         .unwrap()
         .instruction();
@@ -131,7 +132,7 @@ async fn test_composed_rule() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(Operation::OwnerTransfer.to_string(), overall_rule)
         .unwrap();
@@ -163,12 +164,13 @@ async fn test_composed_rule() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: payload.clone(),
             update_rule_state: false,
+            rule_set_version: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
     assert_rule_set_error!(err, RuleSetError::MissingAccount);
@@ -188,12 +190,13 @@ async fn test_composed_rule() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_version: None,
         })
         .unwrap()
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![&second_signer]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![&second_signer], None).await;
 
     // --------------------------------
     // Validate fail wrong amount
@@ -213,12 +216,14 @@ async fn test_composed_rule() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_version: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![&second_signer]).await;
+    let err =
+        process_failing_validate_ix!(&mut context, validate_ix, vec![&second_signer], None).await;
 
     // Check that error is what we expect.
     assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
@@ -235,7 +240,7 @@ async fn test_update_ruleset() {
     let pass_rule = Rule::Pass;
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(Operation::OwnerTransfer.to_string(), pass_rule)
         .unwrap();
@@ -263,7 +268,7 @@ async fn test_update_ruleset() {
     };
 
     // Create a new RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(Operation::OwnerTransfer.to_string(), overall_rule)
         .unwrap();

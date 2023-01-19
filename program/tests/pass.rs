@@ -5,7 +5,7 @@ pub mod utils;
 use mpl_token_auth_rules::{
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::Payload,
-    state::{Rule, RuleSet},
+    state::{Rule, RuleSetV1},
 };
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
@@ -22,7 +22,7 @@ async fn test_pass() {
     let pass_rule = Rule::Pass;
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(Operation::OwnerTransfer.to_string(), pass_rule)
         .unwrap();
@@ -48,10 +48,11 @@ async fn test_pass() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
+            rule_set_version: None,
         })
         .unwrap()
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 }

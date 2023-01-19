@@ -6,14 +6,14 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
-    state::{Rule, RuleSet},
+    state::{Rule, RuleSetV1, RULE_SET_SERIALIZED_HEADER_LEN},
 };
 use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_program::system_program;
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{cmp_vec, program_test, Operation, PayloadKey};
+use utils::{cmp_slice, program_test, Operation, PayloadKey};
 
 #[tokio::test]
 async fn buffered_rule_set() {
@@ -31,7 +31,7 @@ async fn buffered_rule_set() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(Operation::OwnerTransfer.to_string(), rule)
         .unwrap();
@@ -55,8 +55,13 @@ async fn buffered_rule_set() {
         .unwrap()
         .data;
 
+    // Because there is only one RuleSet we can assume it exists right after the header.
+    // TODO: Write utility function to provide the RuleSet location of a given revision.
     assert!(
-        cmp_vec(&data, &serialized_rule_set),
+        cmp_slice(
+            &data[RULE_SET_SERIALIZED_HEADER_LEN..],
+            &serialized_rule_set
+        ),
         "The buffer doesn't match the serialized rule set.",
     );
 
@@ -81,12 +86,13 @@ async fn buffered_rule_set() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_version: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
     assert_rule_set_error!(err, RuleSetError::PubkeyListMatchCheckFailed);
@@ -112,10 +118,11 @@ async fn buffered_rule_set() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_version: None,
         })
         .unwrap()
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 }
