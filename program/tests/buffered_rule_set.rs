@@ -57,11 +57,10 @@ async fn buffered_rule_set() {
 
     // Because there is only one RuleSet we can assume it exists right after the header.
     // TODO: Write utility function to provide the RuleSet location of a given revision.
+    let start = RULE_SET_SERIALIZED_HEADER_LEN + 1;
+    let end = RULE_SET_SERIALIZED_HEADER_LEN + 1 + serialized_rule_set.len();
     assert!(
-        cmp_slice(
-            &data[RULE_SET_SERIALIZED_HEADER_LEN..],
-            &serialized_rule_set
-        ),
+        cmp_slice(&data[start..end], &serialized_rule_set),
         "The buffer doesn't match the serialized rule set.",
     );
 

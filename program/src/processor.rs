@@ -125,8 +125,6 @@ fn create_or_update_v1(
         None => serialized_rule_set.len(),
     };
 
-    let existing_pda_data_len = ctx.accounts.rule_set_pda_info.data_len();
-
     let (revision_map, serialized_rev_map, new_pda_data_len) =
         if ctx.accounts.rule_set_pda_info.data_is_empty() {
             let mut revision_map = RuleSetRevisionMapV1::default();
@@ -155,7 +153,7 @@ fn create_or_update_v1(
             (revision_map, serialized_rev_map, new_pda_data_len)
         } else {
             // Get existing revision map and its serialized length.
-            let (mut revision_map, existing_serialized_rev_map_len) =
+            let (mut revision_map, existing_rev_map_loc) =
                 get_existing_revision_map(ctx.accounts.rule_set_pda_info)?;
 
             // Update the revision map: Increment max revision and save the new `RuleSet` revision's
@@ -164,7 +162,9 @@ fn create_or_update_v1(
                 .max_revision
                 .checked_add(1)
                 .ok_or(RuleSetError::NumericalOverflow)?;
-            revision_map.rule_set_revisions.push(existing_pda_data_len);
+
+            // The next `RuleSet` revision will start where the existing revision map was.
+            revision_map.rule_set_revisions.push(existing_rev_map_loc);
 
             // Borsh re-serialize the revision map.
             let mut serialized_rev_map = Vec::new();
@@ -172,13 +172,13 @@ fn create_or_update_v1(
                 .serialize(&mut serialized_rev_map)
                 .map_err(|_| RuleSetError::BorshSerializationError)?;
 
-            // Determine size needed for PDA: existing data length -
-            // length of the old serialized revision map + length of the new serialized revision map +
-            // 1 byte for version number + length of user-pre-serialized `RuleSet`.
-            let new_pda_data_len = existing_pda_data_len
-                .checked_sub(existing_serialized_rev_map_len)
+            // Determine size needed for PDA:
+            // existing revision map location (includes header and all previous data) +
+            // 2 bytes for version numbers + length of the serialized revision map +
+            // length of user-pre-serialized `RuleSet`.
+            let new_pda_data_len = existing_rev_map_loc
+                .checked_add(2)
                 .and_then(|len| len.checked_add(serialized_rev_map.len()))
-                .and_then(|len| len.checked_add(1))
                 .and_then(|len| len.checked_add(new_rule_set_data_len))
                 .ok_or(RuleSetError::NumericalOverflow)?;
 
@@ -587,14 +587,14 @@ fn get_existing_revision_map(
             // Deserialize revision map.
             if start < data.len() {
                 let revision_map = RuleSetRevisionMapV1::try_from_slice(&data[start..])?;
-                // Safe subtraction because we just checked for `<`.
-                let serialized_rev_map_len = data.len() - start;
-                Ok((revision_map, serialized_rev_map_len))
+                Ok((revision_map, header.rev_map_version_location))
             } else {
                 Err(RuleSetError::DataTypeMismatch.into())
             }
         }
-        Some(_) => return Err(RuleSetError::UnsupportedRuleSetVersion.into()),
+        Some(_) => {
+            return Err(RuleSetError::UnsupportedRuleSetRevMapVersion.into());
+        }
         None => return Err(RuleSetError::DataTypeMismatch.into()),
     }
 }

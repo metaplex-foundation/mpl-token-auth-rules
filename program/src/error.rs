@@ -91,8 +91,8 @@ pub enum RuleSetError {
     RuleAuthorityIsNotSigner,
 
     /// 20 - Unsupported RuleSet header version
-    #[error("Unsupported RuleSet header version")]
-    UnsupportedRuleSetHeaderVersion,
+    #[error("Unsupported RuleSet revision map version")]
+    UnsupportedRuleSetRevMapVersion,
 
     /// 21 - Unsupported RuleSet version
     #[error("Unsupported RuleSet version")]
