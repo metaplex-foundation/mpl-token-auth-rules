@@ -354,11 +354,11 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         Some(version) => revision_map
             .rule_set_revisions
             .get(version)
-            .ok_or::<ProgramError>(RuleSetError::RuleSetRevNotAvailable.into())?,
+            .ok_or(RuleSetError::RuleSetRevNotAvailable)?,
         None => revision_map
             .rule_set_revisions
             .last()
-            .ok_or::<ProgramError>(RuleSetError::RuleSetRevNotAvailable.into())?,
+            .ok_or(RuleSetError::RuleSetRevNotAvailable)?,
     };
 
     // Mutably borrow the existing `RuleSet` PDA data.
@@ -592,9 +592,7 @@ fn get_existing_revision_map(
                 Err(RuleSetError::DataTypeMismatch.into())
             }
         }
-        Some(_) => {
-            return Err(RuleSetError::UnsupportedRuleSetRevMapVersion.into());
-        }
-        None => return Err(RuleSetError::DataTypeMismatch.into()),
+        Some(_) => Err(RuleSetError::UnsupportedRuleSetRevMapVersion.into()),
+        None => Err(RuleSetError::DataTypeMismatch.into()),
     }
 }

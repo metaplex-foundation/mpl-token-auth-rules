@@ -58,7 +58,9 @@ impl RuleSetHeader {
 /// Size of `RuleSetHeader` when Borsh serialized.
 pub const RULE_SET_SERIALIZED_HEADER_LEN: usize = 8;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(
+    BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default,
+)]
 #[serde(rename_all = "camelCase")]
 /// Revision map used to keep track of where individual `RuleSet` revisions are stored in the PDA.
 pub struct RuleSetRevisionMapV1 {
@@ -67,15 +69,6 @@ pub struct RuleSetRevisionMapV1 {
     /// The current maximum revision stored in the PDA (essentially the greatest
     /// element of `rule_set_revisions`).
     pub max_revision: usize,
-}
-
-impl Default for RuleSetRevisionMapV1 {
-    fn default() -> Self {
-        Self {
-            rule_set_revisions: vec![],
-            max_revision: 0,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default)]
