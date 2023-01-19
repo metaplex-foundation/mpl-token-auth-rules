@@ -1,3 +1,4 @@
+/// See state module for description of PDA memory layout.
 use crate::{error::RuleSetError, state::Rule};
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
@@ -13,7 +14,7 @@ pub const RULE_SET_LIB_VERSION: u8 = 1;
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 /// Header used to keep track of where RuleSets are stored in the PDA.  This header is meant
 /// to be stored at the beginning of the PDA and never be versioned so that it always
-/// has the same serialized size.
+/// has the same serialized size.  See top-level module for description of PDA memory layout.
 pub struct RuleSetHeader {
     /// The location of revision map version stored in the PDA.  This is one byte before the
     /// revision map itself.
@@ -34,6 +35,7 @@ pub const RULE_SET_SERIALIZED_HEADER_LEN: usize = 8;
 
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Default)]
 /// Revision map used to keep track of where individual `RuleSet` revisions are stored in the PDA.
+/// See top-level module for description of PDA memory layout.
 pub struct RuleSetRevisionMapV1 {
     /// `Vec` used to map a `RuleSet` revision number to its location in the PDA.
     pub rule_set_revisions: Vec<usize>,
@@ -45,6 +47,7 @@ pub struct RuleSetRevisionMapV1 {
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 /// The struct containing all Rule Set data, most importantly the map of operations to `Rules`.
+///  See top-level module for description of PDA memory layout.
 pub struct RuleSetV1 {
     /// Version of the RuleSet.  This is not a user version, but the version
     /// of this lib, to make sure that a `RuleSet` passed into our handlers

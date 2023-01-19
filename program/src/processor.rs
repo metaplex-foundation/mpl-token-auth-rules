@@ -1,4 +1,4 @@
-//! The processors for the Rule Set program instructions.
+//! The processors for the Rule Set program instructions.   See state module for description of PDA memory layout.
 use std::collections::HashMap;
 
 use crate::{
