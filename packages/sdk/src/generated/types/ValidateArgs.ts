@@ -17,7 +17,12 @@ import { Payload, payloadBeet } from './Payload';
  * @private
  */
 export type ValidateArgsRecord = {
-  V1: { operation: string; payload: Payload; updateRuleState: boolean };
+  V1: {
+    operation: string;
+    payload: Payload;
+    updateRuleState: boolean;
+    ruleSetVersion: beet.COption<beet.bignum>;
+  };
 };
 
 /**
@@ -48,6 +53,7 @@ export const validateArgsBeet = beet.dataEnum<ValidateArgsRecord>([
         ['operation', beet.utf8String],
         ['payload', payloadBeet],
         ['updateRuleState', beet.bool],
+        ['ruleSetVersion', beet.coption(beet.u64)],
       ],
       'ValidateArgsRecord["V1"]',
     ),
