@@ -140,7 +140,7 @@ fn create_or_update_v1(
             get_existing_revision_map(ctx.accounts.rule_set_pda_info)?;
 
         // Update the revision map: Increment max revision and save the new `RuleSet` revision's
-        // location which is the end of the current PDA data length.
+        // location.
         revision_map.max_revision = revision_map
             .max_revision
             .checked_add(1)
