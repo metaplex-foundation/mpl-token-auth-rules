@@ -580,7 +580,7 @@ fn write_data_to_pda(
     if end <= data.len() {
         sol_memcpy(
             &mut data[start..end],
-            &serialized_rev_map,
+            serialized_rev_map,
             serialized_rev_map.len(),
         );
     } else {
