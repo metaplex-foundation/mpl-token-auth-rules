@@ -120,12 +120,8 @@ fn create_or_update_v1(
         &[bump],
     ];
 
-    let new_rule_set_data_len = match ctx.accounts.buffer_pda_info {
-        Some(account_info) => account_info.data_len(),
-        None => serialized_rule_set.len(),
-    };
-
-    let (revision_map, initial_offset) = if ctx.accounts.rule_set_pda_info.data_is_empty() {
+    // Get new or existing revision map.
+    let revision_map = if ctx.accounts.rule_set_pda_info.data_is_empty() {
         let mut revision_map = RuleSetRevisionMapV1::default();
 
         // Initially set the first revision location to a the value right after the header.
@@ -133,7 +129,7 @@ fn create_or_update_v1(
             .rule_set_revisions
             .push(RULE_SET_SERIALIZED_HEADER_LEN);
         revision_map.max_revision = 0;
-        (revision_map, RULE_SET_SERIALIZED_HEADER_LEN)
+        revision_map
     } else {
         // Get existing revision map and its serialized length.
         let (mut revision_map, existing_rev_map_loc) =
@@ -148,7 +144,7 @@ fn create_or_update_v1(
 
         // The next `RuleSet` revision will start where the existing revision map was.
         revision_map.rule_set_revisions.push(existing_rev_map_loc);
-        (revision_map, existing_rev_map_loc)
+        revision_map
     };
 
     // Borsh serialize (or re-serialize) the revision map.
@@ -157,11 +153,18 @@ fn create_or_update_v1(
         .serialize(&mut serialized_rev_map)
         .map_err(|_| RuleSetError::BorshSerializationError)?;
 
-    // Determine size needed for PDA:
-    // (RULE_SET_SERIALIZED_HEADER_LEN || existing revision map location) +
+    // Get new user-pre-serialized `RuleSet` data length based on whether it's in a buffer account
+    // or provided as an argument.
+    let new_rule_set_data_len = match ctx.accounts.buffer_pda_info {
+        Some(account_info) => account_info.data_len(),
+        None => serialized_rule_set.len(),
+    };
+
+    // Determine size needed for PDA: next revision location (which is:
+    // (RULE_SET_SERIALIZED_HEADER_LEN || existing revision map location)) +
     // 2 bytes for version numbers + length of the serialized revision map +
     // length of user-pre-serialized `RuleSet`.
-    let new_pda_data_len = initial_offset
+    let new_pda_data_len = revision_map.rule_set_revisions[revision_map.max_revision]
         .checked_add(2)
         .and_then(|len| len.checked_add(serialized_rev_map.len()))
         .and_then(|len| len.checked_add(new_rule_set_data_len))
@@ -186,97 +189,26 @@ fn create_or_update_v1(
         )?;
     }
 
-    // Mutably borrow the `RuleSet` PDA data.
-    let data = &mut ctx
-        .accounts
-        .rule_set_pda_info
-        .try_borrow_mut_data()
-        .map_err(|_| ProgramError::AccountBorrowFailed)?;
-
-    // Copy `RuleSet` lib version to PDA account starting at the location stored in the revision
-    // map for the max revision.
-    let start = revision_map.rule_set_revisions[revision_map.max_revision];
-    let end = start
-        .checked_add(1)
-        .ok_or(RuleSetError::NumericalOverflow)?;
-    if end <= new_pda_data_len {
-        sol_memcpy(&mut data[start..end], &[RULE_SET_LIB_VERSION], 1);
-    } else {
-        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
-    }
-
-    // Copy user-pre-serialized `RuleSet` to PDA account.
-    let start = end;
-    let end = start
-        .checked_add(new_rule_set_data_len)
-        .ok_or(RuleSetError::NumericalOverflow)?;
-    if end <= new_pda_data_len {
-        match ctx.accounts.buffer_pda_info {
-            Some(account_info) => {
-                sol_memcpy(
-                    &mut data[start..end],
-                    &account_info.data.borrow(),
-                    new_rule_set_data_len,
-                );
-            }
-            None => {
-                sol_memcpy(
-                    &mut data[start..end],
-                    &serialized_rule_set,
-                    new_rule_set_data_len,
-                );
-            }
+    // Write all the data to the PDA.  The user-pre-serialized `RuleSet` is either in a buffer
+    // account or provided as an argument.
+    match ctx.accounts.buffer_pda_info {
+        Some(account_info) => {
+            write_data_to_pda(
+                ctx.accounts.rule_set_pda_info,
+                revision_map.rule_set_revisions[revision_map.max_revision],
+                &serialized_rev_map,
+                &account_info.data.borrow(),
+            )?;
         }
-    } else {
-        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
-    }
-
-    // Copy the revision map version to PDA account.
-    let start = end;
-    let end = start
-        .checked_add(1)
-        .ok_or(RuleSetError::NumericalOverflow)?;
-    if end <= new_pda_data_len {
-        sol_memcpy(&mut data[start..end], &[RULE_SET_REV_MAP_VERSION], 1);
-    } else {
-        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
-    }
-
-    // Create a new header holding the location of the revision map version.
-    let header = RuleSetHeader::new(start);
-
-    // Borsh serialize the header.
-    let mut serialized_header = Vec::new();
-    header
-        .serialize(&mut serialized_header)
-        .map_err(|_| RuleSetError::BorshSerializationError)?;
-
-    // Copy the serialized revision map to PDA account.
-    let start = end;
-    let end = start
-        .checked_add(serialized_rev_map.len())
-        .ok_or(RuleSetError::NumericalOverflow)?;
-    if end <= new_pda_data_len {
-        sol_memcpy(
-            &mut data[start..end],
-            &serialized_rev_map,
-            serialized_rev_map.len(),
-        );
-    } else {
-        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
-    }
-
-    let start = 0;
-    let end = RULE_SET_SERIALIZED_HEADER_LEN;
-    if end <= new_pda_data_len {
-        sol_memcpy(
-            &mut data[start..end],
-            &serialized_header,
-            serialized_header.len(),
-        );
-    } else {
-        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
-    }
+        None => {
+            write_data_to_pda(
+                ctx.accounts.rule_set_pda_info,
+                revision_map.rule_set_revisions[revision_map.max_revision],
+                &serialized_rev_map,
+                &serialized_rule_set,
+            )?;
+        }
+    };
 
     Ok(())
 }
@@ -541,6 +473,7 @@ pub fn cmp_pubkeys(a: &Pubkey, b: &Pubkey) -> bool {
     sol_memcmp(a.as_ref(), b.as_ref(), PUBKEY_BYTES) == 0
 }
 
+// Get a revision map by looking at the header, finding its location, and deserializing it.
 fn get_existing_revision_map(
     rule_set_pda_info: &AccountInfo,
 ) -> Result<(RuleSetRevisionMapV1, usize), ProgramError> {
@@ -577,4 +510,94 @@ fn get_existing_revision_map(
         Some(_) => Err(RuleSetError::UnsupportedRuleSetRevMapVersion.into()),
         None => Err(RuleSetError::DataTypeMismatch.into()),
     }
+}
+
+// Write the `RuleSet` lib version, a serialized `RuleSet`, the revision map version,
+// a revision map, and a header to the `RuleSet` PDA.
+fn write_data_to_pda(
+    rule_set_pda_info: &AccountInfo,
+    starting_location: usize,
+    serialized_rev_map: &[u8],
+    serialized_rule_set: &[u8],
+) -> ProgramResult {
+    // Mutably borrow the `RuleSet` PDA data.
+    let data = &mut rule_set_pda_info
+        .try_borrow_mut_data()
+        .map_err(|_| ProgramError::AccountBorrowFailed)?;
+
+    // Copy `RuleSet` lib version to PDA account starting at the location stored in the revision
+    // map for the max revision.
+    let start = starting_location;
+    let end = start
+        .checked_add(1)
+        .ok_or(RuleSetError::NumericalOverflow)?;
+    if end <= data.len() {
+        sol_memcpy(&mut data[start..end], &[RULE_SET_LIB_VERSION], 1);
+    } else {
+        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
+    }
+
+    // Copy serialized `RuleSet` to PDA account.
+    let start = end;
+    let end = start
+        .checked_add(serialized_rule_set.len())
+        .ok_or(RuleSetError::NumericalOverflow)?;
+    if end <= data.len() {
+        sol_memcpy(
+            &mut data[start..end],
+            serialized_rule_set,
+            serialized_rule_set.len(),
+        );
+    } else {
+        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
+    }
+
+    // Copy the revision map version to PDA account.
+    let start = end;
+    let end = start
+        .checked_add(1)
+        .ok_or(RuleSetError::NumericalOverflow)?;
+    if end <= data.len() {
+        sol_memcpy(&mut data[start..end], &[RULE_SET_REV_MAP_VERSION], 1);
+    } else {
+        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
+    }
+
+    // Create a new header holding the location of the revision map version.
+    let header = RuleSetHeader::new(start);
+
+    // Borsh serialize the header.
+    let mut serialized_header = Vec::new();
+    header
+        .serialize(&mut serialized_header)
+        .map_err(|_| RuleSetError::BorshSerializationError)?;
+
+    // Copy the serialized revision map to PDA account.
+    let start = end;
+    let end = start
+        .checked_add(serialized_rev_map.len())
+        .ok_or(RuleSetError::NumericalOverflow)?;
+    if end <= data.len() {
+        sol_memcpy(
+            &mut data[start..end],
+            &serialized_rev_map,
+            serialized_rev_map.len(),
+        );
+    } else {
+        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
+    }
+
+    let start = 0;
+    let end = RULE_SET_SERIALIZED_HEADER_LEN;
+    if end <= data.len() {
+        sol_memcpy(
+            &mut data[start..end],
+            &serialized_header,
+            serialized_header.len(),
+        );
+    } else {
+        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
+    }
+
+    Ok(())
 }

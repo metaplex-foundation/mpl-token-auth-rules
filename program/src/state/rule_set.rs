@@ -2,7 +2,7 @@
 //!
 //! This file contains the the main types used to store `RuleSet` data in the `RuleSet` PDA on
 //! chain.  It includes the main `RuleSet` types which keeps the the map of operations to `Rules`,
-//! as well as header and revision map types used to manage data within the `RuleSet` PDA.  
+//! as well as header and revision map types used to manage data within the `RuleSet` PDA.
 //!
 //! Each time a `RuleSet` is updated, a new revision is added to the PDA, and previous revisions
 //! never deleted.  The revision map is needed so that during `RuleSet` validation the desired
@@ -35,8 +35,7 @@ pub const RULE_SET_REV_MAP_VERSION: u8 = 1;
 /// Version of the `RuleSetV1` struct.
 pub const RULE_SET_LIB_VERSION: u8 = 1;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
+#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 /// Header used to keep track of where RuleSets are stored in the PDA.  This header is meant
 /// to be stored at the beginning of the PDA and never be versioned so that it always
 /// has the same serialized size.
@@ -58,10 +57,7 @@ impl RuleSetHeader {
 /// Size of `RuleSetHeader` when Borsh serialized.
 pub const RULE_SET_SERIALIZED_HEADER_LEN: usize = 8;
 
-#[derive(
-    BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default,
-)]
-#[serde(rename_all = "camelCase")]
+#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Default)]
 /// Revision map used to keep track of where individual `RuleSet` revisions are stored in the PDA.
 pub struct RuleSetRevisionMapV1 {
     /// `Vec` used to map a `RuleSet` revision number to its location in the PDA.
