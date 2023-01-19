@@ -8,7 +8,7 @@
 import * as beet from '@metaplex-foundation/beet';
 export type RuleSetRevisionMapV1 = {
   ruleSetRevisions: beet.bignum[];
-  maxRevision: beet.bignum;
+  latestRevision: beet.bignum;
 };
 
 /**
@@ -18,7 +18,7 @@ export type RuleSetRevisionMapV1 = {
 export const ruleSetRevisionMapV1Beet = new beet.FixableBeetArgsStruct<RuleSetRevisionMapV1>(
   [
     ['ruleSetRevisions', beet.array(beet.u64)],
-    ['maxRevision', beet.u64],
+    ['latestRevision', beet.u64],
   ],
   'RuleSetRevisionMapV1',
 );

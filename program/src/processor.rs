@@ -124,21 +124,21 @@ fn create_or_update_v1(
     let revision_map = if ctx.accounts.rule_set_pda_info.data_is_empty() {
         let mut revision_map = RuleSetRevisionMapV1::default();
 
-        // Initially set the first revision location to a the value right after the header.
+        // Initially set the latest revision location to a the value right after the header.
         revision_map
             .rule_set_revisions
             .push(RULE_SET_SERIALIZED_HEADER_LEN);
-        revision_map.max_revision = 0;
+        revision_map.latest_revision = 0;
         revision_map
     } else {
         // Get existing revision map and its serialized length.
         let (mut revision_map, existing_rev_map_loc) =
             get_existing_revision_map(ctx.accounts.rule_set_pda_info)?;
 
-        // Update the revision map: Increment max revision and save the new `RuleSet` revision's
+        // Update the revision map: Increment latest revision and save the new `RuleSet` revision's
         // location.
-        revision_map.max_revision = revision_map
-            .max_revision
+        revision_map.latest_revision = revision_map
+            .latest_revision
             .checked_add(1)
             .ok_or(RuleSetError::NumericalOverflow)?;
 
@@ -161,10 +161,10 @@ fn create_or_update_v1(
     };
 
     // Determine size needed for PDA: next revision location (which is:
-    // (RULE_SET_SERIALIZED_HEADER_LEN || existing revision map location)) +
+    // (RULE_SET_SERIALIZED_HEADER_LEN || existing latest revision map location)) +
     // 2 bytes for version numbers + length of the serialized revision map +
     // length of user-pre-serialized `RuleSet`.
-    let new_pda_data_len = revision_map.rule_set_revisions[revision_map.max_revision]
+    let new_pda_data_len = revision_map.rule_set_revisions[revision_map.latest_revision]
         .checked_add(2)
         .and_then(|len| len.checked_add(serialized_rev_map.len()))
         .and_then(|len| len.checked_add(new_rule_set_data_len))
@@ -195,7 +195,7 @@ fn create_or_update_v1(
         Some(account_info) => {
             write_data_to_pda(
                 ctx.accounts.rule_set_pda_info,
-                revision_map.rule_set_revisions[revision_map.max_revision],
+                revision_map.rule_set_revisions[revision_map.latest_revision],
                 &serialized_rev_map,
                 &account_info.data.borrow(),
             )?;
@@ -203,7 +203,7 @@ fn create_or_update_v1(
         None => {
             write_data_to_pda(
                 ctx.accounts.rule_set_pda_info,
-                revision_map.rule_set_revisions[revision_map.max_revision],
+                revision_map.rule_set_revisions[revision_map.latest_revision],
                 &serialized_rev_map,
                 &serialized_rule_set,
             )?;
@@ -526,7 +526,7 @@ fn write_data_to_pda(
         .map_err(|_| ProgramError::AccountBorrowFailed)?;
 
     // Copy `RuleSet` lib version to PDA account starting at the location stored in the revision
-    // map for the max revision.
+    // map for the latest revision.
     let start = starting_location;
     let end = start
         .checked_add(1)
