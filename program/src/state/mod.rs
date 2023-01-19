@@ -1,4 +1,28 @@
 //! All structures and related functions representing a Rule Set on-chain.
+//!
+//! Key types include the main `RuleSetV1` type which keeps the the map of operations to `Rules`,
+//! as well as `RuleSetHeader` and `RuleSetRevisionMapV1` types used to manage data within the
+//! `RuleSet` PDA.
+//!
+//! Each time a `RuleSet` is updated, a new revision is added to the PDA, and previous revisions
+//! never deleted.  The revision map is needed so that during `RuleSet` validation the desired
+//! revision can be selected by the user.
+//!
+//! Because the `RuleSet`s and the revision map are variable size, a fixed size header is stored
+//! at the beginning of the `RuleSet` PDA that allows new `RuleSets` and updated revision maps
+//! to be added to the PDA without moving the previous revision `RuleSets` and without losing the
+//! revision map's location.
+//!
+//! Also note there is a 1-byte version preceding each `RuleSet` revision and the revision map.
+//! This is not included in the data struct itself to give flexibility to update `RuleSet`s and
+//! the revision map data structs and even change serialization format.
+//!
+//! RuleSet PDA data layout
+//! ```text
+//! | Header  | RuleSet version | RuleSet Revision 0 | RuleSet version | RuleSet Revision 1 | RuleSet version | RuleSet Revision 2 | ... | RuleSetRevisionMap version | RuleSetRevisionMap |
+//! |---------|-----------------|--------------------|-----------------|--------------------|-----------------|--------------------|-----|----------------------------|--------------------|
+//! | 8 bytes | 1 byte          | variable bytes     | 1 byte          | variable bytes     | 1 byte          | variable bytes     | ... | 1 byte                     | variable bytes     |
+//! ```
 use borsh::{BorshDeserialize, BorshSerialize};
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;

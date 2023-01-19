@@ -1,28 +1,3 @@
-//! `RuleSet` types
-//!
-//! This file contains the the main types used to store `RuleSet` data in the `RuleSet` PDA on
-//! chain.  It includes the main `RuleSet` types which keeps the the map of operations to `Rules`,
-//! as well as header and revision map types used to manage data within the `RuleSet` PDA.
-//!
-//! Each time a `RuleSet` is updated, a new revision is added to the PDA, and previous revisions
-//! never deleted.  The revision map is needed so that during `RuleSet` validation the desired
-//! revision can be selected by the user.
-//!
-//! Because the `RuleSet`s and the revision map are variable size, a fixed size header is stored
-//! at the beginning of the `RuleSet` PDA that allows new `RuleSets` and updated revision maps
-//! to be added to the PDA without moving the previous revision `RuleSets` and without losing the
-//! revision map's location.
-//!
-//! Also note there is a 1-byte version preceding each `RuleSet` revision and the revision map.
-//! This is not included in the data struct itself to give flexibility to update `RuleSet`s and
-//! the revision map data structs and even change serialization format.
-//!
-//! RuleSet PDA data layout
-//! | Header  | RuleSet | RuleSet revision 0 | RuleSet | RuleSet revision 1 | ... | Rev map | RuleSetRevisionMap |
-//! |         | version |                    | version |                    |     | version |                    |
-//! |---------|---------|--------------------|---------|--------------------|-----|---------|--------------------|
-//! | 8 bytes | 1 byte  | variable bytes     | 1 byte  | variable bytes     | ... | 1 byte  | variable bytes     |
-
 use crate::{error::RuleSetError, state::Rule};
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
