@@ -125,65 +125,47 @@ fn create_or_update_v1(
         None => serialized_rule_set.len(),
     };
 
-    let (revision_map, serialized_rev_map, new_pda_data_len) =
-        if ctx.accounts.rule_set_pda_info.data_is_empty() {
-            let mut revision_map = RuleSetRevisionMapV1::default();
+    let (revision_map, initial_offset) = if ctx.accounts.rule_set_pda_info.data_is_empty() {
+        let mut revision_map = RuleSetRevisionMapV1::default();
 
-            // Initially set the first revision location to a the value right after the header.
-            revision_map
-                .rule_set_revisions
-                .push(RULE_SET_SERIALIZED_HEADER_LEN);
-            revision_map.max_revision = 0;
+        // Initially set the first revision location to a the value right after the header.
+        revision_map
+            .rule_set_revisions
+            .push(RULE_SET_SERIALIZED_HEADER_LEN);
+        revision_map.max_revision = 0;
+        (revision_map, RULE_SET_SERIALIZED_HEADER_LEN)
+    } else {
+        // Get existing revision map and its serialized length.
+        let (mut revision_map, existing_rev_map_loc) =
+            get_existing_revision_map(ctx.accounts.rule_set_pda_info)?;
 
-            // Borsh serialize the revision map.
-            let mut serialized_rev_map = Vec::new();
-            revision_map
-                .serialize(&mut serialized_rev_map)
-                .map_err(|_| RuleSetError::BorshSerializationError)?;
+        // Update the revision map: Increment max revision and save the new `RuleSet` revision's
+        // location which is the end of the current PDA data length.
+        revision_map.max_revision = revision_map
+            .max_revision
+            .checked_add(1)
+            .ok_or(RuleSetError::NumericalOverflow)?;
 
-            // Determine size needed for PDA: length of serialized header +
-            // 2 bytes for version numbers + length of the serialized revision map +
-            // length of user-pre-serialized `RuleSet`.
-            let new_pda_data_len = RULE_SET_SERIALIZED_HEADER_LEN
-                .checked_add(2)
-                .and_then(|len| len.checked_add(serialized_rev_map.len()))
-                .and_then(|len| len.checked_add(new_rule_set_data_len))
-                .ok_or(RuleSetError::NumericalOverflow)?;
+        // The next `RuleSet` revision will start where the existing revision map was.
+        revision_map.rule_set_revisions.push(existing_rev_map_loc);
+        (revision_map, existing_rev_map_loc)
+    };
 
-            (revision_map, serialized_rev_map, new_pda_data_len)
-        } else {
-            // Get existing revision map and its serialized length.
-            let (mut revision_map, existing_rev_map_loc) =
-                get_existing_revision_map(ctx.accounts.rule_set_pda_info)?;
+    // Borsh serialize (or re-serialize) the revision map.
+    let mut serialized_rev_map = Vec::new();
+    revision_map
+        .serialize(&mut serialized_rev_map)
+        .map_err(|_| RuleSetError::BorshSerializationError)?;
 
-            // Update the revision map: Increment max revision and save the new `RuleSet` revision's
-            // location which is the end of the current PDA data length.
-            revision_map.max_revision = revision_map
-                .max_revision
-                .checked_add(1)
-                .ok_or(RuleSetError::NumericalOverflow)?;
-
-            // The next `RuleSet` revision will start where the existing revision map was.
-            revision_map.rule_set_revisions.push(existing_rev_map_loc);
-
-            // Borsh re-serialize the revision map.
-            let mut serialized_rev_map = Vec::new();
-            revision_map
-                .serialize(&mut serialized_rev_map)
-                .map_err(|_| RuleSetError::BorshSerializationError)?;
-
-            // Determine size needed for PDA:
-            // existing revision map location (includes header and all previous data) +
-            // 2 bytes for version numbers + length of the serialized revision map +
-            // length of user-pre-serialized `RuleSet`.
-            let new_pda_data_len = existing_rev_map_loc
-                .checked_add(2)
-                .and_then(|len| len.checked_add(serialized_rev_map.len()))
-                .and_then(|len| len.checked_add(new_rule_set_data_len))
-                .ok_or(RuleSetError::NumericalOverflow)?;
-
-            (revision_map, serialized_rev_map, new_pda_data_len)
-        };
+    // Determine size needed for PDA:
+    // (RULE_SET_SERIALIZED_HEADER_LEN || existing revision map location) +
+    // 2 bytes for version numbers + length of the serialized revision map +
+    // length of user-pre-serialized `RuleSet`.
+    let new_pda_data_len = initial_offset
+        .checked_add(2)
+        .and_then(|len| len.checked_add(serialized_rev_map.len()))
+        .and_then(|len| len.checked_add(new_rule_set_data_len))
+        .ok_or(RuleSetError::NumericalOverflow)?;
 
     // Create or allocate, resize or reallocate the `RuleSet` PDA.
     if ctx.accounts.rule_set_pda_info.data_is_empty() {
