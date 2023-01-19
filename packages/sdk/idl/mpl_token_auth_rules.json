@@ -468,8 +468,8 @@
     },
     {
       "code": 20,
-      "name": "UnsupportedRuleSetHeaderVersion",
-      "msg": "Unsupported RuleSet header version"
+      "name": "UnsupportedRuleSetRevMapVersion",
+      "msg": "Unsupported RuleSet revision map version"
     },
     {
       "code": 21,

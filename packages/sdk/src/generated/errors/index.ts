@@ -427,26 +427,26 @@ createErrorFromNameLookup.set(
 );
 
 /**
- * UnsupportedRuleSetHeaderVersion: 'Unsupported RuleSet header version'
+ * UnsupportedRuleSetRevMapVersion: 'Unsupported RuleSet revision map version'
  *
  * @category Errors
  * @category generated
  */
-export class UnsupportedRuleSetHeaderVersionError extends Error {
+export class UnsupportedRuleSetRevMapVersionError extends Error {
   readonly code: number = 0x14;
-  readonly name: string = 'UnsupportedRuleSetHeaderVersion';
+  readonly name: string = 'UnsupportedRuleSetRevMapVersion';
   constructor() {
-    super('Unsupported RuleSet header version');
+    super('Unsupported RuleSet revision map version');
     if (typeof Error.captureStackTrace === 'function') {
-      Error.captureStackTrace(this, UnsupportedRuleSetHeaderVersionError);
+      Error.captureStackTrace(this, UnsupportedRuleSetRevMapVersionError);
     }
   }
 }
 
-createErrorFromCodeLookup.set(0x14, () => new UnsupportedRuleSetHeaderVersionError());
+createErrorFromCodeLookup.set(0x14, () => new UnsupportedRuleSetRevMapVersionError());
 createErrorFromNameLookup.set(
-  'UnsupportedRuleSetHeaderVersion',
-  () => new UnsupportedRuleSetHeaderVersionError(),
+  'UnsupportedRuleSetRevMapVersion',
+  () => new UnsupportedRuleSetRevMapVersionError(),
 );
 
 /**
