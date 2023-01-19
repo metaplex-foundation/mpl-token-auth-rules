@@ -283,7 +283,7 @@
                 "type": "bool"
               },
               {
-                "name": "rule_set_version",
+                "name": "rule_set_revision",
                 "type": {
                   "option": "u64"
                 }
