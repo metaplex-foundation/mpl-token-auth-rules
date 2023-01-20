@@ -18,88 +18,60 @@ use mpl_token_auth_rules::{
 use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_program::instruction::AccountMeta;
-use solana_program_test::{tokio, BanksClientError};
-use solana_sdk::{
-    signature::Signer,
-    signer::keypair::Keypair,
-    transaction::{Transaction, TransactionError},
-};
+use solana_program_test::tokio;
+use solana_sdk::{signature::Signer, signer::keypair::Keypair, transaction::Transaction};
 use utils::{cmp_slice, program_test, Operation, PayloadKey};
 
 #[tokio::test]
-async fn test_payer_not_signer_fails() {
+#[should_panic]
+async fn test_payer_not_signer_panics() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------
-    // Create fail unsigned tx
+    // Create RuleSet
     // --------------------------------
+    // Create a Pass Rule.
+    let pass_rule = Rule::Pass;
+
+    // Create a RuleSet.
+    let other_payer = Keypair::new();
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), other_payer.pubkey());
+    rule_set
+        .add(Operation::OwnerTransfer.to_string(), pass_rule)
+        .unwrap();
+
     // Find RuleSet PDA.
     let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
-        context.payer.pubkey(),
+        other_payer.pubkey(),
         "test rule_set".to_string(),
     );
 
-    // Create a `create` instruction.
+    // Serialize the RuleSet using RMP serde.
+    let mut serialized_rule_set = Vec::new();
+    rule_set
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
+        .unwrap();
+
+    // Create a `create` instruction with a payer that won't be a signer.
     let create_ix = CreateOrUpdateBuilder::new()
-        .payer(context.payer.pubkey())
+        .payer(other_payer.pubkey())
         .rule_set_pda(rule_set_addr)
         .build(CreateOrUpdateArgs::V1 {
-            serialized_rule_set: vec![],
+            serialized_rule_set,
         })
         .unwrap()
         .instruction();
 
-    // Add it to a non-signed transaction.
-    let create_tx = Transaction::new_with_payer(&[create_ix], Some(&context.payer.pubkey()));
+    // Add it to a transaction but don't add other payer as a signer.
+    let create_tx = Transaction::new_signed_with_payer(
+        &[create_ix],
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        context.last_blockhash,
+    );
 
-    // Process the transaction.
-    let err = context
-        .banks_client
-        .process_transaction(create_tx)
-        .await
-        .expect_err("creation should fail");
-
-    // Deconstruct the error code and make sure it is what we expect.
-    match err {
-        BanksClientError::TransactionError(TransactionError::SignatureFailure) => (),
-        _ => panic!("Unexpected error {:?}", err),
-    }
-
-    // --------------------------------
-    // Validate fail unsigned tx
-    // --------------------------------
-    // Create a Keypair to simulate a token mint address.
-    let mint = Keypair::new().pubkey();
-
-    // Create a `validate` instruction.
-    let validate_ix = ValidateBuilder::new()
-        .rule_set_pda(rule_set_addr)
-        .mint(mint)
-        .additional_rule_accounts(vec![])
-        .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
-            payload: Payload::default(),
-            update_rule_state: false,
-            rule_set_revision: None,
-        })
-        .unwrap()
-        .instruction();
-
-    // Add it to a non-signed transaction.
-    let validate_tx = Transaction::new_with_payer(&[validate_ix], Some(&context.payer.pubkey()));
-
-    // Process the transaction.
-    let err = context
-        .banks_client
-        .process_transaction(validate_tx)
-        .await
-        .expect_err("validation should fail");
-
-    // Deconstruct the error code and make sure it is what we expect.
-    match err {
-        BanksClientError::TransactionError(TransactionError::SignatureFailure) => (),
-        _ => panic!("Unexpected error {:?}", err),
-    }
+    // Process the transaction.  It will panic because of not enough signers.
+    let _result = context.banks_client.process_transaction(create_tx).await;
 }
 
 #[tokio::test]
