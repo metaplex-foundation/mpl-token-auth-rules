@@ -338,7 +338,6 @@ async fn test_update_ruleset() {
     revision_map
         .rule_set_revisions
         .push(second_rule_set_version_loc);
-    revision_map.latest_revision = 1;
 
     // Borsh serialize the revision map.
     let mut serialized_rev_map = Vec::new();

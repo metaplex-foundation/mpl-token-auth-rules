@@ -39,9 +39,6 @@ pub const RULE_SET_SERIALIZED_HEADER_LEN: usize = 8;
 pub struct RuleSetRevisionMapV1 {
     /// `Vec` used to map a `RuleSet` revision number to its location in the PDA.
     pub rule_set_revisions: Vec<usize>,
-    /// The current latest revision stored in the PDA (essentially the greatest element of
-    /// `rule_set_revisions`).
-    pub latest_revision: usize,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default)]

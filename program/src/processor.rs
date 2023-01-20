@@ -131,19 +131,11 @@ fn create_or_update_v1(
         revision_map
             .rule_set_revisions
             .push(RULE_SET_SERIALIZED_HEADER_LEN);
-        revision_map.latest_revision = 0;
         revision_map
     } else {
         // Get existing revision map and its serialized length.
         let (mut revision_map, existing_rev_map_loc) =
             get_existing_revision_map(ctx.accounts.rule_set_pda_info)?;
-
-        // Update the revision map: Increment latest revision and save the new `RuleSet` revision's
-        // location.
-        revision_map.latest_revision = revision_map
-            .latest_revision
-            .checked_add(1)
-            .ok_or(RuleSetError::NumericalOverflow)?;
 
         // The next `RuleSet` revision will start where the existing revision map was.
         revision_map.rule_set_revisions.push(existing_rev_map_loc);
@@ -167,7 +159,10 @@ fn create_or_update_v1(
     // (RULE_SET_SERIALIZED_HEADER_LEN || existing latest revision map location)) +
     // 2 bytes for version numbers + length of the serialized revision map +
     // length of user-pre-serialized `RuleSet`.
-    let new_pda_data_len = revision_map.rule_set_revisions[revision_map.latest_revision]
+    let new_pda_data_len = revision_map
+        .rule_set_revisions
+        .last()
+        .ok_or(RuleSetError::RuleSetRevNotAvailable)?
         .checked_add(2)
         .and_then(|len| len.checked_add(serialized_rev_map.len()))
         .and_then(|len| len.checked_add(new_rule_set_data_len))
@@ -198,7 +193,10 @@ fn create_or_update_v1(
         Some(account_info) => {
             write_data_to_pda(
                 ctx.accounts.rule_set_pda_info,
-                revision_map.rule_set_revisions[revision_map.latest_revision],
+                *revision_map
+                    .rule_set_revisions
+                    .last()
+                    .ok_or(RuleSetError::RuleSetRevNotAvailable)?,
                 &serialized_rev_map,
                 &account_info.data.borrow(),
             )?;
@@ -206,7 +204,10 @@ fn create_or_update_v1(
         None => {
             write_data_to_pda(
                 ctx.accounts.rule_set_pda_info,
-                revision_map.rule_set_revisions[revision_map.latest_revision],
+                *revision_map
+                    .rule_set_revisions
+                    .last()
+                    .ok_or(RuleSetError::RuleSetRevNotAvailable)?,
                 &serialized_rev_map,
                 &serialized_rule_set,
             )?;

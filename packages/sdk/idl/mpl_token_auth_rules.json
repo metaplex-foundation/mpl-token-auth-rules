@@ -237,10 +237,6 @@
             "type": {
               "vec": "u64"
             }
-          },
-          {
-            "name": "latestRevision",
-            "type": "u64"
           }
         ]
       }
