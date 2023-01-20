@@ -179,7 +179,7 @@ async fn test_composed_rule() {
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::MissingAccount);
+    assert_custom_error!(err, RuleSetError::MissingAccount);
 
     // --------------------------------
     // Validate pass
@@ -232,7 +232,7 @@ async fn test_composed_rule() {
         process_failing_validate_ix!(&mut context, validate_ix, vec![&second_signer], None).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
+    assert_custom_error!(err, RuleSetError::AmountCheckFailed);
 }
 
 #[tokio::test]

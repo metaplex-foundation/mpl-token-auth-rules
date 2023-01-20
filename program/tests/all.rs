@@ -79,7 +79,7 @@ async fn test_all() {
         process_failing_validate_ix!(&mut context, validate_ix, vec![&second_signer], None).await;
 
     // Check that error is what we expect.  In this case we expect the first failure to roll up.
-    assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
+    assert_custom_error!(err, RuleSetError::AmountCheckFailed);
 
     // --------------------------------
     // Validate pass

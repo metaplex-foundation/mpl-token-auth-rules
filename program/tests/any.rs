@@ -73,7 +73,7 @@ async fn test_any() {
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.  In this case we expect the last failure to roll up.
-    assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
+    assert_custom_error!(err, RuleSetError::AmountCheckFailed);
 
     // --------------------------------
     // Validate pass
