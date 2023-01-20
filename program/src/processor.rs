@@ -162,7 +162,7 @@ fn create_or_update_v1(
     let new_pda_data_len = revision_map
         .rule_set_revisions
         .last()
-        .ok_or(RuleSetError::RuleSetRevNotAvailable)?
+        .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?
         .checked_add(2)
         .and_then(|len| len.checked_add(serialized_rev_map.len()))
         .and_then(|len| len.checked_add(new_rule_set_data_len))
@@ -196,7 +196,7 @@ fn create_or_update_v1(
                 *revision_map
                     .rule_set_revisions
                     .last()
-                    .ok_or(RuleSetError::RuleSetRevNotAvailable)?,
+                    .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?,
                 &serialized_rev_map,
                 &account_info.data.borrow(),
             )?;
@@ -207,7 +207,7 @@ fn create_or_update_v1(
                 *revision_map
                     .rule_set_revisions
                     .last()
-                    .ok_or(RuleSetError::RuleSetRevNotAvailable)?,
+                    .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?,
                 &serialized_rev_map,
                 &serialized_rule_set,
             )?;
@@ -272,7 +272,7 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
             let start = revision_map
                 .rule_set_revisions
                 .get(revision)
-                .ok_or(RuleSetError::RuleSetRevNotAvailable)?;
+                .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?;
 
             let end_index = revision
                 .checked_add(1)
@@ -288,7 +288,7 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
             let start = revision_map
                 .rule_set_revisions
                 .last()
-                .ok_or(RuleSetError::RuleSetRevNotAvailable)?;
+                .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?;
             (*start, rev_map_location)
         }
     };

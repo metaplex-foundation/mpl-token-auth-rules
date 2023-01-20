@@ -104,7 +104,7 @@ pub enum RuleSetError {
 
     /// 23 - RuleSet revision not available
     #[error("RuleSet revision not available")]
-    RuleSetRevNotAvailable,
+    RuleSetRevisionNotAvailable,
 
     /// 24 - Additional Signer check failed
     #[error("Additional Signer check failed")]
