@@ -184,7 +184,7 @@ pub fn get_latest_revision(rule_set_pda_info: &AccountInfo) -> Result<Option<usi
 
     match revision_map.rule_set_revisions.len() {
         // we should always have at least one revision
-        0 => Err(RuleSetError::RuleSetRevNotAvailable.into()),
+        0 => Err(RuleSetError::RuleSetRevisionNotAvailable.into()),
         // determine the index of the last revision
         length => Ok(Some(length - 1)),
     }
