@@ -39,6 +39,7 @@
           }
         }
       ],
+      "defaultOptionalAccounts": true,
       "discriminant": {
         "type": "u8",
         "value": 0
@@ -95,6 +96,7 @@
           }
         }
       ],
+      "defaultOptionalAccounts": true,
       "discriminant": {
         "type": "u8",
         "value": 1
