@@ -1,13 +1,8 @@
 use crate::{
     error::RuleSetError,
-<<<<<<< HEAD
     payload::Payload,
+    utils::is_on_curve,
     utils::{assert_derivation, compute_merkle_root},
-=======
-    payload::{Payload, PayloadKey},
-    pda::FREQ_PDA,
-    utils::{is_on_curve, assert_derivation},
->>>>>>> 99b7472 (add zk token crate and syscalls)
 };
 use serde::{Deserialize, Serialize};
 use solana_program::{
@@ -170,6 +165,7 @@ pub enum Rule {
     },
     /// The true test if a pubkey can be signed from a client and therefore is a true wallet account
     IsWallet {
+        /// Account
         account: Pubkey,
     },
     /// An operation that always succeeds.
@@ -485,7 +481,6 @@ impl Rule {
                 } else {
                     return (false, RuleSetError::IsWalletRuleFailed.into());
                 }
-                (false, self.to_error())
             }
         }
     }

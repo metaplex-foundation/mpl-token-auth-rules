@@ -129,9 +129,10 @@ pub fn compute_merkle_root(leaf: &Pubkey, merkle_proof: &ProofInfo) -> [u8; 32] 
     computed_hash
 }
 
+/// Return whether the pubkey is on the Edwards 25519 curve.
 pub fn is_on_curve(pubkey: &Pubkey) -> bool {
-    let point = pubkey.to_bytes();
-    let mut validate_result = 0u8;
+    let _point = pubkey.to_bytes();
+    let mut _validate_result = 0u8;
     // TODO: Uncomment this when the syscall is available.
     // let result = unsafe {
     //     solana_program::syscalls::sol_curve_validate_point(
