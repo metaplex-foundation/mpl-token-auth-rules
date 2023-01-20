@@ -153,7 +153,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
 
     // Check that error is what we expect.  It should fail the ProgramOwnedList Rule since the
     // owner is not in the Rule.
-    assert_rule_set_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
+    assert_custom_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
 
     // --------------------------------
     // Validate wallet to prog owned PDA
@@ -338,7 +338,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
+    assert_custom_error!(err, RuleSetError::AmountCheckFailed);
 
     // --------------------------------
     // Validate fail valid PDA, but not prog owned
@@ -404,7 +404,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
 
     // Check that error is what we expect.  It should fail the ProgramOwnedList Rule since the
     // owner is not in the Rule.
-    assert_rule_set_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
+    assert_custom_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
 
     // --------------------------------
     // Validate fail prog owned but not a PDA
@@ -465,7 +465,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
 
     // Check that error is what we expect.  It should fail the PDAMatch Rule after passing
     // the ProgramOwnedList Rule, since the owner was correct but it is not a valid PDA.
-    assert_rule_set_error!(err, RuleSetError::PDAMatchCheckFailed);
+    assert_custom_error!(err, RuleSetError::PDAMatchCheckFailed);
 }
 
 #[tokio::test]
@@ -622,7 +622,7 @@ async fn multiple_operations() {
 
     // Check that error is what we expect.  The destination is owned by the System Program
     // so in this case it doesn't match the ProgramOwnedList Rule.
-    assert_rule_set_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
+    assert_custom_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
 
     // --------------------------------
     // Validate Delegate operation

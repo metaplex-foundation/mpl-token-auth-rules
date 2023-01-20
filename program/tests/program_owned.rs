@@ -77,7 +77,7 @@ async fn program_owned() {
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::ProgramOwnedCheckFailed);
+    assert_custom_error!(err, RuleSetError::ProgramOwnedCheckFailed);
 
     // --------------------------------
     // Validate pass

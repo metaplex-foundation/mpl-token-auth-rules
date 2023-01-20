@@ -11,7 +11,8 @@ use mpl_token_auth_rules::{
 };
 use solana_program::program_error::ProgramError;
 use solana_program_test::tokio;
-use solana_sdk::{signature::Signer, signer::keypair::Keypair};
+use solana_program_test::BanksClientError;
+use solana_sdk::{signature::Signer, signer::keypair::Keypair, transaction::TransactionError};
 use utils::{program_test, Operation};
 
 #[tokio::test]
@@ -62,8 +63,18 @@ async fn test_frequency() {
     // Fail to validate Transfer operation.
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
-    // Check that error is what we expect.
-    assert_program_error!(err, ProgramError::NotEnoughAccountKeys);
+    // Deconstruct the error code and make sure it is what we expect.
+    match err {
+        BanksClientError::TransactionError(TransactionError::InstructionError(0, err)) => {
+            assert_eq!(
+                ProgramError::try_from(err).unwrap_or_else(|_| panic!(
+                    "Could not convert InstructionError to ProgramError",
+                )),
+                ProgramError::NotEnoughAccountKeys,
+            );
+        }
+        _ => panic!("Unexpected error: {}", err),
+    }
 
     // --------------------------------
     // Validate wrong authority
@@ -92,7 +103,7 @@ async fn test_frequency() {
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::RuleAuthorityIsNotSigner);
+    assert_custom_error!(err, RuleSetError::RuleAuthorityIsNotSigner);
 
     // --------------------------------
     // Validate not implemented
@@ -120,5 +131,5 @@ async fn test_frequency() {
         process_failing_validate_ix!(&mut context, validate_ix, vec![&rule_authority], None).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::NotImplemented);
+    assert_custom_error!(err, RuleSetError::NotImplemented);
 }

@@ -101,7 +101,7 @@ async fn parametric_amount_check(
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
+    assert_custom_error!(err, RuleSetError::AmountCheckFailed);
 
     // --------------------------------
     // Validate pass

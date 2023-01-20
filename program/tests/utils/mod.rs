@@ -1,5 +1,4 @@
 use mpl_token_auth_rules::{
-    error::RuleSetError,
     instruction::{
         builders::{CreateOrUpdateBuilder, WriteToBufferBuilder},
         CreateOrUpdateArgs, InstructionBuilder, WriteToBufferArgs,
@@ -7,22 +6,13 @@ use mpl_token_auth_rules::{
     state::RuleSetV1,
 };
 use num_derive::ToPrimitive;
-use num_traits::cast::FromPrimitive;
 use rmp_serde::Serializer;
 use serde::Serialize;
-use solana_program::{
-    instruction::{Instruction, InstructionError},
-    program_error::ProgramError,
-    pubkey::Pubkey,
-};
+use solana_program::{instruction::Instruction, pubkey::Pubkey};
 use solana_program_test::{BanksClientError, ProgramTest, ProgramTestContext};
 use solana_sdk::{
-    compute_budget::ComputeBudgetInstruction,
-    program_pack::Pack,
-    signature::Signer,
-    signer::keypair::Keypair,
-    system_instruction,
-    transaction::{Transaction, TransactionError},
+    compute_budget::ComputeBudgetInstruction, program_pack::Pack, signature::Signer,
+    signer::keypair::Keypair, system_instruction, transaction::Transaction,
 };
 
 #[repr(C)]
@@ -405,81 +395,43 @@ pub async fn process_failing_validate_ix_with_loc(
 }
 
 #[macro_export]
-macro_rules! assert_rule_set_error {
-    ($err:path, $rule_set_error:path) => {
-        $crate::utils::assert_rule_set_error_with_loc(
-            $err,
-            $rule_set_error,
+macro_rules! assert_custom_error {
+    ($error:expr, $matcher:pat) => {
+        let calling_location = format!(
+            "assert_custom_error called at {}:{}:{}",
             file!(),
             line!(),
-            column!(),
+            column!()
         );
+
+        match $error {
+            solana_program_test::BanksClientError::TransactionError(
+                solana_sdk::transaction::TransactionError::InstructionError(
+                    0,
+                    solana_program::instruction::InstructionError::Custom(x),
+                ),
+            ) => match num_traits::FromPrimitive::from_i32(x as i32) {
+                Some($matcher) => assert!(true),
+                Some(other) => {
+                    assert!(
+                        false,
+                        "Expected another custom instruction error than '{:#?}', {}",
+                        other, calling_location
+                    )
+                }
+                None => assert!(
+                    false,
+                    "Expected custom instruction error, {}",
+                    calling_location
+                ),
+            },
+            err => assert!(
+                false,
+                "Expected custom instruction error but got '{:#?}', {}",
+                err, calling_location
+            ),
+        };
     };
-}
-
-pub fn assert_rule_set_error_with_loc(
-    err: BanksClientError,
-    rule_set_error: RuleSetError,
-    file: &str,
-    line: u32,
-    column: u32,
-) {
-    let calling_location = format!(
-        "assert_rule_set_error called at {}:{}:{}",
-        file, line, column
-    );
-    // Deconstruct the error code and make sure it is what we expect.
-    match err {
-        BanksClientError::TransactionError(TransactionError::InstructionError(
-            _,
-            InstructionError::Custom(val),
-        )) => {
-            let deconstructed_err = RuleSetError::from_u32(val).unwrap();
-            assert_eq!(deconstructed_err, rule_set_error, "{}", calling_location);
-        }
-        _ => panic!("Unexpected error {:?}, {}", err, calling_location),
-    }
-}
-
-#[macro_export]
-macro_rules! assert_program_error {
-    ($err:path, $rule_set_error:path) => {
-        $crate::utils::assert_program_error_with_loc(
-            $err,
-            $rule_set_error,
-            file!(),
-            line!(),
-            column!(),
-        )
-    };
-}
-
-pub fn assert_program_error_with_loc(
-    err: BanksClientError,
-    program_error: ProgramError,
-    file: &str,
-    line: u32,
-    column: u32,
-) {
-    let calling_location = format!(
-        "assert_program_error called at {}:{}:{}",
-        file, line, column
-    );
-    // Deconstruct the error code and make sure it is what we expect.
-    match err {
-        BanksClientError::TransactionError(TransactionError::InstructionError(_, err)) => {
-            assert_eq!(
-                ProgramError::try_from(err).unwrap_or_else(|_| panic!(
-                    "Could not convert InstructionError to ProgramError at {}",
-                    calling_location,
-                )),
-                program_error,
-                "{}",
-                calling_location,
-            );
-        }
-        _ => panic!("Unexpected error {:?}, {}", err, calling_location),
-    }
 }
 
 pub async fn create_mint(
