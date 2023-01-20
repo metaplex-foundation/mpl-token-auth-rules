@@ -181,8 +181,5 @@ pub fn get_existing_revision_map(
 /// revision map.
 pub fn get_latest_revision(rule_set_pda_info: &AccountInfo) -> Result<Option<usize>, ProgramError> {
     let (revision_map, _) = get_existing_revision_map(rule_set_pda_info)?;
-    Ok(revision_map
-        .rule_set_revisions
-        .last()
-        .map(|revision| *revision))
+    Ok(revision_map.rule_set_revisions.last().copied())
 }
