@@ -1,4 +1,5 @@
 //! Utilities for the program
+use crate::{error::RuleSetError, payload::ProofInfo};
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
@@ -10,15 +11,8 @@ use solana_program::{
     system_instruction,
     sysvar::Sysvar,
 };
-<<<<<<< HEAD
-
-use crate::{error::RuleSetError, payload::ProofInfo};
-=======
-use solana_zk_token_sdk::curve25519::{
-    curve_syscall_traits::{CURVE25519_EDWARDS}
-};
-use crate::error::RuleSetError;
->>>>>>> 99b7472 (add zk token crate and syscalls)
+// TODO: Uncomment this when the syscall is available.
+//use solana_zk_token_sdk::curve25519::curve_syscall_traits::CURVE25519_EDWARDS;
 
 /// Create account almost from scratch, lifted from
 /// <https://github.com/solana-labs/solana-program-library/tree/master/associated-token-account/program/src/processor.rs#L51-L98>
@@ -135,17 +129,19 @@ pub fn compute_merkle_root(leaf: &Pubkey, merkle_proof: &ProofInfo) -> [u8; 32] 
     computed_hash
 }
 
-
 pub fn is_on_curve(pubkey: &Pubkey) -> bool {
     let point = pubkey.to_bytes();
     let mut validate_result = 0u8;
-        let result = unsafe {
-            solana_program::syscalls::sol_curve_validate_point(
-                CURVE25519_EDWARDS,
-                &point as *const u8,
-                &mut validate_result,
-            )
-        };
-        result == 0
-}
+    // TODO: Uncomment this when the syscall is available.
+    // let result = unsafe {
+    //     solana_program::syscalls::sol_curve_validate_point(
+    //         CURVE25519_EDWARDS,
+    //         &point as *const u8,
+    //         &mut validate_result,
+    //     )
+    // };
 
+    // For now return false instead of checking the result.
+    // result == 0
+    false
+}
