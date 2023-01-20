@@ -214,6 +214,36 @@
       }
     },
     {
+      "name": "RuleSetHeader",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "revMapVersionLocation",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RuleSetRevisionMapV1",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "ruleSetRevisions",
+            "type": {
+              "vec": "u64"
+            }
+          },
+          {
+            "name": "latestRevision",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "CreateOrUpdateArgs",
       "type": {
         "kind": "enum",
@@ -251,6 +281,12 @@
               {
                 "name": "update_rule_state",
                 "type": "bool"
+              },
+              {
+                "name": "rule_set_revision",
+                "type": {
+                  "option": "u64"
+                }
               }
             ]
           }
@@ -342,136 +378,161 @@
     },
     {
       "code": 2,
+      "name": "DataSliceUnexpectedIndexError",
+      "msg": "Data slice unexpected index error"
+    },
+    {
+      "code": 3,
       "name": "IncorrectOwner",
       "msg": "Incorrect account owner"
     },
     {
-      "code": 3,
+      "code": 4,
       "name": "PayloadVecIndexError",
       "msg": "Could not index into PayloadVec"
     },
     {
-      "code": 4,
+      "code": 5,
       "name": "DerivedKeyInvalid",
       "msg": "Derived key invalid"
     },
     {
-      "code": 5,
+      "code": 6,
       "name": "PayerIsNotSigner",
       "msg": "Payer is not a signer"
     },
     {
-      "code": 6,
+      "code": 7,
       "name": "NotImplemented",
       "msg": "Not implemented"
     },
     {
-      "code": 7,
+      "code": 8,
       "name": "BorshSerializationError",
       "msg": "Borsh serialization error"
     },
     {
-      "code": 8,
+      "code": 9,
+      "name": "BorshDeserializationError",
+      "msg": "Borsh deserialization error"
+    },
+    {
+      "code": 10,
       "name": "ValueOccupied",
       "msg": "Value in Payload or RuleSet is occupied"
     },
     {
-      "code": 9,
+      "code": 11,
       "name": "DataIsEmpty",
       "msg": "Account data is empty"
     },
     {
-      "code": 10,
+      "code": 12,
+      "name": "MessagePackSerializationError",
+      "msg": "MessagePack serialization error"
+    },
+    {
+      "code": 13,
       "name": "MessagePackDeserializationError",
       "msg": "MessagePack deserialization error"
     },
     {
-      "code": 11,
+      "code": 14,
       "name": "MissingAccount",
       "msg": "Missing account"
     },
     {
-      "code": 12,
+      "code": 15,
       "name": "MissingPayloadValue",
       "msg": "Missing Payload value"
     },
     {
-      "code": 13,
+      "code": 16,
       "name": "RuleSetOwnerMismatch",
       "msg": "RuleSet owner must be payer"
     },
     {
-      "code": 14,
+      "code": 17,
       "name": "NameTooLong",
       "msg": "Name too long"
     },
     {
-      "code": 15,
+      "code": 18,
       "name": "OperationNotFound",
       "msg": "The operation retrieved is not in the selected RuleSet"
     },
     {
-      "code": 16,
+      "code": 19,
       "name": "RuleAuthorityIsNotSigner",
       "msg": "Rule authority is not signer"
     },
     {
-      "code": 17,
+      "code": 20,
+      "name": "UnsupportedRuleSetRevMapVersion",
+      "msg": "Unsupported RuleSet revision map version"
+    },
+    {
+      "code": 21,
       "name": "UnsupportedRuleSetVersion",
       "msg": "Unsupported RuleSet version"
     },
     {
-      "code": 18,
+      "code": 22,
       "name": "UnexpectedRuleSetFailure",
       "msg": "Unexpected RuleSet failure"
     },
     {
-      "code": 19,
+      "code": 23,
+      "name": "RuleSetRevNotAvailable",
+      "msg": "RuleSet revision not available"
+    },
+    {
+      "code": 24,
       "name": "AdditionalSignerCheckFailed",
       "msg": "Additional Signer check failed"
     },
     {
-      "code": 20,
+      "code": 25,
       "name": "PubkeyMatchCheckFailed",
       "msg": "Pubkey Match check failed"
     },
     {
-      "code": 21,
+      "code": 26,
       "name": "PubkeyListMatchCheckFailed",
       "msg": "Pubkey List Match check failed"
     },
     {
-      "code": 22,
+      "code": 27,
       "name": "PubkeyTreeMatchCheckFailed",
       "msg": "Pubkey Tree Match check failed"
     },
     {
-      "code": 23,
+      "code": 28,
       "name": "PDAMatchCheckFailed",
       "msg": "PDA Match check failed"
     },
     {
-      "code": 24,
+      "code": 29,
       "name": "ProgramOwnedCheckFailed",
       "msg": "Program Owned check failed"
     },
     {
-      "code": 25,
+      "code": 30,
       "name": "ProgramOwnedListCheckFailed",
       "msg": "Program Owned List check failed"
     },
     {
-      "code": 26,
+      "code": 31,
       "name": "ProgramOwnedTreeCheckFailed",
       "msg": "Program Owned Tree check failed"
     },
     {
-      "code": 27,
+      "code": 32,
       "name": "AmountCheckFailed",
       "msg": "Amount checked failed"
     },
     {
-      "code": 28,
+      "code": 33,
       "name": "FrequencyCheckFailed",
       "msg": "Frequency check failed"
     }

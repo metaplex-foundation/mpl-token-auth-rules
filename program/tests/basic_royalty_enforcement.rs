@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType, ProofInfo, SeedsVec},
-    state::{CompareOp, Rule, RuleSet},
+    state::{CompareOp, Rule, RuleSetV1},
 };
 use solana_program::pubkey::Pubkey;
 use solana_program_test::tokio;
@@ -92,7 +92,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     };
 
     // Create RuleSet.
-    let mut rule_set = RuleSet::new(
+    let mut rule_set = RuleSetV1::new(
         "basic_royalty_enforcement".to_string(),
         context.payer.pubkey(),
     );
@@ -143,12 +143,13 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Validate OwnerTransfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.  It should fail the ProgramOwnedList Rule since the
     // owner is not in the Rule.
@@ -194,19 +195,20 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Validate OwnerTransfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // --------------------------------
     // Validate prog owned PDA to prog owned PDA
     // --------------------------------
     // Create a second RuleSet on chain for the sole purpose of having
     // another PDA that is owned by the mpl-token-auth-rules program.
-    let second_rule_set = RuleSet::new("second_rule_set".to_string(), context.payer.pubkey());
+    let second_rule_set = RuleSetV1::new("second_rule_set".to_string(), context.payer.pubkey());
 
     let second_rule_set_addr =
         create_rule_set_on_chain!(&mut context, second_rule_set, "second_rule_set".to_string())
@@ -250,12 +252,13 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Validate OwnerTransfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // --------------------------------
     // Validate prog owned PDA to wallet
@@ -288,12 +291,13 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Validate OwnerTransfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // --------------------------------
     // Validate fail wrong amount
@@ -325,12 +329,13 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate OwnerTransfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
     assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
@@ -389,12 +394,13 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate OwnerTransfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.  It should fail the ProgramOwnedList Rule since the
     // owner is not in the Rule.
@@ -449,12 +455,13 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.  It should fail the PDAMatch Rule after passing
     // the ProgramOwnedList Rule, since the owner was correct but it is not a valid PDA.
@@ -496,7 +503,7 @@ async fn multiple_operations() {
     };
 
     // Create RuleSet.
-    let mut rule_set = RuleSet::new(
+    let mut rule_set = RuleSetV1::new(
         "basic_royalty_enforcement".to_string(),
         context.payer.pubkey(),
     );
@@ -571,12 +578,13 @@ async fn multiple_operations() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Validate OwnerTransfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // --------------------------------
     // Validate fail sys prog owned to sys prog owned
@@ -604,12 +612,13 @@ async fn multiple_operations() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.  The destination is owned by the System Program
     // so in this case it doesn't match the ProgramOwnedList Rule.
@@ -667,12 +676,13 @@ async fn multiple_operations() {
             operation: Operation::Delegate.to_string(),
             payload: payload.clone(),
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Validate Delegate operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // --------------------------------
     // Validate SaleTransfer operation
@@ -686,10 +696,11 @@ async fn multiple_operations() {
             operation: Operation::SaleTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Validate SaleTransfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 }

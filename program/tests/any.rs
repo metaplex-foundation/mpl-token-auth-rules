@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
-    state::{CompareOp, Rule, RuleSet},
+    state::{CompareOp, Rule, RuleSetV1},
 };
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
@@ -35,7 +35,7 @@ async fn test_any() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(Operation::OwnerTransfer.to_string(), overall_rule)
         .unwrap();
@@ -64,12 +64,13 @@ async fn test_any() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.  In this case we expect the last failure to roll up.
     assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
@@ -89,10 +90,11 @@ async fn test_any() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Validate Transfer operation since at least one Rule condition was true.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 }

@@ -4,7 +4,7 @@ use mpl_token_auth_rules::{
         builders::{CreateOrUpdateBuilder, WriteToBufferBuilder},
         CreateOrUpdateArgs, InstructionBuilder, WriteToBufferArgs,
     },
-    state::RuleSet,
+    state::RuleSetV1,
 };
 use num_derive::ToPrimitive;
 use num_traits::cast::FromPrimitive;
@@ -17,6 +17,7 @@ use solana_program::{
 };
 use solana_program_test::{BanksClientError, ProgramTest, ProgramTestContext};
 use solana_sdk::{
+    compute_budget::ComputeBudgetInstruction,
     program_pack::Pack,
     signature::Signer,
     signer::keypair::Keypair,
@@ -107,7 +108,7 @@ macro_rules! create_rule_set_on_chain {
 
 pub async fn create_rule_set_on_chain_with_loc(
     context: &mut ProgramTestContext,
-    rule_set: RuleSet,
+    rule_set: RuleSetV1,
     rule_set_name: String,
     file: &str,
     line: u32,
@@ -177,7 +178,7 @@ macro_rules! create_big_rule_set_on_chain {
 
 pub async fn create_big_rule_set_on_chain_with_loc(
     context: &mut ProgramTestContext,
-    rule_set: RuleSet,
+    rule_set: RuleSetV1,
     rule_set_name: String,
     file: &str,
     line: u32,
@@ -248,7 +249,7 @@ pub async fn create_big_rule_set_on_chain_with_loc(
         .data;
 
     assert!(
-        cmp_vec(&data, &serialized_rule_set),
+        cmp_slice(&data, &serialized_rule_set),
         "The buffer doesn't match the serialized rule set.",
     );
 
@@ -293,11 +294,12 @@ pub async fn create_big_rule_set_on_chain_with_loc(
 
 #[macro_export]
 macro_rules! process_passing_validate_ix {
-    ($context:expr, $validate_ix:expr, $additional_signers:expr) => {
+    ($context:expr, $validate_ix:expr, $additional_signers:expr, $compute_budget:expr) => {
         $crate::utils::process_passing_validate_ix_with_loc(
             $context,
             $validate_ix,
             $additional_signers,
+            $compute_budget,
             file!(),
             line!(),
             column!(),
@@ -309,6 +311,7 @@ pub async fn process_passing_validate_ix_with_loc(
     context: &mut ProgramTestContext,
     validate_ix: Instruction,
     additional_signers: Vec<&Keypair>,
+    compute_budget: Option<u32>,
     file: &str,
     line: u32,
     column: u32,
@@ -316,9 +319,18 @@ pub async fn process_passing_validate_ix_with_loc(
     let mut signing_keypairs = vec![&context.payer];
     signing_keypairs.extend(additional_signers);
 
+    // Use user-provided compute budget if one was provided.
+    let instructions = match compute_budget {
+        Some(units) => {
+            let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(units);
+            vec![compute_budget_ix, validate_ix]
+        }
+        None => vec![validate_ix],
+    };
+
     // Add ix to a transaction.
     let validate_tx = Transaction::new_signed_with_payer(
-        &[validate_ix],
+        &instructions,
         Some(&context.payer.pubkey()),
         &signing_keypairs,
         context.last_blockhash,
@@ -339,11 +351,12 @@ pub async fn process_passing_validate_ix_with_loc(
 
 #[macro_export]
 macro_rules! process_failing_validate_ix {
-    ($context:expr, $validate_ix:expr, $additional_signers:expr) => {
+    ($context:expr, $validate_ix:expr, $additional_signers:expr, $compute_budget:expr) => {
         $crate::utils::process_failing_validate_ix_with_loc(
             $context,
             $validate_ix,
             $additional_signers,
+            $compute_budget,
             file!(),
             line!(),
             column!(),
@@ -355,6 +368,7 @@ pub async fn process_failing_validate_ix_with_loc(
     context: &mut ProgramTestContext,
     validate_ix: Instruction,
     additional_signers: Vec<&Keypair>,
+    compute_budget: Option<u32>,
     file: &str,
     line: u32,
     column: u32,
@@ -362,9 +376,18 @@ pub async fn process_failing_validate_ix_with_loc(
     let mut signing_keypairs = vec![&context.payer];
     signing_keypairs.extend(additional_signers);
 
+    // Use user-provided compute budget if one was provided.
+    let instructions = match compute_budget {
+        Some(units) => {
+            let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(units);
+            vec![compute_budget_ix, validate_ix]
+        }
+        None => vec![validate_ix],
+    };
+
     // Add ix to a transaction.
     let validate_tx = Transaction::new_signed_with_payer(
-        &[validate_ix],
+        &instructions,
         Some(&context.payer.pubkey()),
         &signing_keypairs,
         context.last_blockhash,
@@ -524,7 +547,7 @@ pub async fn create_associated_token_account(
     ))
 }
 
-pub fn cmp_vec<T: PartialEq>(a: &Vec<T>, b: &Vec<T>) -> bool {
+pub fn cmp_slice<T: PartialEq>(a: &[T], b: &[T]) -> bool {
     let matching = a.iter().zip(b.iter()).filter(|&(a, b)| a == b).count();
     matching == a.len() && matching == b.len()
 }

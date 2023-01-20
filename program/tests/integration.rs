@@ -2,6 +2,7 @@
 
 pub mod utils;
 
+use borsh::BorshSerialize;
 use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{
@@ -9,8 +10,13 @@ use mpl_token_auth_rules::{
         CreateOrUpdateArgs, InstructionBuilder, ValidateArgs,
     },
     payload::{Payload, PayloadType},
-    state::{CompareOp, Rule, RuleSet},
+    state::{
+        CompareOp, Rule, RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RULE_SET_LIB_VERSION,
+        RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
+    },
 };
+use rmp_serde::Serializer;
+use serde::Serialize;
 use solana_program::instruction::AccountMeta;
 use solana_program_test::{tokio, BanksClientError};
 use solana_sdk::{
@@ -18,7 +24,7 @@ use solana_sdk::{
     signer::keypair::Keypair,
     transaction::{Transaction, TransactionError},
 };
-use utils::{program_test, Operation, PayloadKey};
+use utils::{cmp_slice, program_test, Operation, PayloadKey};
 
 #[tokio::test]
 async fn test_payer_not_signer_fails() {
@@ -74,6 +80,7 @@ async fn test_payer_not_signer_fails() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
@@ -131,7 +138,7 @@ async fn test_composed_rule() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(Operation::OwnerTransfer.to_string(), overall_rule)
         .unwrap();
@@ -163,12 +170,13 @@ async fn test_composed_rule() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: payload.clone(),
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
     assert_rule_set_error!(err, RuleSetError::MissingAccount);
@@ -188,12 +196,13 @@ async fn test_composed_rule() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![&second_signer]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![&second_signer], None).await;
 
     // --------------------------------
     // Validate fail wrong amount
@@ -213,12 +222,14 @@ async fn test_composed_rule() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![&second_signer]).await;
+    let err =
+        process_failing_validate_ix!(&mut context, validate_ix, vec![&second_signer], None).await;
 
     // Check that error is what we expect.
     assert_rule_set_error!(err, RuleSetError::AmountCheckFailed);
@@ -235,14 +246,18 @@ async fn test_update_ruleset() {
     let pass_rule = Rule::Pass;
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
-    rule_set
+    let mut first_rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    first_rule_set
         .add(Operation::OwnerTransfer.to_string(), pass_rule)
         .unwrap();
 
     // Put the RuleSet on chain.
-    let _rule_set_addr =
-        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
+    let _rule_set_addr = create_rule_set_on_chain!(
+        &mut context,
+        first_rule_set.clone(),
+        "test rule_set".to_string()
+    )
+    .await;
 
     // --------------------------------
     // Update RuleSet
@@ -263,12 +278,117 @@ async fn test_update_ruleset() {
     };
 
     // Create a new RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
-    rule_set
+    let mut second_rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    second_rule_set
         .add(Operation::OwnerTransfer.to_string(), overall_rule)
         .unwrap();
 
     // Put the updated RuleSet on chain.
-    let _rule_set_addr =
-        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
+    let rule_set_addr = create_rule_set_on_chain!(
+        &mut context,
+        second_rule_set.clone(),
+        "test rule_set".to_string()
+    )
+    .await;
+
+    // --------------------------------
+    // Validate the on chain data
+    // --------------------------------
+    // Get the `RuleSet` PDA data.
+    let data = context
+        .banks_client
+        .get_account(rule_set_addr)
+        .await
+        .unwrap()
+        .unwrap()
+        .data;
+
+    // Check the first `RuleSet` lib version.
+    let first_rule_set_version_loc = RULE_SET_SERIALIZED_HEADER_LEN;
+    assert_eq!(
+        data[first_rule_set_version_loc], RULE_SET_LIB_VERSION,
+        "The buffer doesn't match the first rule set's lib version"
+    );
+
+    // Serialize the first `RuleSet` using RMP serde.
+    let mut serialized_first_rule_set = Vec::new();
+    first_rule_set
+        .serialize(&mut Serializer::new(&mut serialized_first_rule_set))
+        .unwrap();
+
+    // Check the first `RuleSet` serialized data.
+    let first_rule_set_start = first_rule_set_version_loc + 1;
+    let first_rule_set_end = first_rule_set_start + serialized_first_rule_set.len();
+    assert!(
+        cmp_slice(
+            &data[first_rule_set_start..first_rule_set_end],
+            &serialized_first_rule_set
+        ),
+        "The buffer doesn't match the serialized first rule set.",
+    );
+
+    // Check the second `RuleSet` lib version.
+    let second_rule_set_version_loc = first_rule_set_end;
+    assert_eq!(
+        data[second_rule_set_version_loc], RULE_SET_LIB_VERSION,
+        "The buffer doesn't match the second rule set's lib version"
+    );
+
+    // Serialize the second `RuleSet` using RMP serde.
+    let mut serialized_second_rule_set = Vec::new();
+    second_rule_set
+        .serialize(&mut Serializer::new(&mut serialized_second_rule_set))
+        .unwrap();
+
+    // Check the second `RuleSet` serialized data.
+    let second_rule_set_start = second_rule_set_version_loc + 1;
+    let second_rule_set_end = second_rule_set_start + serialized_second_rule_set.len();
+    assert!(
+        cmp_slice(
+            &data[second_rule_set_start..second_rule_set_end],
+            &serialized_second_rule_set
+        ),
+        "The buffer doesn't match the serialized second rule set.",
+    );
+
+    // Check the revision map version.
+    let rev_map_version_loc = second_rule_set_end;
+    assert_eq!(
+        data[rev_map_version_loc], RULE_SET_REV_MAP_VERSION,
+        "The buffer doesn't match the revision map version"
+    );
+
+    // Create revision map using the known locations of the two `RuleSet`s in this test.
+    let mut revision_map = RuleSetRevisionMapV1::default();
+    revision_map
+        .rule_set_revisions
+        .push(first_rule_set_version_loc);
+    revision_map
+        .rule_set_revisions
+        .push(second_rule_set_version_loc);
+    revision_map.latest_revision = 1;
+
+    // Borsh serialize the revision map.
+    let mut serialized_rev_map = Vec::new();
+    revision_map.serialize(&mut serialized_rev_map).unwrap();
+
+    // Check the revision map.
+    let rev_map_start = rev_map_version_loc + 1;
+    assert!(
+        cmp_slice(&data[rev_map_start..], &serialized_rev_map),
+        "The buffer doesn't match the serialized revision map.",
+    );
+
+    // Create header using the known location of the revision map version location.
+    let header = RuleSetHeader::new(rev_map_version_loc);
+
+    // Borsh serialize the header.
+    let mut serialized_header = Vec::new();
+    header.serialize(&mut serialized_header).unwrap();
+
+    // Check the header.
+    assert!(
+        cmp_slice(&data[..RULE_SET_SERIALIZED_HEADER_LEN], &serialized_header),
+        "The buffer doesn't match the serialized header.",
+    );
 }
