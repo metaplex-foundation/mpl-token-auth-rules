@@ -1,4 +1,4 @@
-//! The processors for the Rule Set program instructions.
+//! The processors for the Rule Set program instructions.   See state module for description of PDA memory layout.
 use std::collections::HashMap;
 
 use crate::{
@@ -8,11 +8,17 @@ use crate::{
         WriteToBuffer, WriteToBufferArgs,
     },
     pda::{PREFIX, STATE_PDA},
-    state::{RuleSet, RULE_SET_VERSION},
-    utils::{assert_derivation, create_or_allocate_account_raw, resize_or_reallocate_account_raw},
+    state::{
+        RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RULE_SET_LIB_VERSION,
+        RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
+    },
+    utils::{
+        assert_derivation, create_or_allocate_account_raw, get_existing_revision_map,
+        resize_or_reallocate_account_raw,
+    },
     MAX_NAME_LENGTH,
 };
-use borsh::BorshDeserialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
@@ -77,9 +83,9 @@ fn create_or_update_v1(
         return Err(RuleSetError::PayerIsNotSigner.into());
     }
 
-    // Deserialize RuleSet.
-    let rule_set: RuleSet = match ctx.accounts.buffer_pda_info {
-        Some(account_info) => rmp_serde::from_slice(&account_info.data.borrow())
+    // Deserialize `RuleSet`.
+    let rule_set = match ctx.accounts.buffer_pda_info {
+        Some(account_info) => rmp_serde::from_slice::<RuleSetV1>(&account_info.data.borrow())
             .map_err(|_| RuleSetError::MessagePackDeserializationError)?,
         None => rmp_serde::from_slice(&serialized_rule_set)
             .map_err(|_| RuleSetError::MessagePackDeserializationError)?,
@@ -90,16 +96,16 @@ fn create_or_update_v1(
     }
 
     // Make sure we know how to work with this RuleSet.
-    if rule_set.version() != RULE_SET_VERSION {
+    if rule_set.lib_version() != RULE_SET_LIB_VERSION {
         return Err(RuleSetError::UnsupportedRuleSetVersion.into());
     }
 
-    // The payer/signer must be the RuleSet owner.
+    // The payer/signer must be the `RuleSet` owner.
     if ctx.accounts.payer_info.key != rule_set.owner() {
         return Err(RuleSetError::RuleSetOwnerMismatch.into());
     }
 
-    // Check RuleSet account info derivation.
+    // Check `RuleSet` account info derivation.
     let bump = assert_derivation(
         program_id,
         ctx.accounts.rule_set_pda_info.key,
@@ -117,19 +123,59 @@ fn create_or_update_v1(
         &[bump],
     ];
 
-    let data_len = match ctx.accounts.buffer_pda_info {
+    // Get new or existing revision map.
+    let revision_map = if ctx.accounts.rule_set_pda_info.data_is_empty() {
+        let mut revision_map = RuleSetRevisionMapV1::default();
+
+        // Initially set the latest revision location to a the value right after the header.
+        revision_map
+            .rule_set_revisions
+            .push(RULE_SET_SERIALIZED_HEADER_LEN);
+        revision_map
+    } else {
+        // Get existing revision map and its serialized length.
+        let (mut revision_map, existing_rev_map_loc) =
+            get_existing_revision_map(ctx.accounts.rule_set_pda_info)?;
+
+        // The next `RuleSet` revision will start where the existing revision map was.
+        revision_map.rule_set_revisions.push(existing_rev_map_loc);
+        revision_map
+    };
+
+    // Borsh serialize (or re-serialize) the revision map.
+    let mut serialized_rev_map = Vec::new();
+    revision_map
+        .serialize(&mut serialized_rev_map)
+        .map_err(|_| RuleSetError::BorshSerializationError)?;
+
+    // Get new user-pre-serialized `RuleSet` data length based on whether it's in a buffer account
+    // or provided as an argument.
+    let new_rule_set_data_len = match ctx.accounts.buffer_pda_info {
         Some(account_info) => account_info.data_len(),
         None => serialized_rule_set.len(),
     };
 
-    // Create or allocate, resize or reallocate RuleSet PDA.
+    // Determine size needed for PDA: next revision location (which is:
+    // (RULE_SET_SERIALIZED_HEADER_LEN || existing latest revision map location)) +
+    // 2 bytes for version numbers + length of the serialized revision map +
+    // length of user-pre-serialized `RuleSet`.
+    let new_pda_data_len = revision_map
+        .rule_set_revisions
+        .last()
+        .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?
+        .checked_add(2)
+        .and_then(|len| len.checked_add(serialized_rev_map.len()))
+        .and_then(|len| len.checked_add(new_rule_set_data_len))
+        .ok_or(RuleSetError::NumericalOverflow)?;
+
+    // Create or allocate, resize or reallocate the `RuleSet` PDA.
     if ctx.accounts.rule_set_pda_info.data_is_empty() {
         create_or_allocate_account_raw(
             *program_id,
             ctx.accounts.rule_set_pda_info,
             ctx.accounts.system_program_info,
             ctx.accounts.payer_info,
-            data_len,
+            new_pda_data_len,
             rule_set_seeds,
         )?;
     } else {
@@ -137,37 +183,36 @@ fn create_or_update_v1(
             ctx.accounts.rule_set_pda_info,
             ctx.accounts.payer_info,
             ctx.accounts.system_program_info,
-            data_len,
+            new_pda_data_len,
         )?;
     }
 
+    // Write all the data to the PDA.  The user-pre-serialized `RuleSet` is either in a buffer
+    // account or provided as an argument.
     match ctx.accounts.buffer_pda_info {
         Some(account_info) => {
-            msg!("Using buffer account for RuleSet serialization.");
-            // Copy user-pre-serialized RuleSet to PDA account.
-            sol_memcpy(
-                &mut ctx
-                    .accounts
-                    .rule_set_pda_info
-                    .try_borrow_mut_data()
-                    .unwrap(),
+            write_data_to_pda(
+                ctx.accounts.rule_set_pda_info,
+                *revision_map
+                    .rule_set_revisions
+                    .last()
+                    .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?,
+                &serialized_rev_map,
                 &account_info.data.borrow(),
-                data_len,
-            );
+            )?;
         }
         None => {
-            // Copy user-pre-serialized RuleSet to PDA account.
-            sol_memcpy(
-                &mut ctx
-                    .accounts
-                    .rule_set_pda_info
-                    .try_borrow_mut_data()
-                    .unwrap(),
+            write_data_to_pda(
+                ctx.accounts.rule_set_pda_info,
+                *revision_map
+                    .rule_set_revisions
+                    .last()
+                    .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?,
+                &serialized_rev_map,
                 &serialized_rule_set,
-                data_len,
-            );
+            )?;
         }
-    }
+    };
 
     Ok(())
 }
@@ -192,10 +237,11 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         operation,
         payload,
         update_rule_state,
+        rule_set_revision,
     } = args;
 
-    // If state is being updated for any Rules, the payer must be present and must be a signer so
-    // that the RuleSet state PDA can be created or reallocated.
+    // If state is being updated for any `Rule`s, the payer must be present and must be a signer so
+    // that the `RuleSet` state PDA can be created or reallocated.
     if update_rule_state {
         if let Some(payer_info) = ctx.accounts.payer_info {
             if !payer_info.is_signer {
@@ -206,29 +252,76 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         }
     }
 
-    // RuleSet must be owned by this program.
+    // `RuleSet` must be owned by this program.
     if *ctx.accounts.rule_set_pda_info.owner != crate::ID {
         return Err(RuleSetError::IncorrectOwner.into());
     }
 
-    // RuleSet must not be empty.
+    // `RuleSet` must not be empty.
     if ctx.accounts.rule_set_pda_info.data_is_empty() {
         return Err(RuleSetError::DataIsEmpty.into());
     }
 
-    // Borrow the RuleSet PDA data.
+    // Get existing revision map and its serialized length.
+    let (revision_map, rev_map_location) =
+        get_existing_revision_map(ctx.accounts.rule_set_pda_info)?;
+
+    // Use the user-provided revision number to look up the `RuleSet` revision location in the PDA.
+    let (start, end) = match rule_set_revision {
+        Some(revision) => {
+            let start = revision_map
+                .rule_set_revisions
+                .get(revision)
+                .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?;
+
+            let end_index = revision
+                .checked_add(1)
+                .ok_or(RuleSetError::NumericalOverflow)?;
+
+            let end = revision_map
+                .rule_set_revisions
+                .get(end_index)
+                .unwrap_or(&rev_map_location);
+            (*start, *end)
+        }
+        None => {
+            let start = revision_map
+                .rule_set_revisions
+                .last()
+                .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?;
+            (*start, rev_map_location)
+        }
+    };
+
+    // Mutably borrow the existing `RuleSet` PDA data.
     let data = ctx
         .accounts
         .rule_set_pda_info
         .data
         .try_borrow()
-        .map_err(|_| RuleSetError::DataTypeMismatch)?;
+        .map_err(|_| ProgramError::AccountBorrowFailed)?;
 
-    // Deserialize RuleSet.
-    let rule_set: RuleSet =
-        rmp_serde::from_slice(&data).map_err(|_| RuleSetError::MessagePackDeserializationError)?;
+    // Check `RuleSet` lib version.
+    let rule_set = match data.get(start) {
+        Some(&RULE_SET_LIB_VERSION) => {
+            // Increment starting location by size of lib version.
+            let start = start
+                .checked_add(1)
+                .ok_or(RuleSetError::NumericalOverflow)?;
 
-    // Check RuleSet account info derivation.
+            // Deserialize `RuleSet`.
+            if end < ctx.accounts.rule_set_pda_info.data_len() {
+                rmp_serde::from_slice::<RuleSetV1>(&data[start..end])
+                    .map_err(|_| RuleSetError::MessagePackDeserializationError)?
+            } else {
+                return Err(RuleSetError::DataTypeMismatch.into());
+            }
+        }
+        Some(_) => return Err(RuleSetError::UnsupportedRuleSetVersion.into()),
+        None => return Err(RuleSetError::DataTypeMismatch.into()),
+    };
+
+    // Check `RuleSet` account info derivation.
     let _bump = assert_derivation(
         program_id,
         ctx.accounts.rule_set_pda_info.key,
@@ -239,7 +332,7 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         ],
     )?;
 
-    // If RuleSet state is to be updated, check account info derivation.
+    // If `RuleSet` state is to be updated, check account info derivation.
     if update_rule_state {
         if let Some(rule_set_state_pda_info) = ctx.accounts.rule_set_state_pda_info {
             let _bump = assert_derivation(
@@ -257,21 +350,21 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         }
     }
 
-    // Convert remaining Rule accounts into a map of `Pubkey`s to the corresponding `AccountInfo`s.
-    // This makes it easy to pass the account infos into validation functions since they store the
-    //`Pubkey`s.
+    // Convert remaining `Rule` accounts into a map of `Pubkey`s to the corresponding
+    // `AccountInfo`s.  This makes it easy to pass the account infos into validation functions
+    // since they store the `Pubkey`s.
     let accounts_map = ctx
         .remaining_accounts
         .iter()
         .map(|account| (*account.key, *account))
         .collect::<HashMap<Pubkey, &AccountInfo>>();
 
-    // Get the Rule from the RuleSet based on the caller-specified operation.
+    // Get the `Rule` from the `RuleSet` based on the user-specified operation.
     let rule = rule_set
         .get(operation)
         .ok_or(RuleSetError::OperationNotFound)?;
 
-    // Validate the Rule.
+    // Validate the `Rule`.
     if let Err(err) = rule.validate(
         &accounts_map,
         &payload,
@@ -396,4 +489,94 @@ pub fn next_optional_account_info<'a, 'b, I: Iterator<Item = &'a AccountInfo<'b>
 /// Convenience function for comparing two [`Pubkey`]s.
 pub fn cmp_pubkeys(a: &Pubkey, b: &Pubkey) -> bool {
     sol_memcmp(a.as_ref(), b.as_ref(), PUBKEY_BYTES) == 0
+}
+
+// Write the `RuleSet` lib version, a serialized `RuleSet`, the revision map version,
+// a revision map, and a header to the `RuleSet` PDA.
+fn write_data_to_pda(
+    rule_set_pda_info: &AccountInfo,
+    starting_location: usize,
+    serialized_rev_map: &[u8],
+    serialized_rule_set: &[u8],
+) -> ProgramResult {
+    // Mutably borrow the `RuleSet` PDA data.
+    let data = &mut rule_set_pda_info
+        .try_borrow_mut_data()
+        .map_err(|_| ProgramError::AccountBorrowFailed)?;
+
+    // Copy `RuleSet` lib version to PDA account starting at the location stored in the revision
+    // map for the latest revision.
+    let start = starting_location;
+    let end = start
+        .checked_add(1)
+        .ok_or(RuleSetError::NumericalOverflow)?;
+    if end <= data.len() {
+        sol_memcpy(&mut data[start..end], &[RULE_SET_LIB_VERSION], 1);
+    } else {
+        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
+    }
+
+    // Copy serialized `RuleSet` to PDA account.
+    let start = end;
+    let end = start
+        .checked_add(serialized_rule_set.len())
+        .ok_or(RuleSetError::NumericalOverflow)?;
+    if end <= data.len() {
+        sol_memcpy(
+            &mut data[start..end],
+            serialized_rule_set,
+            serialized_rule_set.len(),
+        );
+    } else {
+        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
+    }
+
+    // Copy the revision map version to PDA account.
+    let start = end;
+    let end = start
+        .checked_add(1)
+        .ok_or(RuleSetError::NumericalOverflow)?;
+    if end <= data.len() {
+        sol_memcpy(&mut data[start..end], &[RULE_SET_REV_MAP_VERSION], 1);
+    } else {
+        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
+    }
+
+    // Create a new header holding the location of the revision map version.
+    let header = RuleSetHeader::new(start);
+
+    // Borsh serialize the header.
+    let mut serialized_header = Vec::new();
+    header
+        .serialize(&mut serialized_header)
+        .map_err(|_| RuleSetError::BorshSerializationError)?;
+
+    // Copy the serialized revision map to PDA account.
+    let start = end;
+    let end = start
+        .checked_add(serialized_rev_map.len())
+        .ok_or(RuleSetError::NumericalOverflow)?;
+    if end <= data.len() {
+        sol_memcpy(
+            &mut data[start..end],
+            serialized_rev_map,
+            serialized_rev_map.len(),
+        );
+    } else {
+        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
+    }
+
+    let start = 0;
+    let end = RULE_SET_SERIALIZED_HEADER_LEN;
+    if end <= data.len() {
+        sol_memcpy(
+            &mut data[start..end],
+            &serialized_header,
+            serialized_header.len(),
+        );
+    } else {
+        return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
+    }
+
+    Ok(())
 }

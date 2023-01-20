@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::Payload,
-    state::{Rule, RuleSet},
+    state::{Rule, RuleSetV1},
 };
 use solana_program::instruction::AccountMeta;
 use solana_program_test::tokio;
@@ -27,7 +27,7 @@ async fn test_additional_signer() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(Operation::OwnerTransfer.to_string(), adtl_signer_rule)
         .unwrap();
@@ -53,15 +53,16 @@ async fn test_additional_signer() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::MissingAccount);
+    assert_custom_error!(err, RuleSetError::MissingAccount);
 
     // --------------------------------
     // Validate fail not a signer
@@ -75,15 +76,16 @@ async fn test_additional_signer() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::AdditionalSignerCheckFailed);
+    assert_custom_error!(err, RuleSetError::AdditionalSignerCheckFailed);
 
     // --------------------------------
     // Validate pass
@@ -97,10 +99,11 @@ async fn test_additional_signer() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![&adtl_signer]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![&adtl_signer], None).await;
 }

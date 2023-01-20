@@ -1,27 +1,18 @@
 use mpl_token_auth_rules::{
-    error::RuleSetError,
     instruction::{
         builders::{CreateOrUpdateBuilder, WriteToBufferBuilder},
         CreateOrUpdateArgs, InstructionBuilder, WriteToBufferArgs,
     },
-    state::RuleSet,
+    state::RuleSetV1,
 };
 use num_derive::ToPrimitive;
-use num_traits::cast::FromPrimitive;
 use rmp_serde::Serializer;
 use serde::Serialize;
-use solana_program::{
-    instruction::{Instruction, InstructionError},
-    program_error::ProgramError,
-    pubkey::Pubkey,
-};
+use solana_program::{instruction::Instruction, pubkey::Pubkey};
 use solana_program_test::{BanksClientError, ProgramTest, ProgramTestContext};
 use solana_sdk::{
-    program_pack::Pack,
-    signature::Signer,
-    signer::keypair::Keypair,
-    system_instruction,
-    transaction::{Transaction, TransactionError},
+    compute_budget::ComputeBudgetInstruction, program_pack::Pack, signature::Signer,
+    signer::keypair::Keypair, system_instruction, transaction::Transaction,
 };
 
 #[repr(C)]
@@ -107,7 +98,7 @@ macro_rules! create_rule_set_on_chain {
 
 pub async fn create_rule_set_on_chain_with_loc(
     context: &mut ProgramTestContext,
-    rule_set: RuleSet,
+    rule_set: RuleSetV1,
     rule_set_name: String,
     file: &str,
     line: u32,
@@ -177,7 +168,7 @@ macro_rules! create_big_rule_set_on_chain {
 
 pub async fn create_big_rule_set_on_chain_with_loc(
     context: &mut ProgramTestContext,
-    rule_set: RuleSet,
+    rule_set: RuleSetV1,
     rule_set_name: String,
     file: &str,
     line: u32,
@@ -248,7 +239,7 @@ pub async fn create_big_rule_set_on_chain_with_loc(
         .data;
 
     assert!(
-        cmp_vec(&data, &serialized_rule_set),
+        cmp_slice(&data, &serialized_rule_set),
         "The buffer doesn't match the serialized rule set.",
     );
 
@@ -293,11 +284,12 @@ pub async fn create_big_rule_set_on_chain_with_loc(
 
 #[macro_export]
 macro_rules! process_passing_validate_ix {
-    ($context:expr, $validate_ix:expr, $additional_signers:expr) => {
+    ($context:expr, $validate_ix:expr, $additional_signers:expr, $compute_budget:expr) => {
         $crate::utils::process_passing_validate_ix_with_loc(
             $context,
             $validate_ix,
             $additional_signers,
+            $compute_budget,
             file!(),
             line!(),
             column!(),
@@ -309,6 +301,7 @@ pub async fn process_passing_validate_ix_with_loc(
     context: &mut ProgramTestContext,
     validate_ix: Instruction,
     additional_signers: Vec<&Keypair>,
+    compute_budget: Option<u32>,
     file: &str,
     line: u32,
     column: u32,
@@ -316,9 +309,18 @@ pub async fn process_passing_validate_ix_with_loc(
     let mut signing_keypairs = vec![&context.payer];
     signing_keypairs.extend(additional_signers);
 
+    // Use user-provided compute budget if one was provided.
+    let instructions = match compute_budget {
+        Some(units) => {
+            let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(units);
+            vec![compute_budget_ix, validate_ix]
+        }
+        None => vec![validate_ix],
+    };
+
     // Add ix to a transaction.
     let validate_tx = Transaction::new_signed_with_payer(
-        &[validate_ix],
+        &instructions,
         Some(&context.payer.pubkey()),
         &signing_keypairs,
         context.last_blockhash,
@@ -339,11 +341,12 @@ pub async fn process_passing_validate_ix_with_loc(
 
 #[macro_export]
 macro_rules! process_failing_validate_ix {
-    ($context:expr, $validate_ix:expr, $additional_signers:expr) => {
+    ($context:expr, $validate_ix:expr, $additional_signers:expr, $compute_budget:expr) => {
         $crate::utils::process_failing_validate_ix_with_loc(
             $context,
             $validate_ix,
             $additional_signers,
+            $compute_budget,
             file!(),
             line!(),
             column!(),
@@ -355,6 +358,7 @@ pub async fn process_failing_validate_ix_with_loc(
     context: &mut ProgramTestContext,
     validate_ix: Instruction,
     additional_signers: Vec<&Keypair>,
+    compute_budget: Option<u32>,
     file: &str,
     line: u32,
     column: u32,
@@ -362,9 +366,18 @@ pub async fn process_failing_validate_ix_with_loc(
     let mut signing_keypairs = vec![&context.payer];
     signing_keypairs.extend(additional_signers);
 
+    // Use user-provided compute budget if one was provided.
+    let instructions = match compute_budget {
+        Some(units) => {
+            let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(units);
+            vec![compute_budget_ix, validate_ix]
+        }
+        None => vec![validate_ix],
+    };
+
     // Add ix to a transaction.
     let validate_tx = Transaction::new_signed_with_payer(
-        &[validate_ix],
+        &instructions,
         Some(&context.payer.pubkey()),
         &signing_keypairs,
         context.last_blockhash,
@@ -382,81 +395,43 @@ pub async fn process_failing_validate_ix_with_loc(
 }
 
 #[macro_export]
-macro_rules! assert_rule_set_error {
-    ($err:path, $rule_set_error:path) => {
-        $crate::utils::assert_rule_set_error_with_loc(
-            $err,
-            $rule_set_error,
+macro_rules! assert_custom_error {
+    ($error:expr, $matcher:pat) => {
+        let calling_location = format!(
+            "assert_custom_error called at {}:{}:{}",
             file!(),
             line!(),
-            column!(),
+            column!()
         );
+
+        match $error {
+            solana_program_test::BanksClientError::TransactionError(
+                solana_sdk::transaction::TransactionError::InstructionError(
+                    0,
+                    solana_program::instruction::InstructionError::Custom(x),
+                ),
+            ) => match num_traits::FromPrimitive::from_i32(x as i32) {
+                Some($matcher) => assert!(true),
+                Some(other) => {
+                    assert!(
+                        false,
+                        "Expected another custom instruction error than '{:#?}', {}",
+                        other, calling_location
+                    )
+                }
+                None => assert!(
+                    false,
+                    "Expected custom instruction error, {}",
+                    calling_location
+                ),
+            },
+            err => assert!(
+                false,
+                "Expected custom instruction error but got '{:#?}', {}",
+                err, calling_location
+            ),
+        };
     };
-}
-
-pub fn assert_rule_set_error_with_loc(
-    err: BanksClientError,
-    rule_set_error: RuleSetError,
-    file: &str,
-    line: u32,
-    column: u32,
-) {
-    let calling_location = format!(
-        "assert_rule_set_error called at {}:{}:{}",
-        file, line, column
-    );
-    // Deconstruct the error code and make sure it is what we expect.
-    match err {
-        BanksClientError::TransactionError(TransactionError::InstructionError(
-            _,
-            InstructionError::Custom(val),
-        )) => {
-            let deconstructed_err = RuleSetError::from_u32(val).unwrap();
-            assert_eq!(deconstructed_err, rule_set_error, "{}", calling_location);
-        }
-        _ => panic!("Unexpected error {:?}, {}", err, calling_location),
-    }
-}
-
-#[macro_export]
-macro_rules! assert_program_error {
-    ($err:path, $rule_set_error:path) => {
-        $crate::utils::assert_program_error_with_loc(
-            $err,
-            $rule_set_error,
-            file!(),
-            line!(),
-            column!(),
-        )
-    };
-}
-
-pub fn assert_program_error_with_loc(
-    err: BanksClientError,
-    program_error: ProgramError,
-    file: &str,
-    line: u32,
-    column: u32,
-) {
-    let calling_location = format!(
-        "assert_program_error called at {}:{}:{}",
-        file, line, column
-    );
-    // Deconstruct the error code and make sure it is what we expect.
-    match err {
-        BanksClientError::TransactionError(TransactionError::InstructionError(_, err)) => {
-            assert_eq!(
-                ProgramError::try_from(err).unwrap_or_else(|_| panic!(
-                    "Could not convert InstructionError to ProgramError at {}",
-                    calling_location,
-                )),
-                program_error,
-                "{}",
-                calling_location,
-            );
-        }
-        _ => panic!("Unexpected error {:?}, {}", err, calling_location),
-    }
 }
 
 pub async fn create_mint(
@@ -524,7 +499,7 @@ pub async fn create_associated_token_account(
     ))
 }
 
-pub fn cmp_vec<T: PartialEq>(a: &Vec<T>, b: &Vec<T>) -> bool {
+pub fn cmp_slice<T: PartialEq>(a: &[T], b: &[T]) -> bool {
     let matching = a.iter().zip(b.iter()).filter(|&(a, b)| a == b).count();
     matching == a.len() && matching == b.len()
 }

@@ -7,11 +7,12 @@ use mpl_token_auth_rules::{
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::Payload,
     pda::find_rule_set_state_address,
-    state::{Rule, RuleSet},
+    state::{Rule, RuleSetV1},
 };
 use solana_program::program_error::ProgramError;
 use solana_program_test::tokio;
-use solana_sdk::{signature::Signer, signer::keypair::Keypair};
+use solana_program_test::BanksClientError;
+use solana_sdk::{signature::Signer, signer::keypair::Keypair, transaction::TransactionError};
 use utils::{program_test, Operation};
 
 #[tokio::test]
@@ -28,7 +29,7 @@ async fn test_frequency() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(Operation::OwnerTransfer.to_string(), rule)
         .unwrap();
@@ -54,15 +55,26 @@ async fn test_frequency() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
-    // Check that error is what we expect.
-    assert_program_error!(err, ProgramError::NotEnoughAccountKeys);
+    // Deconstruct the error code and make sure it is what we expect.
+    match err {
+        BanksClientError::TransactionError(TransactionError::InstructionError(0, err)) => {
+            assert_eq!(
+                ProgramError::try_from(err).unwrap_or_else(|_| panic!(
+                    "Could not convert InstructionError to ProgramError",
+                )),
+                ProgramError::NotEnoughAccountKeys,
+            );
+        }
+        _ => panic!("Unexpected error: {}", err),
+    }
 
     // --------------------------------
     // Validate wrong authority
@@ -82,15 +94,16 @@ async fn test_frequency() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::RuleAuthorityIsNotSigner);
+    assert_custom_error!(err, RuleSetError::RuleAuthorityIsNotSigner);
 
     // --------------------------------
     // Validate not implemented
@@ -108,13 +121,15 @@ async fn test_frequency() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![&rule_authority]).await;
+    let err =
+        process_failing_validate_ix!(&mut context, validate_ix, vec![&rule_authority], None).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::NotImplemented);
+    assert_custom_error!(err, RuleSetError::NotImplemented);
 }

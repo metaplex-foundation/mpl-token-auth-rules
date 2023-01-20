@@ -59,10 +59,8 @@ export const validateInstructionDiscriminator = 1;
 /**
  * Creates a _Validate_ instruction.
  *
- * Optional accounts that are not provided will be omitted from the accounts
- * array passed with the instruction.
- * An optional account that is set cannot follow an optional account that is unset.
- * Otherwise an Error is raised.
+ * Optional accounts that are not provided default to the program ID since
+ * this was indicated in the IDL from which this instruction was generated.
  *
  * @param accounts that will be accessed while the instruction is processed
  * @param args to provide as instruction data to the program
@@ -96,39 +94,22 @@ export function createValidateInstruction(
       isWritable: false,
       isSigner: false,
     },
-  ];
-
-  if (accounts.payer != null) {
-    keys.push({
-      pubkey: accounts.payer,
-      isWritable: true,
-      isSigner: true,
-    });
-  }
-  if (accounts.ruleAuthority != null) {
-    if (accounts.payer == null) {
-      throw new Error(
-        "When providing 'ruleAuthority' then 'accounts.payer' need(s) to be provided as well.",
-      );
-    }
-    keys.push({
-      pubkey: accounts.ruleAuthority,
+    {
+      pubkey: accounts.payer ?? programId,
+      isWritable: accounts.payer != null,
+      isSigner: accounts.payer != null,
+    },
+    {
+      pubkey: accounts.ruleAuthority ?? programId,
       isWritable: false,
-      isSigner: true,
-    });
-  }
-  if (accounts.ruleSetStatePda != null) {
-    if (accounts.payer == null || accounts.ruleAuthority == null) {
-      throw new Error(
-        "When providing 'ruleSetStatePda' then 'accounts.payer', 'accounts.ruleAuthority' need(s) to be provided as well.",
-      );
-    }
-    keys.push({
-      pubkey: accounts.ruleSetStatePda,
-      isWritable: true,
+      isSigner: accounts.ruleAuthority != null,
+    },
+    {
+      pubkey: accounts.ruleSetStatePda ?? programId,
+      isWritable: accounts.ruleSetStatePda != null,
       isSigner: false,
-    });
-  }
+    },
+  ];
 
   const ix = new web3.TransactionInstruction({
     programId,

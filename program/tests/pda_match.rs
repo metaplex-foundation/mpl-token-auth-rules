@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType, SeedsVec},
-    state::{Rule, RuleSet},
+    state::{Rule, RuleSetV1},
 };
 use solana_program::{instruction::AccountMeta, pubkey::Pubkey};
 use solana_program_test::tokio;
@@ -28,7 +28,7 @@ async fn test_pda_match_assumed_owner() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(Operation::OwnerTransfer.to_string(), rule)
         .unwrap();
@@ -76,15 +76,16 @@ async fn test_pda_match_assumed_owner() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: payload.clone(),
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::PDAMatchCheckFailed);
+    assert_custom_error!(err, RuleSetError::PDAMatchCheckFailed);
 
     // --------------------------------
     // Validate pass
@@ -110,12 +111,13 @@ async fn test_pda_match_assumed_owner() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 }
 
 #[tokio::test]
@@ -133,7 +135,7 @@ async fn test_pda_match_specified_owner() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(Operation::OwnerTransfer.to_string(), rule)
         .unwrap();
@@ -174,15 +176,16 @@ async fn test_pda_match_specified_owner() {
             operation: Operation::OwnerTransfer.to_string(),
             payload: payload.clone(),
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_rule_set_error!(err, RuleSetError::PDAMatchCheckFailed);
+    assert_custom_error!(err, RuleSetError::PDAMatchCheckFailed);
 
     // --------------------------------
     // Validate pass
@@ -212,10 +215,11 @@ async fn test_pda_match_specified_owner() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![]).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 }

@@ -148,7 +148,7 @@ fn main() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSet::new("test rule_set".to_string(), payer.pubkey());
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), payer.pubkey());
     rule_set
         .add(Operation::OwnerTransfer.to_string(), overall_rule)
         .unwrap();
@@ -202,6 +202,7 @@ fn main() {
             operation: Operation::OwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
+            rule_set_revision: None,
         })
         .unwrap()
         .instruction();
