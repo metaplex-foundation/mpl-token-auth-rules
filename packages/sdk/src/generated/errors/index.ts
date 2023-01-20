@@ -496,24 +496,27 @@ createErrorFromNameLookup.set(
 );
 
 /**
- * RuleSetRevNotAvailable: 'RuleSet revision not available'
+ * RuleSetRevisionNotAvailable: 'RuleSet revision not available'
  *
  * @category Errors
  * @category generated
  */
-export class RuleSetRevNotAvailableError extends Error {
+export class RuleSetRevisionNotAvailableError extends Error {
   readonly code: number = 0x17;
-  readonly name: string = 'RuleSetRevNotAvailable';
+  readonly name: string = 'RuleSetRevisionNotAvailable';
   constructor() {
     super('RuleSet revision not available');
     if (typeof Error.captureStackTrace === 'function') {
-      Error.captureStackTrace(this, RuleSetRevNotAvailableError);
+      Error.captureStackTrace(this, RuleSetRevisionNotAvailableError);
     }
   }
 }
 
-createErrorFromCodeLookup.set(0x17, () => new RuleSetRevNotAvailableError());
-createErrorFromNameLookup.set('RuleSetRevNotAvailable', () => new RuleSetRevNotAvailableError());
+createErrorFromCodeLookup.set(0x17, () => new RuleSetRevisionNotAvailableError());
+createErrorFromNameLookup.set(
+  'RuleSetRevisionNotAvailable',
+  () => new RuleSetRevisionNotAvailableError(),
+);
 
 /**
  * AdditionalSignerCheckFailed: 'Additional Signer check failed'

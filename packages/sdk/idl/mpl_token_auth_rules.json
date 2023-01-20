@@ -481,7 +481,7 @@
     },
     {
       "code": 23,
-      "name": "RuleSetRevNotAvailable",
+      "name": "RuleSetRevisionNotAvailable",
       "msg": "RuleSet revision not available"
     },
     {
