@@ -1,4 +1,5 @@
 //! Utilities for the program
+use borsh::BorshDeserialize;
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
@@ -11,7 +12,14 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-use crate::{error::RuleSetError, payload::ProofInfo};
+use crate::{
+    error::RuleSetError,
+    payload::ProofInfo,
+    state::{
+        RuleSetHeader, RuleSetRevisionMapV1, RULE_SET_REV_MAP_VERSION,
+        RULE_SET_SERIALIZED_HEADER_LEN,
+    },
+};
 
 /// Create account almost from scratch, lifted from
 /// <https://github.com/solana-labs/solana-program-library/tree/master/associated-token-account/program/src/processor.rs#L51-L98>
@@ -126,4 +134,52 @@ pub fn compute_merkle_root(leaf: &Pubkey, merkle_proof: &ProofInfo) -> [u8; 32] 
     }
 
     computed_hash
+}
+
+/// Get a revision map by looking at the header, finding its location, and deserializing it.
+pub fn get_existing_revision_map(
+    rule_set_pda_info: &AccountInfo,
+) -> Result<(RuleSetRevisionMapV1, usize), ProgramError> {
+    // Mutably borrow the existing `RuleSet` PDA data.
+    let data = rule_set_pda_info
+        .data
+        .try_borrow()
+        .map_err(|_| ProgramError::AccountBorrowFailed)?;
+
+    // Deserialize header.
+    let header = if data.len() >= RULE_SET_SERIALIZED_HEADER_LEN {
+        RuleSetHeader::try_from_slice(&data[..RULE_SET_SERIALIZED_HEADER_LEN])?
+    } else {
+        return Err(RuleSetError::DataTypeMismatch.into());
+    };
+
+    // Get revision map version location from header and use it check revision map version.
+    match data.get(header.rev_map_version_location) {
+        Some(&RULE_SET_REV_MAP_VERSION) => {
+            // Increment starting location by size of the revision map version.
+            let start = header
+                .rev_map_version_location
+                .checked_add(1)
+                .ok_or(RuleSetError::NumericalOverflow)?;
+
+            // Deserialize revision map.
+            if start < data.len() {
+                let revision_map = RuleSetRevisionMapV1::try_from_slice(&data[start..])?;
+                Ok((revision_map, header.rev_map_version_location))
+            } else {
+                Err(RuleSetError::DataTypeMismatch.into())
+            }
+        }
+        Some(_) => Err(RuleSetError::UnsupportedRuleSetRevMapVersion.into()),
+        None => Err(RuleSetError::DataTypeMismatch.into()),
+    }
+}
+
+/// Get the latest revision number stored on the revision map.
+///
+/// This will first deserialize the header to find the map location and then deserialize the
+/// revision map.
+pub fn get_latest_revision(rule_set_pda_info: &AccountInfo) -> Result<Option<usize>, ProgramError> {
+    let (revision_map, _) = get_existing_revision_map(rule_set_pda_info)?;
+    Ok(revision_map.rule_set_revisions.last().copied())
 }
