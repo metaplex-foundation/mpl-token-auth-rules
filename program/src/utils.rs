@@ -181,5 +181,11 @@ pub fn get_existing_revision_map(
 /// revision map.
 pub fn get_latest_revision(rule_set_pda_info: &AccountInfo) -> Result<Option<usize>, ProgramError> {
     let (revision_map, _) = get_existing_revision_map(rule_set_pda_info)?;
-    Ok(revision_map.rule_set_revisions.last().copied())
+
+    match revision_map.rule_set_revisions.len() {
+        // we should always have at least one revision
+        0 => Err(RuleSetError::RuleSetRevNotAvailable.into()),
+        // determine the index of the last revision
+        length => Ok(Some(length - 1)),
+    }
 }
