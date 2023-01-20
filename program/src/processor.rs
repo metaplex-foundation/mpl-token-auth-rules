@@ -12,7 +12,10 @@ use crate::{
         RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RULE_SET_LIB_VERSION,
         RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
     },
-    utils::{assert_derivation, create_or_allocate_account_raw, resize_or_reallocate_account_raw},
+    utils::{
+        assert_derivation, create_or_allocate_account_raw, get_existing_revision_map,
+        resize_or_reallocate_account_raw,
+    },
     MAX_NAME_LENGTH,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -486,45 +489,6 @@ pub fn next_optional_account_info<'a, 'b, I: Iterator<Item = &'a AccountInfo<'b>
 /// Convenience function for comparing two [`Pubkey`]s.
 pub fn cmp_pubkeys(a: &Pubkey, b: &Pubkey) -> bool {
     sol_memcmp(a.as_ref(), b.as_ref(), PUBKEY_BYTES) == 0
-}
-
-// Get a revision map by looking at the header, finding its location, and deserializing it.
-fn get_existing_revision_map(
-    rule_set_pda_info: &AccountInfo,
-) -> Result<(RuleSetRevisionMapV1, usize), ProgramError> {
-    // Mutably borrow the existing `RuleSet` PDA data.
-    let data = rule_set_pda_info
-        .data
-        .try_borrow()
-        .map_err(|_| ProgramError::AccountBorrowFailed)?;
-
-    // Deserialize header.
-    let header = if data.len() >= RULE_SET_SERIALIZED_HEADER_LEN {
-        RuleSetHeader::try_from_slice(&data[..RULE_SET_SERIALIZED_HEADER_LEN])?
-    } else {
-        return Err(RuleSetError::DataTypeMismatch.into());
-    };
-
-    // Get revision map version location from header and use it check revision map version.
-    match data.get(header.rev_map_version_location) {
-        Some(&RULE_SET_REV_MAP_VERSION) => {
-            // Increment starting location by size of the revision map version.
-            let start = header
-                .rev_map_version_location
-                .checked_add(1)
-                .ok_or(RuleSetError::NumericalOverflow)?;
-
-            // Deserialize revision map.
-            if start < data.len() {
-                let revision_map = RuleSetRevisionMapV1::try_from_slice(&data[start..])?;
-                Ok((revision_map, header.rev_map_version_location))
-            } else {
-                Err(RuleSetError::DataTypeMismatch.into())
-            }
-        }
-        Some(_) => Err(RuleSetError::UnsupportedRuleSetRevMapVersion.into()),
-        None => Err(RuleSetError::DataTypeMismatch.into()),
-    }
 }
 
 // Write the `RuleSet` lib version, a serialized `RuleSet`, the revision map version,
