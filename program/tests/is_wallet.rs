@@ -5,11 +5,11 @@ pub mod utils;
 use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
-    payload::Payload,
+    payload::{Payload, PayloadType},
     state::{Rule, RuleSetV1},
 };
 use solana_program_test::tokio;
-use solana_sdk::{signature::Signer, signer::keypair::Keypair};
+use solana_sdk::{instruction::AccountMeta, signature::Signer, signer::keypair::Keypair};
 use utils::{program_test, Operation, PayloadKey};
 
 #[tokio::test]
@@ -38,17 +38,25 @@ async fn is_wallet() {
     // Validate not implemented
     // (this will become pass later)
     // --------------------------------
+    // Keypair to check.
+    let wallet = Keypair::new();
+
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
+
+    let payload = Payload::from([(
+        PayloadKey::Source.to_string(),
+        PayloadType::Pubkey(wallet.pubkey()),
+    )]);
 
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .additional_rule_accounts(vec![])
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(wallet.pubkey(), false)])
         .build(ValidateArgs::V1 {
             operation: Operation::OwnerTransfer.to_string(),
-            payload: Payload::default(),
+            payload,
             update_rule_state: false,
             rule_set_revision: None,
         })
