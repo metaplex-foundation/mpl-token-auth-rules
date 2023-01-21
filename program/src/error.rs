@@ -146,10 +146,9 @@ pub enum RuleSetError {
     #[error("Frequency check failed")]
     FrequencyCheckFailed,
 
-    /// 29 - IsWallet Rule Failed
-    #[error("IsWallet Rule Failed")]
-    IsWalletRuleFailed
-
+    /// 34 - IsWallet check failed
+    #[error("IsWallet check failed")]
+    IsWalletCheckFailed,
 }
 
 impl PrintProgramError for RuleSetError {
