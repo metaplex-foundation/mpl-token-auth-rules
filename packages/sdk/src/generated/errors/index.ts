@@ -734,6 +734,26 @@ createErrorFromCodeLookup.set(0x21, () => new FrequencyCheckFailedError());
 createErrorFromNameLookup.set('FrequencyCheckFailed', () => new FrequencyCheckFailedError());
 
 /**
+ * IsWalletCheckFailed: 'IsWallet check failed'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class IsWalletCheckFailedError extends Error {
+  readonly code: number = 0x22;
+  readonly name: string = 'IsWalletCheckFailed';
+  constructor() {
+    super('IsWallet check failed');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, IsWalletCheckFailedError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x22, () => new IsWalletCheckFailedError());
+createErrorFromNameLookup.set('IsWalletCheckFailed', () => new IsWalletCheckFailedError());
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated
