@@ -237,8 +237,8 @@ async fn test_update_ruleset_data_integrity() {
     let mut revision_map = RuleSetRevisionMapV1::default();
 
     // Push the `RuleSet` locations.
-    for n in 0..rule_sets.len() {
-        revision_map.rule_set_revisions.push(offsets[n]);
+    for loc in offsets.iter().take(rule_sets.len()) {
+        revision_map.rule_set_revisions.push(*loc);
     }
 
     // Borsh serialize the revision map.
