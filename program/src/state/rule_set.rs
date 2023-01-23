@@ -2,6 +2,7 @@
 use crate::{error::RuleSetError, state::Rule};
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "serde-feature")]
 use serde_with::{As, DisplayFromStr};
 use solana_program::{entrypoint::ProgramResult, pubkey::Pubkey};
 use std::collections::HashMap;
