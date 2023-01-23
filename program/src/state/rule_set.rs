@@ -16,6 +16,7 @@ pub struct RuleSet {
     /// Name of the RuleSet, used in PDA derivation.
     rule_set_name: String,
     /// Owner (creator) of the RuleSet.
+    #[cfg_attr(feature = "serde-feature", serde(with = "As::<DisplayFromStr>"))]
     owner: Pubkey,
     /// A map to determine the `Rule` that belongs to a given `Operation`.
     pub operations: HashMap<String, Rule>,
