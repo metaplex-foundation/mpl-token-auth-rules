@@ -6,6 +6,8 @@ use crate::{
     utils::{assert_derivation, compute_merkle_root},
 };
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "serde-feature")]
+use serde_with::{As, DisplayFromStr};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey, system_program,
