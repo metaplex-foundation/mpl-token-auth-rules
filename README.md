@@ -73,7 +73,7 @@ use mpl_token_auth_rules::{
         CreateOrUpdateArgs, InstructionBuilder, ValidateArgs,
     },
     payload::{Payload, PayloadType},
-    state::{CompareOp, Rule, RuleSet},
+    state::{CompareOp, Rule, RuleSetV1},
 };
 use num_derive::ToPrimitive;
 use rmp_serde::Serializer;
