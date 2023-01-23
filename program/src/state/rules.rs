@@ -1,12 +1,14 @@
 use crate::{
     error::RuleSetError,
     payload::Payload,
+    // TODO: Uncomment this after on-curve sycall available.
+    // utils::is_on_curve,
     utils::{assert_derivation, compute_merkle_root},
 };
 use serde::{Deserialize, Serialize};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
-    pubkey::Pubkey,
+    pubkey::Pubkey, system_program,
 };
 use std::collections::HashMap;
 
@@ -166,6 +168,17 @@ pub enum Rule {
         #[cfg_attr(feature = "serde-feature", serde(with = "As::<DisplayFromStr>"))]
         authority: Pubkey,
     },
+    /// The true test if a pubkey can be signed from a client and therefore is a true wallet account.
+    /// The details of this rule are as follows: a wallet is defined as being both owned by the
+    /// System Program and the address is on-curve.  The `field` value in the rule is used to
+    /// locate the `Pubkey` in the payload that must be on-curve and for which the owner must be
+    /// the System Program.  Note this same `Pubkey` account must also be provided to `Validate`
+    /// via the `additional_rule_accounts` argument.  This is so that the `Pubkey`'s owner can be
+    /// found from its `AccountInfo` struct.
+    IsWallet {
+        /// The field in the `Payload` to be checked.
+        field: String,
+    },
     /// An operation that always succeeds.
     Pass,
 }
@@ -215,15 +228,18 @@ impl Rule {
                         _rule_set_state_pda,
                         rule_authority,
                     );
+                    // Return failure on the first failing rule.
                     if !result.0 {
                         return result;
                     }
                 }
+
+                // Return pass if and only if all rules passed.
                 (true, self.to_error())
             }
             Rule::Any { rules } => {
                 msg!("Validating Any");
-                let mut last = self.to_error();
+                let mut last: Option<ProgramError> = None;
                 for rule in rules {
                     let result = rule.low_level_validate(
                         accounts,
@@ -233,12 +249,23 @@ impl Rule {
                         rule_authority,
                     );
                     if result.0 {
+                        // Return pass on the first passing rule.
                         return result;
                     } else {
-                        last = result.1;
+                        // Save the last failure, but don't overwrite an existing last failure with
+                        // `RuleSetError::NotImplemented` as it can lead to a confusing result when
+                        // using `RuleSets` that have unimplemented rules in them.
+                        if last.is_none() || result.1 != RuleSetError::NotImplemented.into() {
+                            last = Some(result.1);
+                        }
                     }
                 }
-                (false, last)
+
+                // Return failure if and only if all rules failed.  Use the last failure.
+                match last {
+                    Some(last) => (false, last),
+                    None => (false, RuleSetError::UnexpectedRuleSetFailure.into()),
+                }
             }
             Rule::Not { rule } => {
                 let result = rule.low_level_validate(
@@ -248,6 +275,8 @@ impl Rule {
                     _rule_set_state_pda,
                     rule_authority,
                 );
+
+                // Negate the result.
                 (!result.0, result.1)
             }
             Rule::AdditionalSigner { account } => {
@@ -472,6 +501,32 @@ impl Rule {
                 msg!("Validating Pass");
                 (true, self.to_error())
             }
+            Rule::IsWallet { field } => {
+                msg!("Validating IsWallet");
+
+                // Get the `Pubkey` we are checking from the payload.
+                let key = match payload.get_pubkey(field) {
+                    Some(pubkey) => pubkey,
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                };
+
+                // Get the `AccountInfo` struct for the `Pubkey` and verify that
+                // its owner is the System Program.
+                if let Some(account) = accounts.get(key) {
+                    if *account.owner != system_program::ID {
+                        // TODO: Change error return to commented line after on-curve syscall
+                        // available.
+                        return (false, RuleSetError::NotImplemented.into());
+                        //return (false, self.to_error());
+                    }
+                } else {
+                    return (false, RuleSetError::MissingAccount.into());
+                }
+
+                // TODO: Uncomment call to `is_on_curve()` after on-curve sycall available.
+                (false, RuleSetError::NotImplemented.into())
+                //(is_on_curve(key), self.to_error())
+            }
         }
     }
 
@@ -491,6 +546,7 @@ impl Rule {
             Rule::ProgramOwnedTree { .. } => RuleSetError::ProgramOwnedTreeCheckFailed.into(),
             Rule::Amount { .. } => RuleSetError::AmountCheckFailed.into(),
             Rule::Frequency { .. } => RuleSetError::FrequencyCheckFailed.into(),
+            Rule::IsWallet { .. } => RuleSetError::IsWalletCheckFailed.into(),
         }
     }
 }

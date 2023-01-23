@@ -533,6 +533,11 @@
       "code": 33,
       "name": "FrequencyCheckFailed",
       "msg": "Frequency check failed"
+    },
+    {
+      "code": 34,
+      "name": "IsWalletCheckFailed",
+      "msg": "IsWallet check failed"
     }
   ],
   "metadata": {

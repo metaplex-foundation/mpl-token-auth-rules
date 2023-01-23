@@ -1,4 +1,12 @@
 //! Utilities for the program
+use crate::{
+    error::RuleSetError,
+    payload::ProofInfo,
+    state::{
+        RuleSetHeader, RuleSetRevisionMapV1, RULE_SET_REV_MAP_VERSION,
+        RULE_SET_SERIALIZED_HEADER_LEN,
+    },
+};
 use borsh::BorshDeserialize;
 use solana_program::{
     account_info::AccountInfo,
@@ -11,15 +19,8 @@ use solana_program::{
     system_instruction,
     sysvar::Sysvar,
 };
-
-use crate::{
-    error::RuleSetError,
-    payload::ProofInfo,
-    state::{
-        RuleSetHeader, RuleSetRevisionMapV1, RULE_SET_REV_MAP_VERSION,
-        RULE_SET_SERIALIZED_HEADER_LEN,
-    },
-};
+// TODO: Uncomment this when the syscall is available.
+//use solana_zk_token_sdk::curve25519::curve_syscall_traits::CURVE25519_EDWARDS;
 
 /// Create account almost from scratch, lifted from
 /// <https://github.com/solana-labs/solana-program-library/tree/master/associated-token-account/program/src/processor.rs#L51-L98>
@@ -188,4 +189,22 @@ pub fn get_latest_revision(rule_set_pda_info: &AccountInfo) -> Result<Option<usi
         // determine the index of the last revision
         length => Ok(Some(length - 1)),
     }
+}
+
+/// Return whether the pubkey is on the Edwards 25519 curve.
+pub fn is_on_curve(pubkey: &Pubkey) -> bool {
+    let _point = pubkey.to_bytes();
+    let mut _validate_result = 0u8;
+    // TODO: Uncomment this when the syscall is available.
+    // let result = unsafe {
+    //     solana_program::syscalls::sol_curve_validate_point(
+    //         CURVE25519_EDWARDS,
+    //         &point as *const u8,
+    //         &mut validate_result,
+    //     )
+    // };
+
+    // For now return false instead of checking the result.
+    // result == 0
+    false
 }
