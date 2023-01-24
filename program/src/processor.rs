@@ -421,7 +421,11 @@ fn write_to_buffer_v1(
     ];
 
     // Fetch the offset before we realloc so we get the accurate account length.
-    let offset = ctx.accounts.buffer_pda_info.data_len();
+    let offset = if overwrite {
+        0
+    } else {
+        ctx.accounts.buffer_pda_info.data_len()
+    };
 
     // Create or allocate, resize or reallocate buffer PDA.
     if ctx.accounts.buffer_pda_info.data_is_empty() {
