@@ -58,11 +58,11 @@ pub struct RuleSetV1 {
     /// of this lib, to make sure that a `RuleSet` passed into our handlers
     /// is one we are compatible with.
     lib_version: u8,
-    /// Name of the RuleSet, used in PDA derivation.
-    rule_set_name: String,
     /// Owner (creator) of the RuleSet.
     #[cfg_attr(feature = "serde-with-feature", serde(with = "As::<DisplayFromStr>"))]
     owner: Pubkey,
+    /// Name of the RuleSet, used in PDA derivation.
+    rule_set_name: String,
     /// A map to determine the `Rule` that belongs to a given `Operation`.
     pub operations: HashMap<String, Rule>,
 }
