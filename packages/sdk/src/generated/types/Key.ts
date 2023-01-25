@@ -12,6 +12,7 @@ import * as beet from '@metaplex-foundation/beet';
  */
 export enum Key {
   Uninitialized,
+  RuleSet,
   Frequency,
 }
 
