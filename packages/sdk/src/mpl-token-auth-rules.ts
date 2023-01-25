@@ -16,7 +16,7 @@ export const PREFIX = 'rule_set';
 export * from './pda';
 
 export const getHeader = (data: Buffer): RuleSetHeader => {
-  const [header, _] = ruleSetHeaderBeet.deserialize(data.slice(0, 8));
+  const [header, _] = ruleSetHeaderBeet.deserialize(data.slice(0, 9));
   return header;
 };
 

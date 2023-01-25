@@ -6,7 +6,9 @@
  */
 
 import * as beet from '@metaplex-foundation/beet';
+import { Key, keyBeet } from './Key';
 export type RuleSetHeader = {
+  key: Key;
   revMapVersionLocation: beet.bignum;
 };
 
@@ -15,6 +17,9 @@ export type RuleSetHeader = {
  * @category generated
  */
 export const ruleSetHeaderBeet = new beet.BeetArgsStruct<RuleSetHeader>(
-  [['revMapVersionLocation', beet.u64]],
+  [
+    ['key', keyBeet],
+    ['revMapVersionLocation', beet.u64],
+  ],
   'RuleSetHeader',
 );

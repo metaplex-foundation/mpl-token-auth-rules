@@ -21,7 +21,7 @@
 //! ```text
 //! | Header  | RuleSet version | RuleSet Revision 0 | RuleSet version | RuleSet Revision 1 | RuleSet version | RuleSet Revision 2 | ... | RuleSetRevisionMap version | RuleSetRevisionMap |
 //! |---------|-----------------|--------------------|-----------------|--------------------|-----------------|--------------------|-----|----------------------------|--------------------|
-//! | 8 bytes | 1 byte          | variable bytes     | 1 byte          | variable bytes     | 1 byte          | variable bytes     | ... | 1 byte                     | variable bytes     |
+//! | 9 bytes | 1 byte          | variable bytes     | 1 byte          | variable bytes     | 1 byte          | variable bytes     | ... | 1 byte                     | variable bytes     |
 //! ```
 use borsh::{BorshDeserialize, BorshSerialize};
 use num_derive::FromPrimitive;
@@ -47,6 +47,8 @@ use crate::{error::RuleSetError, utils::assert_owned_by};
 pub enum Key {
     /// An uninitialized account, which has all bytes set to zero by default.
     Uninitialized,
+    /// An account containing a RuleSet.
+    RuleSet,
     /// An account containing frequency state.
     Frequency,
 }

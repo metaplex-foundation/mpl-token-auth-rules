@@ -221,6 +221,12 @@
         "kind": "struct",
         "fields": [
           {
+            "name": "key",
+            "type": {
+              "defined": "Key"
+            }
+          },
+          {
             "name": "revMapVersionLocation",
             "type": "u64"
           }
@@ -355,6 +361,9 @@
         "variants": [
           {
             "name": "Uninitialized"
+          },
+          {
+            "name": "RuleSet"
           },
           {
             "name": "Frequency"
