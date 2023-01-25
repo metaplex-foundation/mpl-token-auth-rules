@@ -5,7 +5,8 @@ import { Command, program } from "commander";
 import log from "loglevel";
 import * as fs from 'fs';
 import { findRuleSetPDA } from './helpers/pda';
-import { Payload } from '../../packages/sdk/src/generated';
+import { Payload, RuleSetHeader, ruleSetHeaderBeet, ruleSetRevisionMapV1Beet } from '../../packages/sdk/src/generated';
+import { getLatestRuleSet } from '../../packages/sdk/src/mpl-token-auth-rules';
 
 program
     .command("create")
@@ -93,19 +94,22 @@ program
         "devnet", //mainnet-beta, testnet, devnet
     )
     .option("-r, --rpc <string>", "The endpoint to connect to.")
-    .option("-k, --keypair <path>", `Solana wallet location`)
     .option("-l, --log-level <string>", "log level", setLogLevel)
-    .option("-c, --creator <string>", "The address of the ruleset creator.")
-    .option("-n, --name <string>", "The name of the ruleset.")
+    .option("-a, --address <string>", "The address of the ruleset.")
     .action(async (directory, cmd) => {
-        const { keypair, env, rpc, name, creator } = cmd.opts();
-        let payer = loadKeypair(keypair);
+        const { keypair, env, rpc, address } = cmd.opts();
         const connection = new Connection(rpc, "finalized");
 
-        let rulesetPDA = await findRuleSetPDA(new PublicKey(creator), name);
-        let rulesetData = await connection.getAccountInfo(rulesetPDA[0]);
-        let rulesetDecoded = decode(rulesetData?.data);
-        console.log("RuleSet Decoded: " + JSON.stringify(rulesetDecoded, null, 2));
+        let rulesetPDA = new PublicKey(address);
+        let rulesetData = await connection.getAccountInfo(rulesetPDA);
+        let data = rulesetData?.data as Buffer;
+        const [header, header_num] = ruleSetHeaderBeet.deserialize(data.slice(0, 8));
+        const [revmap, revmap_num] = ruleSetRevisionMapV1Beet.deserialize(data.slice(parseInt(header.revMapVersionLocation) + 1, data.length));
+        let latestRevision = parseInt(revmap.ruleSetRevisions[revmap.ruleSetRevisions.length - 1]);
+        let rulesetDecoded = decode(data.slice(latestRevision + 1, parseInt(header.revMapVersionLocation)));
+        // console.log(rulesetDecoded);
+        // console.log(JSON.stringify(rulesetDecoded, null, 2));
+        console.log(getLatestRuleSet(data));
     });
 
 
