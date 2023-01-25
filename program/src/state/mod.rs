@@ -21,7 +21,7 @@
 //! ```text
 //! | Header  | RuleSet version | RuleSet Revision 0 | RuleSet version | RuleSet Revision 1 | RuleSet version | RuleSet Revision 2 | ... | RuleSetRevisionMap version | RuleSetRevisionMap |
 //! |---------|-----------------|--------------------|-----------------|--------------------|-----------------|--------------------|-----|----------------------------|--------------------|
-//! | 8 bytes | 1 byte          | variable bytes     | 1 byte          | variable bytes     | 1 byte          | variable bytes     | ... | 1 byte                     | variable bytes     |
+//! | 9 bytes | 1 byte          | variable bytes     | 1 byte          | variable bytes     | 1 byte          | variable bytes     | ... | 1 byte                     | variable bytes     |
 //! ```
 use borsh::{BorshDeserialize, BorshSerialize};
 use num_derive::FromPrimitive;
