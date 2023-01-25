@@ -63,6 +63,7 @@ export const validateOperation = async (
                 operation,
                 payload,
                 updateRuleState: true,
+                ruleSetRevision: 0,
             },
         },
         PROGRAM_ID,
