@@ -16,14 +16,12 @@ export const PREFIX = 'rule_set';
 export * from './pda';
 
 export const getHeader = (data: Buffer): RuleSetHeader => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [header, _] = ruleSetHeaderBeet.deserialize(data.slice(0, 8));
   return header;
 };
 
 export const getRevisionMapV1 = (data: Buffer): RuleSetRevisionMapV1 => {
   const header = getHeader(data);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [revmap, _] = ruleSetRevisionMapV1Beet.deserialize(
     data.slice(parseInt(header.revMapVersionLocation) + 1, data.length),
   );
