@@ -61,7 +61,7 @@ fn create_or_update<'a>(
     accounts: &'a [AccountInfo<'a>],
     args: CreateOrUpdateArgs,
 ) -> ProgramResult {
-    let context = CreateOrUpdate::as_context(accounts)?;
+    let context = CreateOrUpdate::to_context(accounts)?;
 
     match args {
         CreateOrUpdateArgs::V1 { .. } => create_or_update_v1(program_id, context, args),
@@ -223,7 +223,7 @@ fn validate<'a>(
     accounts: &'a [AccountInfo<'a>],
     args: ValidateArgs,
 ) -> ProgramResult {
-    let context = Validate::as_context(accounts)?;
+    let context = Validate::to_context(accounts)?;
 
     match args {
         ValidateArgs::V1 { .. } => validate_v1(program_id, context, args),
@@ -385,7 +385,7 @@ fn write_to_buffer<'a>(
     accounts: &'a [AccountInfo<'a>],
     args: WriteToBufferArgs,
 ) -> ProgramResult {
-    let context = WriteToBuffer::as_context(accounts)?;
+    let context = WriteToBuffer::to_context(accounts)?;
 
     match args {
         WriteToBufferArgs::V1 { .. } => write_to_buffer_v1(program_id, context, args),
