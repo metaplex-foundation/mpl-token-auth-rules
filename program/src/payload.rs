@@ -1,14 +1,12 @@
 //! The definition and associated functions of the `Payload` type that is passed from the program client to the auth rules program for validation.
 use crate::error::RuleSetError;
 use borsh::{BorshDeserialize, BorshSerialize};
-#[cfg(feature = "serde-feature")]
 use serde::{Deserialize, Serialize};
 use solana_program::{entrypoint::ProgramResult, pubkey::Pubkey};
 use std::collections::HashMap;
 
 #[repr(C)]
-#[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
-#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 /// A seed path type used by the `DerivedKeyMatch` rule.
 pub struct SeedsVec {
     /// The vector of derivation seeds.
@@ -23,8 +21,7 @@ impl SeedsVec {
 }
 
 #[repr(C)]
-#[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
-#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 /// A proof type used by the `PubkeyTreeMatch` rule.
 pub struct ProofInfo {
     /// The merkle proof.
@@ -39,8 +36,7 @@ impl ProofInfo {
 }
 
 #[repr(C)]
-#[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
-#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 /// Variants representing the different types represented in a payload.
 pub enum PayloadType {
     /// A plain `Pubkey`.
@@ -54,8 +50,9 @@ pub enum PayloadType {
 }
 
 #[repr(C)]
-#[cfg_attr(feature = "serde-feature", derive(Serialize, Deserialize))]
-#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Default)]
+#[derive(
+    BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default,
+)]
 /// A wrapper type for the payload hashmap.
 pub struct Payload {
     map: HashMap<String, PayloadType>,

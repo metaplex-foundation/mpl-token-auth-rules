@@ -6,7 +6,7 @@ use crate::{
     utils::{assert_derivation, compute_merkle_root},
 };
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "serde-feature")]
+#[cfg(feature = "serde-with-feature")]
 use serde_with::{As, DisplayFromStr};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
@@ -53,7 +53,7 @@ pub enum Rule {
     /// can be retrieved from its `AccountInfo` struct.
     AdditionalSigner {
         /// The public key that must have also signed the transaction.
-        #[cfg_attr(feature = "serde-feature", serde(with = "As::<DisplayFromStr>"))]
+        #[cfg_attr(feature = "serde-with-feature", serde(with = "As::<DisplayFromStr>"))]
         account: Pubkey,
     },
     /// Direct comparison between `Pubkey`s.  When the `Validate` instruction is called, this rule
@@ -61,7 +61,7 @@ pub enum Rule {
     /// used to locate the `Pubkey` in the payload to compare to the `Pubkey` in the rule.
     PubkeyMatch {
         /// The public key to be compared against.
-        #[cfg_attr(feature = "serde-feature", serde(with = "As::<DisplayFromStr>"))]
+        #[cfg_attr(feature = "serde-with-feature", serde(with = "As::<DisplayFromStr>"))]
         pubkey: Pubkey,
         /// The field in the `Payload` to be compared.
         field: String,
@@ -115,7 +115,7 @@ pub enum Rule {
     /// found from its `AccountInfo` struct.
     ProgramOwned {
         /// The program that must own the `Pubkey`.
-        #[cfg_attr(feature = "serde-feature", serde(with = "As::<DisplayFromStr>"))]
+        #[cfg_attr(feature = "serde-with-feature", serde(with = "As::<DisplayFromStr>"))]
         program: Pubkey,
         /// The field in the `Payload` to be compared.
         field: String,
@@ -167,7 +167,7 @@ pub enum Rule {
     /// the optional `rule_authority` account to sign.
     Frequency {
         /// The authority of the frequency account.
-        #[cfg_attr(feature = "serde-feature", serde(with = "As::<DisplayFromStr>"))]
+        #[cfg_attr(feature = "serde-with-feature", serde(with = "As::<DisplayFromStr>"))]
         authority: Pubkey,
     },
     /// The true test if a pubkey can be signed from a client and therefore is a true wallet account.
