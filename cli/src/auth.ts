@@ -103,7 +103,7 @@ program
         let rulesetPDA = new PublicKey(address);
         let rulesetData = await connection.getAccountInfo(rulesetPDA);
         let data = rulesetData?.data as Buffer;
-        const [header, header_num] = ruleSetHeaderBeet.deserialize(data.slice(0, 8));
+        const [header, header_num] = ruleSetHeaderBeet.deserialize(data.slice(0, 9));
         const [revmap, revmap_num] = ruleSetRevisionMapV1Beet.deserialize(data.slice(parseInt(header.revMapVersionLocation) + 1, data.length));
         let latestRevision = parseInt(revmap.ruleSetRevisions[revmap.ruleSetRevisions.length - 1]);
         let rulesetDecoded = decode(data.slice(latestRevision + 1, parseInt(header.revMapVersionLocation)));
