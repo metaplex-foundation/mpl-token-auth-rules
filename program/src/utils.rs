@@ -155,18 +155,18 @@ pub fn get_existing_revision_map(
     };
 
     // Get revision map version location from header and use it check revision map version.
-    match data.get(header.rev_map_version_location) {
+    match data.get(header.rev_map_version_location as usize) {
         Some(&RULE_SET_REV_MAP_VERSION) => {
             // Increment starting location by size of the revision map version.
             let start = header
                 .rev_map_version_location
                 .checked_add(1)
-                .ok_or(RuleSetError::NumericalOverflow)?;
+                .ok_or(RuleSetError::NumericalOverflow)? as usize;
 
             // Deserialize revision map.
             if start < data.len() {
                 let revision_map = RuleSetRevisionMapV1::try_from_slice(&data[start..])?;
-                Ok((revision_map, header.rev_map_version_location))
+                Ok((revision_map, header.rev_map_version_location as usize))
             } else {
                 Err(RuleSetError::DataTypeMismatch.into())
             }

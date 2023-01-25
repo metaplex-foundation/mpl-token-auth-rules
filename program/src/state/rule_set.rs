@@ -25,12 +25,12 @@ pub struct RuleSetHeader {
     pub key: Key,
     /// The location of revision map version stored in the PDA.  This is one byte before the
     /// revision map itself.
-    pub rev_map_version_location: usize,
+    pub rev_map_version_location: u64,
 }
 
 impl RuleSetHeader {
     /// Create a new `RuleSetHeader`.
-    pub fn new(rev_map_version_location: usize) -> Self {
+    pub fn new(rev_map_version_location: u64) -> Self {
         Self {
             key: Key::RuleSet,
             rev_map_version_location,
@@ -58,11 +58,11 @@ pub struct RuleSetV1 {
     /// of this lib, to make sure that a `RuleSet` passed into our handlers
     /// is one we are compatible with.
     lib_version: u8,
-    /// Name of the RuleSet, used in PDA derivation.
-    rule_set_name: String,
     /// Owner (creator) of the RuleSet.
     #[cfg_attr(feature = "serde-with-feature", serde(with = "As::<DisplayFromStr>"))]
     owner: Pubkey,
+    /// Name of the RuleSet, used in PDA derivation.
+    rule_set_name: String,
     /// A map to determine the `Rule` that belongs to a given `Operation`.
     pub operations: HashMap<String, Rule>,
 }

@@ -547,7 +547,7 @@ fn write_data_to_pda(
     }
 
     // Create a new header holding the location of the revision map version.
-    let header = RuleSetHeader::new(start);
+    let header = RuleSetHeader::new(start as u64);
 
     // Borsh serialize the header.
     let mut serialized_header = Vec::new();

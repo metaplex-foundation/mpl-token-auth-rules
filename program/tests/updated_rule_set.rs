@@ -253,7 +253,7 @@ async fn test_update_ruleset_data_integrity() {
     );
 
     // Create header using the known location of the revision map version location.
-    let header = RuleSetHeader::new(rev_map_version_loc);
+    let header = RuleSetHeader::new(rev_map_version_loc as u64);
 
     // Borsh serialize the header.
     let mut serialized_header = Vec::new();
