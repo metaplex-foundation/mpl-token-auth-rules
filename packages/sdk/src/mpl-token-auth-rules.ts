@@ -17,14 +17,14 @@ export * from './pda';
 
 export const getHeader = (data: Buffer): RuleSetHeader => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [header, header_num] = ruleSetHeaderBeet.deserialize(data.slice(0, 8));
+  const [header, _] = ruleSetHeaderBeet.deserialize(data.slice(0, 8));
   return header;
 };
 
 export const getRevisionMapV1 = (data: Buffer): RuleSetRevisionMapV1 => {
   const header = getHeader(data);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [revmap, revmap_num] = ruleSetRevisionMapV1Beet.deserialize(
+  const [revmap, _] = ruleSetRevisionMapV1Beet.deserialize(
     data.slice(parseInt(header.revMapVersionLocation) + 1, data.length),
   );
   return revmap;
