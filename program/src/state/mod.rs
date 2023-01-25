@@ -47,6 +47,8 @@ use crate::{error::RuleSetError, utils::assert_owned_by};
 pub enum Key {
     /// An uninitialized account, which has all bytes set to zero by default.
     Uninitialized,
+    /// An account contianing a RuleSet.
+    RuleSet,
     /// An account containing frequency state.
     Frequency,
 }

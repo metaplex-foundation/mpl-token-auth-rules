@@ -1,5 +1,8 @@
 /// See state module for description of PDA memory layout.
-use crate::{error::RuleSetError, state::Rule};
+use crate::{
+    error::RuleSetError,
+    state::{Key, Rule},
+};
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "serde-with-feature")]
@@ -18,6 +21,8 @@ pub const RULE_SET_LIB_VERSION: u8 = 1;
 /// to be stored at the beginning of the PDA and never be versioned so that it always
 /// has the same serialized size.  See top-level module for description of PDA memory layout.
 pub struct RuleSetHeader {
+    /// The `Key` for this account which identifies it as a `RuleSet` account.
+    pub key: Key,
     /// The location of revision map version stored in the PDA.  This is one byte before the
     /// revision map itself.
     pub rev_map_version_location: usize,
@@ -27,13 +32,14 @@ impl RuleSetHeader {
     /// Create a new `RuleSetHeader`.
     pub fn new(rev_map_version_location: usize) -> Self {
         Self {
+            key: Key::RuleSet,
             rev_map_version_location,
         }
     }
 }
 
 /// Size of `RuleSetHeader` when Borsh serialized.
-pub const RULE_SET_SERIALIZED_HEADER_LEN: usize = 8;
+pub const RULE_SET_SERIALIZED_HEADER_LEN: usize = 9;
 
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Default)]
 /// Revision map used to keep track of where individual `RuleSet` revisions are stored in the PDA.
