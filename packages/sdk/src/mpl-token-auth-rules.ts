@@ -16,13 +16,13 @@ export const PREFIX = 'rule_set';
 export * from './pda';
 
 export const getHeader = (data: Buffer): RuleSetHeader => {
-  const [header, header_num] = ruleSetHeaderBeet.deserialize(data.slice(0, 8));
+  const [header, _] = ruleSetHeaderBeet.deserialize(data.slice(0, 8));
   return header;
 };
 
 export const getRevisionMapV1 = (data: Buffer): RuleSetRevisionMapV1 => {
   const header = getHeader(data);
-  const [revmap, revmap_num] = ruleSetRevisionMapV1Beet.deserialize(
+  const [revmap, _] = ruleSetRevisionMapV1Beet.deserialize(
     data.slice(parseInt(header.revMapVersionLocation) + 1, data.length),
   );
   return revmap;
