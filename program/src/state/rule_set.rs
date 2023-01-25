@@ -2,7 +2,7 @@
 use crate::{error::RuleSetError, state::Rule};
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "serde-feature")]
+#[cfg(feature = "serde-with-feature")]
 use serde_with::{As, DisplayFromStr};
 use solana_program::{entrypoint::ProgramResult, pubkey::Pubkey};
 use std::collections::HashMap;
@@ -55,7 +55,7 @@ pub struct RuleSetV1 {
     /// Name of the RuleSet, used in PDA derivation.
     rule_set_name: String,
     /// Owner (creator) of the RuleSet.
-    #[cfg_attr(feature = "serde-feature", serde(with = "As::<DisplayFromStr>"))]
+    #[cfg_attr(feature = "serde-with-feature", serde(with = "As::<DisplayFromStr>"))]
     owner: Pubkey,
     /// A map to determine the `Rule` that belongs to a given `Operation`.
     pub operations: HashMap<String, Rule>,
