@@ -14,21 +14,63 @@ use solana_sdk::{
     compute_budget::ComputeBudgetInstruction, program_pack::Pack, signature::Signer,
     signer::keypair::Keypair, system_instruction, transaction::Transaction,
 };
+use std::fmt::Display;
 
-#[repr(C)]
-#[derive(ToPrimitive)]
-pub enum Operation {
-    OwnerTransfer,
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TransferScenario {
+    Holder,
+    TransferDelegate,
+    SaleDelegate,
+    MigrationDelegate,
+    WalletToWallet,
+}
+
+impl Display for TransferScenario {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Holder => write!(f, "Owner"),
+            Self::TransferDelegate => write!(f, "TransferDelegate"),
+            Self::SaleDelegate => write!(f, "SaleDelegate"),
+            Self::MigrationDelegate => write!(f, "MigrationDelegate"),
+            Self::WalletToWallet => write!(f, "WalletToWallet"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum UpdateScenario {
+    MetadataAuth,
     Delegate,
-    SaleTransfer,
+    Proxy,
+}
+
+impl Display for UpdateScenario {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UpdateScenario::MetadataAuth => write!(f, "MetadataAuth"),
+            UpdateScenario::Delegate => write!(f, "Delegate"),
+            UpdateScenario::Proxy => write!(f, "Proxy"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Operation {
+    SimpleOwnerTransfer,
+    SimpleDelegate,
+    SimpleSaleTransfer,
+    Transfer { scenario: TransferScenario },
+    Update { scenario: UpdateScenario },
 }
 
 impl ToString for Operation {
     fn to_string(&self) -> String {
         match self {
-            Operation::OwnerTransfer => "OwnerTransfer".to_string(),
-            Operation::Delegate => "Delegate".to_string(),
-            Operation::SaleTransfer => "SaleTransfer".to_string(),
+            Operation::SimpleOwnerTransfer => "SimpleOwnerTransfer".to_string(),
+            Operation::SimpleDelegate => "SimpleDelegate".to_string(),
+            Operation::SimpleSaleTransfer => "SimpleSaleTransfer".to_string(),
+            Self::Transfer { scenario } => format!("Transfer:{}", scenario),
+            Self::Update { scenario } => format!("Update:{}", scenario),
         }
     }
 }

@@ -14,7 +14,10 @@ use solana_sdk::{
     instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
     transaction::Transaction,
 };
-use utils::{create_associated_token_account, create_mint, program_test, Operation, PayloadKey};
+use utils::{
+    create_associated_token_account, create_mint, program_test, Operation, PayloadKey,
+    TransferScenario,
+};
 
 static PROGRAM_ALLOW_LIST: [Pubkey; 1] = [mpl_token_auth_rules::ID];
 
@@ -67,7 +70,7 @@ macro_rules! get_primitive_rules {
 }
 
 #[tokio::test]
-async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
+async fn wallet_and_program_owned_pda_scenarios() {
     let mut context = program_test().start_with_context().await;
 
     get_primitive_rules!(
@@ -81,53 +84,90 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     );
 
     // --------------------------------
-    // Create RuleSet
+    // Create Rules
     // --------------------------------
-    // Compose the Owner Transfer rule as follows:
-    // amount is 1 &&
-    // (source is on allow list && source is a PDA) ||
-    // (dest is on allow list && dest is a PDA) ||
-    // (source is wallet && dest is wallet)
-    let transfer_rule = Rule::All {
+    // (amount is 1 && source is on allow list && source is a PDA) ||
+    // (amount is 1 && dest is on allow list && dest is a PDA)
+    let transfer_rule = Rule::Any {
         rules: vec![
-            nft_amount,
-            Rule::Any {
+            Rule::All {
                 rules: vec![
-                    Rule::All {
-                        rules: vec![source_program_allow_list, source_pda_match],
-                    },
-                    Rule::All {
-                        rules: vec![dest_program_allow_list, dest_pda_match],
-                    },
-                    Rule::All {
-                        rules: vec![source_is_wallet, dest_is_wallet],
-                    },
+                    nft_amount.clone(),
+                    source_program_allow_list,
+                    source_pda_match,
                 ],
+            },
+            Rule::All {
+                rules: vec![nft_amount.clone(), dest_program_allow_list, dest_pda_match],
             },
         ],
     };
 
-    // Create RuleSet.
-    let mut rule_set = RuleSetV1::new(
-        "basic_royalty_enforcement".to_string(),
-        context.payer.pubkey(),
-    );
-    rule_set
-        .add(Operation::OwnerTransfer.to_string(), transfer_rule)
+    // (amount is 1 && source is wallet && dest is wallet)
+    let wallet_to_wallet_rule = Rule::All {
+        rules: vec![nft_amount, source_is_wallet, dest_is_wallet],
+    };
+
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
+    let rule_set_name = "Metaplex Royalty RuleSet Dev".to_string();
+    let mut royalty_rule_set = RuleSetV1::new(rule_set_name.clone(), context.payer.pubkey());
+
+    let owner_operation = Operation::Transfer {
+        scenario: TransferScenario::Holder,
+    };
+
+    let transfer_delegate_operation = Operation::Transfer {
+        scenario: TransferScenario::TransferDelegate,
+    };
+
+    let sale_delegate_operation = Operation::Transfer {
+        scenario: TransferScenario::SaleDelegate,
+    };
+
+    let migration_delegate_operation = Operation::Transfer {
+        scenario: TransferScenario::MigrationDelegate,
+    };
+
+    let wallet_to_wallet_operation = Operation::Transfer {
+        scenario: TransferScenario::WalletToWallet,
+    };
+
+    royalty_rule_set
+        .add(owner_operation.to_string(), transfer_rule.clone())
+        .unwrap();
+    royalty_rule_set
+        .add(
+            transfer_delegate_operation.to_string(),
+            transfer_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(sale_delegate_operation.to_string(), transfer_rule.clone())
+        .unwrap();
+    royalty_rule_set
+        .add(migration_delegate_operation.to_string(), transfer_rule)
+        .unwrap();
+    royalty_rule_set
+        .add(
+            wallet_to_wallet_operation.to_string(),
+            wallet_to_wallet_rule,
+        )
         .unwrap();
 
-    println!("{}", serde_json::to_string_pretty(&rule_set,).unwrap());
+    println!("{:#?}", royalty_rule_set);
 
     // Put the RuleSet on chain.
-    let rule_set_addr = create_rule_set_on_chain!(
+    let rule_set_addr = create_big_rule_set_on_chain!(
         &mut context,
-        rule_set.clone(),
-        "basic_royalty_enforcement".to_string()
+        royalty_rule_set.clone(),
+        rule_set_name.clone()
     )
     .await;
 
     // --------------------------------
-    // Validate fail wallet to wallet
+    // Validate fail wallet to wallet unimplemented
     // --------------------------------
     let source = Keypair::new();
     let dest = Keypair::new();
@@ -156,7 +196,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             AccountMeta::new_readonly(dest.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: wallet_to_wallet_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -164,14 +204,11 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
         .unwrap()
         .instruction();
 
-    // Validate OwnerTransfer operation.
+    // Validate fail operation.
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
-    // Check that error is what we expect.  It should fail the `ProgramOwnedList` Rule since the
-    // owner is not in the Rule.  Technically the last failure in the `Any` statement would be
-    // `RuleSetError::NotImplemented`, but we are avoiding returning those at this time because
-    // it is not as useful to get that error return.
-    assert_custom_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
+    // Check that error is what we expect.  The `IsWallet` rule currently returns `NotImplemented`.
+    assert_custom_error!(err, RuleSetError::NotImplemented);
 
     // --------------------------------
     // Validate wallet to prog owned PDA
@@ -182,7 +219,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
     let seeds = vec![
         mpl_token_auth_rules::pda::PREFIX.as_bytes().to_vec(),
         context.payer.pubkey().as_ref().to_vec(),
-        "basic_royalty_enforcement".as_bytes().to_vec(),
+        rule_set_name.as_bytes().to_vec(),
     ];
 
     // Store the payload of data to validate against the rule definition.
@@ -210,7 +247,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             AccountMeta::new_readonly(rule_set_addr, false),
         ])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: owner_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -218,7 +255,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
         .unwrap()
         .instruction();
 
-    // Validate OwnerTransfer operation.
+    // Validate operation.
     process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // --------------------------------
@@ -267,7 +304,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             AccountMeta::new_readonly(second_rule_set_addr, false),
         ])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: transfer_delegate_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -275,7 +312,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
         .unwrap()
         .instruction();
 
-    // Validate OwnerTransfer operation.
+    // Validate operation.
     process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // --------------------------------
@@ -306,7 +343,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             AccountMeta::new_readonly(dest.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: sale_delegate_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -314,21 +351,22 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
         .unwrap()
         .instruction();
 
-    // Validate OwnerTransfer operation.
+    // Validate operation.
     process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // --------------------------------
     // Validate fail wrong amount
     // --------------------------------
-    // Create a Keypair to simulate a token mint address.
-    let mint = Keypair::new();
-
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
         (PayloadKey::Amount.to_string(), PayloadType::Number(2)),
         (
             PayloadKey::Source.to_string(),
-            PayloadType::Pubkey(source.pubkey()),
+            PayloadType::Pubkey(rule_set_addr),
+        ),
+        (
+            PayloadKey::SourceSeeds.to_string(),
+            PayloadType::Seeds(SeedsVec::new(seeds.clone())),
         ),
         (
             PayloadKey::Destination.to_string(),
@@ -340,11 +378,11 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
         .rule_set_pda(rule_set_addr)
         .mint(mint.pubkey())
         .additional_rule_accounts(vec![
-            AccountMeta::new_readonly(source.pubkey(), false),
+            AccountMeta::new_readonly(rule_set_addr, false),
             AccountMeta::new_readonly(dest.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: sale_delegate_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -352,7 +390,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
         .unwrap()
         .instruction();
 
-    // Fail to validate OwnerTransfer operation.
+    // Fail to validate operation.
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
@@ -409,7 +447,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             AccountMeta::new_readonly(associated_token_account, false),
         ])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: owner_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -417,11 +455,10 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
         .unwrap()
         .instruction();
 
-    // Fail to validate OwnerTransfer operation.
+    // Fail to validate operation.
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
-    // Check that error is what we expect.  It should fail the ProgramOwnedList Rule since the
-    // owner is not in the Rule.
+    // Check that error is what we expect.
     assert_custom_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
 
     // --------------------------------
@@ -470,7 +507,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
             AccountMeta::new_readonly(program_owned_account.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: owner_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -478,7 +515,7 @@ async fn sys_prog_owned_or_owned_pda_to_sys_prog_owned_or_owned_pda() {
         .unwrap()
         .instruction();
 
-    // Fail to validate Transfer operation.
+    // Fail to validate operation.
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.  It should fail the PDAMatch Rule after passing
@@ -503,8 +540,8 @@ async fn multiple_operations() {
     // --------------------------------
     // Create RuleSet
     // --------------------------------
-    // Compose the Owner Transfer rule as follows:
-    // (source is a owned by system program && dest is on allow list && dest is a PDA)
+    // Compose the rule as follows:
+    // (dest is on allow list && dest is a PDA)
     let transfer_rule = Rule::All {
         rules: vec![dest_program_allow_list, dest_pda_match],
     };
@@ -528,18 +565,18 @@ async fn multiple_operations() {
         context.payer.pubkey(),
     );
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), transfer_rule)
+        .add(Operation::SimpleOwnerTransfer.to_string(), transfer_rule)
         .unwrap();
 
     rule_set
         .add(
-            Operation::Delegate.to_string(),
+            Operation::SimpleDelegate.to_string(),
             leaf_in_marketplace_tree.clone(),
         )
         .unwrap();
     rule_set
         .add(
-            Operation::SaleTransfer.to_string(),
+            Operation::SimpleSaleTransfer.to_string(),
             leaf_in_marketplace_tree,
         )
         .unwrap();
@@ -555,7 +592,7 @@ async fn multiple_operations() {
     .await;
 
     // --------------------------------
-    // Validate sys prog owned to PDA
+    // Validate wallet to PDA
     // --------------------------------
     let source = Keypair::new();
 
@@ -595,7 +632,7 @@ async fn multiple_operations() {
             AccountMeta::new_readonly(rule_set_addr, false),
         ])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: Operation::SimpleOwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -607,7 +644,7 @@ async fn multiple_operations() {
     process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // --------------------------------
-    // Validate fail sys prog owned to sys prog owned
+    // Validate fail wallet to wallet
     // --------------------------------
     let dest = Keypair::new();
     let payload = Payload::from([
@@ -629,7 +666,7 @@ async fn multiple_operations() {
             AccountMeta::new_readonly(dest.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: Operation::SimpleOwnerTransfer.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -645,7 +682,7 @@ async fn multiple_operations() {
     assert_custom_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
 
     // --------------------------------
-    // Validate Delegate operation
+    // Validate SimpleDelegate operation
     // --------------------------------
     // Merkle tree leaf node generated in a different test program.
     let leaf: [u8; 32] = [
@@ -693,7 +730,7 @@ async fn multiple_operations() {
         .mint(mint.pubkey())
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::Delegate.to_string(),
+            operation: Operation::SimpleDelegate.to_string(),
             payload: payload.clone(),
             update_rule_state: false,
             rule_set_revision: None,
@@ -705,7 +742,7 @@ async fn multiple_operations() {
     process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // --------------------------------
-    // Validate SaleTransfer operation
+    // Validate SimpleSaleTransfer operation
     // --------------------------------
     // Create a `validate` instruction for a `SaleTransfer` operation.
     let validate_ix = ValidateBuilder::new()
@@ -713,7 +750,7 @@ async fn multiple_operations() {
         .mint(mint.pubkey())
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::SaleTransfer.to_string(),
+            operation: Operation::SimpleSaleTransfer.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
