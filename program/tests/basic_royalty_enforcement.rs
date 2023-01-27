@@ -9,7 +9,7 @@ use mpl_token_auth_rules::{
     state::{CompareOp, Rule, RuleSetV1},
 };
 use solana_program::pubkey::Pubkey;
-use solana_program_test::tokio;
+use solana_program_test::{tokio, ProgramTestContext};
 use solana_sdk::{
     instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
     transaction::Transaction,
@@ -69,10 +69,7 @@ macro_rules! get_primitive_rules {
     };
 }
 
-#[tokio::test]
-async fn wallet_and_program_owned_pda_scenarios() {
-    let mut context = program_test().start_with_context().await;
-
+fn get_rules() -> (Rule, Rule) {
     get_primitive_rules!(
         nft_amount,
         source_program_allow_list,
@@ -108,72 +105,92 @@ async fn wallet_and_program_owned_pda_scenarios() {
         rules: vec![nft_amount, source_is_wallet, dest_is_wallet],
     };
 
-    // --------------------------------
+    (transfer_rule, wallet_to_wallet_rule)
+}
+
+const RULE_SET_NAME: &str = "Metaplex Royalty RuleSet Dev";
+
+// Compose operations with scenarios.
+const OWNER_OPERATION: Operation = Operation::Transfer {
+    scenario: TransferScenario::Holder,
+};
+
+const TRANSFER_DELEGATE_OPERATION: Operation = Operation::Transfer {
+    scenario: TransferScenario::TransferDelegate,
+};
+
+const SALE_DELEGATE_OPERATION: Operation = Operation::Transfer {
+    scenario: TransferScenario::SaleDelegate,
+};
+
+const MIGRATION_DELEGATE_OPERATION: Operation = Operation::Transfer {
+    scenario: TransferScenario::MigrationDelegate,
+};
+
+const WALLET_TO_WALLET_OPERATION: Operation = Operation::Transfer {
+    scenario: TransferScenario::WalletToWallet,
+};
+
+async fn create_royalty_rule_set(context: &mut ProgramTestContext) -> Pubkey {
     // Create RuleSet
-    // --------------------------------
-    let rule_set_name = "Metaplex Royalty RuleSet Dev".to_string();
-    let mut royalty_rule_set = RuleSetV1::new(rule_set_name.clone(), context.payer.pubkey());
+    let (transfer_rule, wallet_to_wallet_rule) = get_rules();
+    let mut royalty_rule_set = RuleSetV1::new(RULE_SET_NAME.to_string(), context.payer.pubkey());
 
-    let owner_operation = Operation::Transfer {
-        scenario: TransferScenario::Holder,
-    };
-
-    let transfer_delegate_operation = Operation::Transfer {
-        scenario: TransferScenario::TransferDelegate,
-    };
-
-    let sale_delegate_operation = Operation::Transfer {
-        scenario: TransferScenario::SaleDelegate,
-    };
-
-    let migration_delegate_operation = Operation::Transfer {
-        scenario: TransferScenario::MigrationDelegate,
-    };
-
-    let wallet_to_wallet_operation = Operation::Transfer {
-        scenario: TransferScenario::WalletToWallet,
-    };
-
+    // Add operations to `RuleSet`.
     royalty_rule_set
-        .add(owner_operation.to_string(), transfer_rule.clone())
+        .add(OWNER_OPERATION.to_string(), transfer_rule.clone())
         .unwrap();
     royalty_rule_set
         .add(
-            transfer_delegate_operation.to_string(),
+            TRANSFER_DELEGATE_OPERATION.to_string(),
             transfer_rule.clone(),
         )
         .unwrap();
     royalty_rule_set
-        .add(sale_delegate_operation.to_string(), transfer_rule.clone())
+        .add(SALE_DELEGATE_OPERATION.to_string(), transfer_rule.clone())
         .unwrap();
     royalty_rule_set
-        .add(migration_delegate_operation.to_string(), transfer_rule)
+        .add(MIGRATION_DELEGATE_OPERATION.to_string(), transfer_rule)
         .unwrap();
     royalty_rule_set
         .add(
-            wallet_to_wallet_operation.to_string(),
+            WALLET_TO_WALLET_OPERATION.to_string(),
             wallet_to_wallet_rule,
         )
         .unwrap();
 
     println!("{:#?}", royalty_rule_set);
 
-    // Put the RuleSet on chain.
-    let rule_set_addr = create_big_rule_set_on_chain!(
-        &mut context,
-        royalty_rule_set.clone(),
-        rule_set_name.clone()
-    )
-    .await;
+    // Put the `RuleSet` on chain.
+
+    let rule_set_addr =
+        create_big_rule_set_on_chain!(context, royalty_rule_set.clone(), RULE_SET_NAME.to_string())
+            .await;
+    rule_set_addr
+}
+
+#[tokio::test]
+async fn create_rule_set() {
+    let mut context = program_test().start_with_context().await;
+    let _rule_set_addr = create_royalty_rule_set(&mut context).await;
+}
+
+#[tokio::test]
+async fn wallet_to_wallet_unimplemented() {
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
+    let mut context = program_test().start_with_context().await;
+    let rule_set_addr = create_royalty_rule_set(&mut context).await;
 
     // --------------------------------
-    // Validate fail wallet to wallet unimplemented
+    // Validate unimplemented wallet to wallet
     // --------------------------------
-    let source = Keypair::new();
-    let dest = Keypair::new();
-
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new();
+
+    let source = Keypair::new();
+    let dest = Keypair::new();
 
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
@@ -196,7 +213,7 @@ async fn wallet_and_program_owned_pda_scenarios() {
             AccountMeta::new_readonly(dest.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
-            operation: wallet_to_wallet_operation.to_string(),
+            operation: WALLET_TO_WALLET_OPERATION.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -209,17 +226,31 @@ async fn wallet_and_program_owned_pda_scenarios() {
 
     // Check that error is what we expect.  The `IsWallet` rule currently returns `NotImplemented`.
     assert_custom_error!(err, RuleSetError::NotImplemented);
+}
+
+#[tokio::test]
+async fn wallet_to_prog_owned_pda() {
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
+    let mut context = program_test().start_with_context().await;
+    let rule_set_addr = create_royalty_rule_set(&mut context).await;
 
     // --------------------------------
     // Validate wallet to prog owned PDA
     // --------------------------------
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new();
+
+    let source = Keypair::new();
+
     // Our derived key is going to be an account owned by the
     // mpl-token-auth-rules program. Any one will do so for convenience
     // we just use the RuleSet.  These are the RuleSet seeds.
     let seeds = vec![
         mpl_token_auth_rules::pda::PREFIX.as_bytes().to_vec(),
         context.payer.pubkey().as_ref().to_vec(),
-        rule_set_name.as_bytes().to_vec(),
+        RULE_SET_NAME.as_bytes().to_vec(),
     ];
 
     // Store the payload of data to validate against the rule definition.
@@ -247,7 +278,7 @@ async fn wallet_and_program_owned_pda_scenarios() {
             AccountMeta::new_readonly(rule_set_addr, false),
         ])
         .build(ValidateArgs::V1 {
-            operation: owner_operation.to_string(),
+            operation: OWNER_OPERATION.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -257,10 +288,31 @@ async fn wallet_and_program_owned_pda_scenarios() {
 
     // Validate operation.
     process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+}
+
+#[tokio::test]
+async fn prog_owned_pda_to_prog_owned_pda() {
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
+    let mut context = program_test().start_with_context().await;
+    let rule_set_addr = create_royalty_rule_set(&mut context).await;
 
     // --------------------------------
     // Validate prog owned PDA to prog owned PDA
     // --------------------------------
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new();
+
+    // Our derived key is going to be an account owned by the
+    // mpl-token-auth-rules program. Any one will do so for convenience
+    // we just use the RuleSet.  These are the RuleSet seeds.
+    let seeds = vec![
+        mpl_token_auth_rules::pda::PREFIX.as_bytes().to_vec(),
+        context.payer.pubkey().as_ref().to_vec(),
+        RULE_SET_NAME.as_bytes().to_vec(),
+    ];
+
     // Create a second RuleSet on chain for the sole purpose of having
     // another PDA that is owned by the mpl-token-auth-rules program.
     let second_rule_set = RuleSetV1::new("second_rule_set".to_string(), context.payer.pubkey());
@@ -304,7 +356,7 @@ async fn wallet_and_program_owned_pda_scenarios() {
             AccountMeta::new_readonly(second_rule_set_addr, false),
         ])
         .build(ValidateArgs::V1 {
-            operation: transfer_delegate_operation.to_string(),
+            operation: TRANSFER_DELEGATE_OPERATION.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -314,10 +366,33 @@ async fn wallet_and_program_owned_pda_scenarios() {
 
     // Validate operation.
     process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+}
+
+#[tokio::test]
+async fn prog_owned_pda_to_wallet() {
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
+    let mut context = program_test().start_with_context().await;
+    let rule_set_addr = create_royalty_rule_set(&mut context).await;
 
     // --------------------------------
     // Validate prog owned PDA to wallet
     // --------------------------------
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new();
+
+    // Our derived key is going to be an account owned by the
+    // mpl-token-auth-rules program. Any one will do so for convenience
+    // we just use the RuleSet.  These are the RuleSet seeds.
+    let seeds = vec![
+        mpl_token_auth_rules::pda::PREFIX.as_bytes().to_vec(),
+        context.payer.pubkey().as_ref().to_vec(),
+        RULE_SET_NAME.as_bytes().to_vec(),
+    ];
+
+    let dest = Keypair::new();
+
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
         (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
@@ -343,7 +418,7 @@ async fn wallet_and_program_owned_pda_scenarios() {
             AccountMeta::new_readonly(dest.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
-            operation: sale_delegate_operation.to_string(),
+            operation: SALE_DELEGATE_OPERATION.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -353,10 +428,33 @@ async fn wallet_and_program_owned_pda_scenarios() {
 
     // Validate operation.
     process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+}
+
+#[tokio::test]
+async fn wrong_amount_fails() {
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
+    let mut context = program_test().start_with_context().await;
+    let rule_set_addr = create_royalty_rule_set(&mut context).await;
 
     // --------------------------------
     // Validate fail wrong amount
     // --------------------------------
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new();
+
+    // Our derived key is going to be an account owned by the
+    // mpl-token-auth-rules program. Any one will do so for convenience
+    // we just use the RuleSet.  These are the RuleSet seeds.
+    let seeds = vec![
+        mpl_token_auth_rules::pda::PREFIX.as_bytes().to_vec(),
+        context.payer.pubkey().as_ref().to_vec(),
+        RULE_SET_NAME.as_bytes().to_vec(),
+    ];
+
+    let dest = Keypair::new();
+
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
         (PayloadKey::Amount.to_string(), PayloadType::Number(2)),
@@ -382,7 +480,7 @@ async fn wallet_and_program_owned_pda_scenarios() {
             AccountMeta::new_readonly(dest.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
-            operation: sale_delegate_operation.to_string(),
+            operation: SALE_DELEGATE_OPERATION.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -395,10 +493,24 @@ async fn wallet_and_program_owned_pda_scenarios() {
 
     // Check that error is what we expect.
     assert_custom_error!(err, RuleSetError::AmountCheckFailed);
+}
+
+#[tokio::test]
+async fn valid_pda_but_not_prog_owned_fails() {
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
+    let mut context = program_test().start_with_context().await;
+    let rule_set_addr = create_royalty_rule_set(&mut context).await;
 
     // --------------------------------
     // Validate fail valid PDA, but not prog owned
     // --------------------------------
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new();
+
+    let source = Keypair::new();
+
     // Create an associated token account for the sole purpose of having
     // a valid PDA that is owned by a different program than what is in the Rule.
     create_mint(
@@ -447,7 +559,7 @@ async fn wallet_and_program_owned_pda_scenarios() {
             AccountMeta::new_readonly(associated_token_account, false),
         ])
         .build(ValidateArgs::V1 {
-            operation: owner_operation.to_string(),
+            operation: OWNER_OPERATION.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -460,10 +572,33 @@ async fn wallet_and_program_owned_pda_scenarios() {
 
     // Check that error is what we expect.
     assert_custom_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
+}
+
+#[tokio::test]
+async fn prog_owned_but_not_pda_fails() {
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
+    let mut context = program_test().start_with_context().await;
+    let rule_set_addr = create_royalty_rule_set(&mut context).await;
 
     // --------------------------------
     // Validate fail prog owned but not a PDA
     // --------------------------------
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new();
+
+    let source = Keypair::new();
+
+    // Our derived key is going to be an account owned by the
+    // mpl-token-auth-rules program. Any one will do so for convenience
+    // we just use the RuleSet.  These are the RuleSet seeds.
+    let seeds = vec![
+        mpl_token_auth_rules::pda::PREFIX.as_bytes().to_vec(),
+        context.payer.pubkey().as_ref().to_vec(),
+        RULE_SET_NAME.as_bytes().to_vec(),
+    ];
+
     // Create an account owned by mpl-token-auth-rules.
     let program_owned_account = Keypair::new();
     let rent = context.banks_client.get_rent().await.unwrap();
@@ -507,7 +642,7 @@ async fn wallet_and_program_owned_pda_scenarios() {
             AccountMeta::new_readonly(program_owned_account.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
-            operation: owner_operation.to_string(),
+            operation: OWNER_OPERATION.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
