@@ -204,7 +204,7 @@ async fn test_composed_rule() {
 }
 
 #[tokio::test]
-async fn test_rule_set_creation_wrong_pda_fails() {
+async fn test_rule_set_creation_wallet_fails() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------
@@ -221,22 +221,19 @@ async fn test_rule_set_creation_wrong_pda_fails() {
         .add(Operation::OwnerTransfer.to_string(), adtl_signer)
         .unwrap();
 
-    // Find RuleSet PDA using WRONG name for seed.
-    let (wrong_rule_set_pda, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
-        context.payer.pubkey(),
-        "WRONG NAME".to_string(),
-    );
-
     // Serialize the RuleSet using RMP serde.
     let mut serialized_rule_set = Vec::new();
     rule_set
         .serialize(&mut Serializer::new(&mut serialized_rule_set))
         .unwrap();
 
+    // --------------------------------
+    // Fail on-chain creation
+    // --------------------------------
     // Create a `create` instruction.
     let create_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
-        .rule_set_pda(wrong_rule_set_pda)
+        .rule_set_pda(Keypair::new().pubkey())
         .build(CreateOrUpdateArgs::V1 {
             serialized_rule_set,
         })
@@ -260,4 +257,140 @@ async fn test_rule_set_creation_wrong_pda_fails() {
 
     // Check that error is what we expect.
     assert_custom_error!(err, RuleSetError::DerivedKeyInvalid);
+}
+
+#[tokio::test]
+async fn test_rule_set_creation_wrong_pda_fails() {
+    let mut context = program_test().start_with_context().await;
+
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
+    // Create some rules.
+    let adtl_signer = Rule::AdditionalSigner {
+        account: context.payer.pubkey(),
+    };
+
+    // Create a RuleSet.
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    rule_set
+        .add(Operation::OwnerTransfer.to_string(), adtl_signer)
+        .unwrap();
+
+    // Serialize the RuleSet using RMP serde.
+    let mut serialized_rule_set = Vec::new();
+    rule_set
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
+        .unwrap();
+
+    // --------------------------------
+    // Fail on-chain creation
+    // --------------------------------
+    // Find RuleSet PDA using WRONG name for seed.
+    let (wrong_rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
+        context.payer.pubkey(),
+        "WRONG NAME".to_string(),
+    );
+
+    // Create a `create` instruction.
+    let create_ix = CreateOrUpdateBuilder::new()
+        .payer(context.payer.pubkey())
+        .rule_set_pda(wrong_rule_set_addr)
+        .build(CreateOrUpdateArgs::V1 {
+            serialized_rule_set,
+        })
+        .unwrap()
+        .instruction();
+
+    // Add it to a transaction.
+    let create_tx = Transaction::new_signed_with_payer(
+        &[create_ix],
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        context.last_blockhash,
+    );
+
+    // Process the transaction.
+    let err = context
+        .banks_client
+        .process_transaction(create_tx)
+        .await
+        .expect_err("Creation should fail");
+
+    // Check that error is what we expect.
+    assert_custom_error!(err, RuleSetError::DerivedKeyInvalid);
+}
+
+#[tokio::test]
+async fn test_rule_set_validate_wallet_fails() {
+    let mut context = program_test().start_with_context().await;
+
+    // --------------------------------
+    // Validate fail incorrect owner
+    // --------------------------------
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new().pubkey();
+
+    // Create a `validate` instruction WITH the second signer.
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(Keypair::new().pubkey())
+        .mint(mint)
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(
+            context.payer.pubkey(),
+            true,
+        )])
+        .build(ValidateArgs::V1 {
+            operation: Operation::OwnerTransfer.to_string(),
+            payload: Payload::default(),
+            update_rule_state: false,
+            rule_set_revision: None,
+        })
+        .unwrap()
+        .instruction();
+
+    // Fail to validate operation.
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+
+    // Check that error is what we expect.
+    assert_custom_error!(err, RuleSetError::IncorrectOwner);
+}
+
+#[tokio::test]
+async fn test_rule_set_validate_uninitialized_pda_fails() {
+    let mut context = program_test().start_with_context().await;
+
+    // Find RuleSet PDA.
+    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
+        context.payer.pubkey(),
+        "test rule_set".to_string(),
+    );
+
+    // --------------------------------
+    // Validate fail incorrect owner
+    // --------------------------------
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new().pubkey();
+
+    // Create a `validate` instruction WITH the second signer.
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(
+            context.payer.pubkey(),
+            true,
+        )])
+        .build(ValidateArgs::V1 {
+            operation: Operation::OwnerTransfer.to_string(),
+            payload: Payload::default(),
+            update_rule_state: false,
+            rule_set_revision: None,
+        })
+        .unwrap()
+        .instruction();
+
+    // Fail to validate operation.
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+
+    // Check that error is what we expect.
+    assert_custom_error!(err, RuleSetError::IncorrectOwner);
 }
