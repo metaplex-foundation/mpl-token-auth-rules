@@ -27,7 +27,7 @@ async fn validate_update_rule_state_payer_not_signer_panics() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), Rule::Pass)
+        .add(Operation::SimpleOwnerTransfer.to_string(), Rule::Pass)
         .unwrap();
 
     // Put the RuleSet on chain.
@@ -56,7 +56,7 @@ async fn validate_update_rule_state_payer_not_signer_panics() {
         .rule_set_state_pda(rule_set_state_pda)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: Operation::SimpleOwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
             rule_set_revision: None,
@@ -83,7 +83,7 @@ async fn validate_update_rule_state_payer_not_provided_fails() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), Rule::Pass)
+        .add(Operation::SimpleOwnerTransfer.to_string(), Rule::Pass)
         .unwrap();
 
     // Put the RuleSet on chain.
@@ -110,7 +110,7 @@ async fn validate_update_rule_state_payer_not_provided_fails() {
         .rule_set_state_pda(rule_set_state_pda)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: Operation::SimpleOwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
             rule_set_revision: None,
@@ -149,7 +149,7 @@ async fn validate_rule_set_with_wallet_fails() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: Operation::SimpleOwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
             rule_set_revision: None,
@@ -183,7 +183,7 @@ async fn validate_rule_set_with_uninitialized_pda_fails() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: Operation::SimpleOwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
             rule_set_revision: None,
@@ -230,7 +230,7 @@ async fn validate_rule_set_with_zero_data_fails() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: Operation::SimpleOwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
             rule_set_revision: None,
@@ -279,7 +279,7 @@ async fn validate_rule_set_with_incorrect_data_fails() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: Operation::SimpleOwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: false,
             rule_set_revision: None,
@@ -302,7 +302,7 @@ async fn validate_update_rule_state_wrong_state_pda_fails() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), Rule::Pass)
+        .add(Operation::SimpleOwnerTransfer.to_string(), Rule::Pass)
         .unwrap();
 
     // Put the RuleSet on chain.
@@ -331,7 +331,7 @@ async fn validate_update_rule_state_wrong_state_pda_fails() {
         .rule_set_state_pda(rule_set_state_pda)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: Operation::SimpleOwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
             rule_set_revision: None,
@@ -354,7 +354,7 @@ async fn validate_update_rule_state_state_pda_not_provided_fails() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), Rule::Pass)
+        .add(Operation::SimpleOwnerTransfer.to_string(), Rule::Pass)
         .unwrap();
 
     // Put the RuleSet on chain.
@@ -374,7 +374,7 @@ async fn validate_update_rule_state_state_pda_not_provided_fails() {
         .rule_authority(rule_authority.pubkey())
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: Operation::SimpleOwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
             rule_set_revision: None,
@@ -413,7 +413,7 @@ async fn validate_update_rule_state_incorrect_auth() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), rule)
+        .add(Operation::SimpleOwnerTransfer.to_string(), rule)
         .unwrap();
 
     // Put the RuleSet on chain.
@@ -439,7 +439,7 @@ async fn validate_update_rule_state_incorrect_auth() {
         .rule_set_state_pda(rule_set_state_pda)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: Operation::SimpleOwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
             rule_set_revision: None,
@@ -467,7 +467,7 @@ async fn validate_update_rule_state_missing_auth() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), rule)
+        .add(Operation::SimpleOwnerTransfer.to_string(), rule)
         .unwrap();
 
     // Put the RuleSet on chain.
@@ -492,7 +492,7 @@ async fn validate_update_rule_state_missing_auth() {
         .rule_set_state_pda(rule_set_state_pda)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::OwnerTransfer.to_string(),
+            operation: Operation::SimpleOwnerTransfer.to_string(),
             payload: Payload::default(),
             update_rule_state: true,
             rule_set_revision: None,

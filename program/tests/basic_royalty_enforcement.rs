@@ -162,11 +162,8 @@ async fn create_royalty_rule_set(context: &mut ProgramTestContext) -> Pubkey {
     println!("{:#?}", royalty_rule_set);
 
     // Put the `RuleSet` on chain.
-
-    let rule_set_addr =
-        create_big_rule_set_on_chain!(context, royalty_rule_set.clone(), RULE_SET_NAME.to_string())
-            .await;
-    rule_set_addr
+    create_big_rule_set_on_chain!(context, royalty_rule_set.clone(), RULE_SET_NAME.to_string())
+        .await
 }
 
 #[tokio::test]
