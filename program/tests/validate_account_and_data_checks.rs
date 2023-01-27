@@ -294,7 +294,8 @@ async fn validate_rule_set_with_incorrect_data_fails() {
     // Fail to validate operation.
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
-    // Check that error is what we expect.  This happens to be how data with all zeros fails to deserialize.
+    // Check that error is what we expect.  This happens to be how data with all zeros fails to
+    // deserialize.
     assert_custom_error!(err, RuleSetError::UnsupportedRuleSetRevMapVersion);
 }
 
@@ -349,4 +350,56 @@ async fn validate_update_rule_state_state_pda_not_provided_fails() {
         }
         _ => panic!("Unexpected error: {}", err),
     }
+}
+
+#[tokio::test]
+async fn validate_update_rule_state_wrong_state_pda_fails() {
+    let mut context = program_test().start_with_context().await;
+
+    // Create a RuleSet.
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    rule_set
+        .add(Operation::OwnerTransfer.to_string(), Rule::Pass)
+        .unwrap();
+
+    // Put the RuleSet on chain.
+    let rule_set_addr =
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
+
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new().pubkey();
+
+    let rule_authority = Keypair::new();
+
+    // Find RuleSet state PDA using WRONG NAME for seed.
+    let (rule_set_state_pda, _rule_set_state_pda_bump) =
+        mpl_token_auth_rules::pda::find_rule_set_state_address(
+            context.payer.pubkey(),
+            "WRONG NAME".to_string(),
+            mint,
+        );
+
+    // Create a `validate` instruction with `update_rule_state` set to true.
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .payer(context.payer.pubkey())
+        .rule_authority(rule_authority.pubkey())
+        .rule_set_state_pda(rule_set_state_pda)
+        .additional_rule_accounts(vec![])
+        .build(ValidateArgs::V1 {
+            operation: Operation::OwnerTransfer.to_string(),
+            payload: Payload::default(),
+            update_rule_state: true,
+            rule_set_revision: None,
+        })
+        .unwrap()
+        .instruction();
+
+    // Fail to validate operation.
+    let err =
+        process_failing_validate_ix!(&mut context, validate_ix, vec![&rule_authority], None).await;
+
+    // Check that error is what we expect.
+    assert_custom_error!(err, RuleSetError::DerivedKeyInvalid);
 }
