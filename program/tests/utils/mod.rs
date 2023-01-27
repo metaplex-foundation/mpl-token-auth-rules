@@ -114,7 +114,7 @@ pub async fn create_rule_set_on_chain_with_loc(
         .serialize(&mut Serializer::new(&mut serialized_rule_set))
         .unwrap();
 
-    // Create a `create` instruction.
+    // Create a `create_or_update` instruction.
     let create_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
@@ -189,7 +189,7 @@ pub async fn create_big_rule_set_on_chain_with_loc(
 
     let mut overwrite = true;
     for serialized_rule_set_chunk in serialized_rule_set.chunks(1000) {
-        // Create a `create` instruction.
+        // Create a `write_to_buffer` instruction.
         let create_ix = WriteToBufferBuilder::new()
             .payer(context.payer.pubkey())
             .buffer_pda(buffer_pda)
