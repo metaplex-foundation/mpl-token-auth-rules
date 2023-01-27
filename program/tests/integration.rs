@@ -204,7 +204,7 @@ async fn test_composed_rule() {
 }
 
 #[tokio::test]
-async fn test_rule_set_creation_wallet_fails() {
+async fn test_rule_set_creation_to_wallet_fails() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------
@@ -260,7 +260,7 @@ async fn test_rule_set_creation_wallet_fails() {
 }
 
 #[tokio::test]
-async fn test_rule_set_creation_wrong_pda_fails() {
+async fn test_rule_set_creation_to_wrong_pda_fails() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------
@@ -322,7 +322,7 @@ async fn test_rule_set_creation_wrong_pda_fails() {
 }
 
 #[tokio::test]
-async fn test_rule_set_validate_wallet_fails() {
+async fn test_rule_set_validate_with_wallet_fails() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------
@@ -356,7 +356,7 @@ async fn test_rule_set_validate_wallet_fails() {
 }
 
 #[tokio::test]
-async fn test_rule_set_validate_uninitialized_pda_fails() {
+async fn test_rule_set_validate_with_uninitialized_pda_fails() {
     let mut context = program_test().start_with_context().await;
 
     // Find RuleSet PDA.
