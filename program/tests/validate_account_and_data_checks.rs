@@ -403,3 +403,110 @@ async fn validate_update_rule_state_state_pda_not_provided_fails() {
         _ => panic!("Unexpected error: {}", err),
     }
 }
+
+#[tokio::test]
+async fn validate_update_rule_state_incorrect_auth() {
+    let mut context = program_test().start_with_context().await;
+
+    // Create a Rule that uses Rule Authority.
+    let rule_authority = Keypair::new();
+    let rule = Rule::Frequency {
+        authority: rule_authority.pubkey(),
+    };
+
+    // Create a RuleSet.
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    rule_set
+        .add(Operation::OwnerTransfer.to_string(), rule)
+        .unwrap();
+
+    // Put the RuleSet on chain.
+    let rule_set_addr =
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
+
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new().pubkey();
+
+    let (rule_set_state_pda, _rule_set_state_pda_bump) =
+        mpl_token_auth_rules::pda::find_rule_set_state_address(
+            context.payer.pubkey(),
+            "test rule_set".to_string(),
+            mint,
+        );
+
+    // Create a `validate` instruction with `update_rule_state` set to true.
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .payer(context.payer.pubkey())
+        .rule_authority(context.payer.pubkey())
+        .rule_set_state_pda(rule_set_state_pda)
+        .additional_rule_accounts(vec![])
+        .build(ValidateArgs::V1 {
+            operation: Operation::OwnerTransfer.to_string(),
+            payload: Payload::default(),
+            update_rule_state: true,
+            rule_set_revision: None,
+        })
+        .unwrap()
+        .instruction();
+
+    // Fail to validate operation.
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+
+    // Check that error is what we expect.
+    assert_custom_error!(err, RuleSetError::RuleAuthorityIsNotSigner);
+}
+
+#[tokio::test]
+async fn validate_update_rule_state_missing_auth() {
+    let mut context = program_test().start_with_context().await;
+
+    // Create a Rule that uses Rule Authority.
+    let rule_authority = Keypair::new();
+    let rule = Rule::Frequency {
+        authority: rule_authority.pubkey(),
+    };
+
+    // Create a RuleSet.
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    rule_set
+        .add(Operation::OwnerTransfer.to_string(), rule)
+        .unwrap();
+
+    // Put the RuleSet on chain.
+    let rule_set_addr =
+        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
+
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new().pubkey();
+
+    let (rule_set_state_pda, _rule_set_state_pda_bump) =
+        mpl_token_auth_rules::pda::find_rule_set_state_address(
+            context.payer.pubkey(),
+            "test rule_set".to_string(),
+            mint,
+        );
+
+    // Create a `validate` instruction with `update_rule_state` set to true.
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .payer(context.payer.pubkey())
+        .rule_set_state_pda(rule_set_state_pda)
+        .additional_rule_accounts(vec![])
+        .build(ValidateArgs::V1 {
+            operation: Operation::OwnerTransfer.to_string(),
+            payload: Payload::default(),
+            update_rule_state: true,
+            rule_set_revision: None,
+        })
+        .unwrap()
+        .instruction();
+
+    // Fail to validate operation.
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+
+    // Check that error is what we expect.
+    assert_custom_error!(err, RuleSetError::MissingAccount);
+}
