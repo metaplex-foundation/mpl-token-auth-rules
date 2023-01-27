@@ -169,7 +169,7 @@ async fn create_rule_set_partial_buffer_fails() {
         mpl_token_auth_rules::pda::find_buffer_address(context.payer.pubkey());
 
     // Create a `write_to_buffer` instruction.
-    let create_ix = WriteToBufferBuilder::new()
+    let write_to_buffer_ix = WriteToBufferBuilder::new()
         .payer(context.payer.pubkey())
         .buffer_pda(buffer_pda)
         .build(WriteToBufferArgs::V1 {
@@ -180,8 +180,8 @@ async fn create_rule_set_partial_buffer_fails() {
         .instruction();
 
     // Add it to a transaction.
-    let create_tx = Transaction::new_signed_with_payer(
-        &[create_ix],
+    let write_to_buffer_tx = Transaction::new_signed_with_payer(
+        &[write_to_buffer_ix],
         Some(&context.payer.pubkey()),
         &[&context.payer],
         context.last_blockhash,
@@ -190,7 +190,7 @@ async fn create_rule_set_partial_buffer_fails() {
     // Process the transaction.
     context
         .banks_client
-        .process_transaction(create_tx)
+        .process_transaction(write_to_buffer_tx)
         .await
         .unwrap();
 
