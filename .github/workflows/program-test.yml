@@ -10,7 +10,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   SOLANA_VERSION: 1.13.5
-  RUST_TOOLCHAIN: stable
+  RUST_TOOLCHAIN: 1.65.0
 
 jobs:
   build-and-test-program:
