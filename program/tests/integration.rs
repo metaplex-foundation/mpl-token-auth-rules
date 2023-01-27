@@ -19,58 +19,6 @@ use solana_sdk::{signature::Signer, signer::keypair::Keypair, transaction::Trans
 use utils::{program_test, Operation, PayloadKey};
 
 #[tokio::test]
-#[should_panic]
-async fn test_payer_not_signer_panics() {
-    let mut context = program_test().start_with_context().await;
-
-    // --------------------------------
-    // Create RuleSet
-    // --------------------------------
-    // Create a Pass Rule.
-    let pass_rule = Rule::Pass;
-
-    // Create a RuleSet.
-    let other_payer = Keypair::new();
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), other_payer.pubkey());
-    rule_set
-        .add(Operation::OwnerTransfer.to_string(), pass_rule)
-        .unwrap();
-
-    // Find RuleSet PDA.
-    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
-        other_payer.pubkey(),
-        "test rule_set".to_string(),
-    );
-
-    // Serialize the RuleSet using RMP serde.
-    let mut serialized_rule_set = Vec::new();
-    rule_set
-        .serialize(&mut Serializer::new(&mut serialized_rule_set))
-        .unwrap();
-
-    // Create a `create` instruction with a payer that won't be a signer.
-    let create_ix = CreateOrUpdateBuilder::new()
-        .payer(other_payer.pubkey())
-        .rule_set_pda(rule_set_addr)
-        .build(CreateOrUpdateArgs::V1 {
-            serialized_rule_set,
-        })
-        .unwrap()
-        .instruction();
-
-    // Add it to a transaction but don't add other payer as a signer.
-    let create_tx = Transaction::new_signed_with_payer(
-        &[create_ix],
-        Some(&context.payer.pubkey()),
-        &[&context.payer],
-        context.last_blockhash,
-    );
-
-    // Process the transaction.  It will panic because of not enough signers.
-    let _result = context.banks_client.process_transaction(create_tx).await;
-}
-
-#[tokio::test]
 async fn test_composed_rule() {
     let mut context = program_test().start_with_context().await;
 
@@ -201,6 +149,58 @@ async fn test_composed_rule() {
 
     // Check that error is what we expect.
     assert_custom_error!(err, RuleSetError::AmountCheckFailed);
+}
+
+#[tokio::test]
+#[should_panic]
+async fn test_payer_not_signer_panics() {
+    let mut context = program_test().start_with_context().await;
+
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
+    // Create a Pass Rule.
+    let pass_rule = Rule::Pass;
+
+    // Create a RuleSet.
+    let other_payer = Keypair::new();
+    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), other_payer.pubkey());
+    rule_set
+        .add(Operation::OwnerTransfer.to_string(), pass_rule)
+        .unwrap();
+
+    // Find RuleSet PDA.
+    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
+        other_payer.pubkey(),
+        "test rule_set".to_string(),
+    );
+
+    // Serialize the RuleSet using RMP serde.
+    let mut serialized_rule_set = Vec::new();
+    rule_set
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
+        .unwrap();
+
+    // Create a `create` instruction with a payer that won't be a signer.
+    let create_ix = CreateOrUpdateBuilder::new()
+        .payer(other_payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .build(CreateOrUpdateArgs::V1 {
+            serialized_rule_set,
+        })
+        .unwrap()
+        .instruction();
+
+    // Add it to a transaction but don't add other payer as a signer.
+    let create_tx = Transaction::new_signed_with_payer(
+        &[create_ix],
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        context.last_blockhash,
+    );
+
+    // Process the transaction.  It will panic because of not enough signers.
+    let _result = context.banks_client.process_transaction(create_tx).await;
 }
 
 #[tokio::test]
