@@ -415,6 +415,73 @@ async fn test_rule_set_creation_empty_rule_set_fails() {
 }
 
 #[tokio::test]
+async fn test_rule_set_name_too_long_fails() {
+    let mut context = program_test().start_with_context().await;
+
+    // --------------------------------
+    // Create RuleSet
+    // --------------------------------
+    // Create some rules.
+    let adtl_signer = Rule::AdditionalSigner {
+        account: context.payer.pubkey(),
+    };
+
+    // Create a RuleSet.
+    let mut rule_set = RuleSetV1::new(
+        "test rule_set that has too long of a name".to_string(),
+        context.payer.pubkey(),
+    );
+
+    rule_set
+        .add(Operation::OwnerTransfer.to_string(), adtl_signer)
+        .unwrap();
+
+    // Serialize the RuleSet using RMP serde.
+    let mut serialized_rule_set = Vec::new();
+    rule_set
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
+        .unwrap();
+
+    // --------------------------------
+    // Fail on-chain creation
+    // --------------------------------
+    // Find RuleSet PDA.  This isn't the correct PDA but we expect to fail because the name in the
+    // serialized `RuleSet` is too long.
+    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
+        context.payer.pubkey(),
+        "test rule_set".to_string(),
+    );
+
+    // Create a `create` instruction.
+    let create_ix = CreateOrUpdateBuilder::new()
+        .payer(context.payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .build(CreateOrUpdateArgs::V1 {
+            serialized_rule_set,
+        })
+        .unwrap()
+        .instruction();
+
+    // Add it to a transaction.
+    let create_tx = Transaction::new_signed_with_payer(
+        &[create_ix],
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        context.last_blockhash,
+    );
+
+    // Process the transaction.
+    let err = context
+        .banks_client
+        .process_transaction(create_tx)
+        .await
+        .expect_err("Creation should fail");
+
+    // Check that error is what we expect.
+    assert_custom_error!(err, RuleSetError::NameTooLong);
+}
+
+#[tokio::test]
 async fn test_rule_set_creation_to_wallet_fails() {
     let mut context = program_test().start_with_context().await;
 
