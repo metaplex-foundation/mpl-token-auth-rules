@@ -39,6 +39,7 @@ program
         rulesetFile[2] = Array.from(payer.publicKey.toBytes());
 
         const encoded = encode(rulesetFile);
+        console.log(encoded)
         let rulesetAddress = await createTokenAuthorizationRules(connection, payer, name, encoded);
         let rulesetData = await connection.getAccountInfo(rulesetAddress);
         let rulesetDecoded = decode(rulesetData?.data);

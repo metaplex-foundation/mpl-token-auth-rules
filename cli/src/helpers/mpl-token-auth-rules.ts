@@ -7,6 +7,7 @@ import {
     Transaction,
 } from "@solana/web3.js";
 import { createCreateOrUpdateInstruction, createValidateInstruction, Payload, PROGRAM_ID } from "../../../packages/sdk/src/mpl-token-auth-rules";
+export * from  "../../../packages/sdk/src/mpl-token-auth-rules";
 import { findRuleSetPDA } from "./pda";
 import { TokenMetadataProgram } from "@metaplex-foundation/js";
 

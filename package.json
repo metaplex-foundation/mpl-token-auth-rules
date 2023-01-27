@@ -31,5 +31,10 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.2.1",
     "prettier": "^2.7.1"
+  },
+  "dependencies": {
+    "@glasseaters/hydra-sdk": "^0.3.2",
+    "@msgpack/msgpack": "^2.8.0",
+    "@project-serum/common": "^0.0.1-beta.3"
   }
 }

@@ -33,17 +33,17 @@ amman run -l token1 -l tx-create-token1 --   spl-token create-token --mint-autho
 
 ## Token Account Creation
 
-amman run -l ata-tok1-addr1 -l tx-create-ata-tok1-addr1 --   spl-token create-account +token1 --owner +soladdr1
+amman run -l ata-tok1-addr1 -l tx-create-ata-tok1-addr1 --   spl-token create-account +token1 --owner +soladdr1 --fee-payer ~/.config/solana/id.json
 
 ## Token Minting
 
-amman run -l tx-mint-token1-to-ata-tok1-addr1 -t --   spl-token mint +token1 10 +ata-tok1-addr1 --mint-authority "$AMMAN_DIR"/solpair1.json
+amman run -l tx-mint-token1-to-ata-tok1-addr1 -t --   spl-token mint +token1 10 +ata-tok1-addr1 --mint-authority "$AMMAN_DIR"/solpair1.json --fee-payer ~/.config/solana/id.json
 
 ## Token Transferring
 
 ### Create ATA for 'soladdr2'
 
-amman run -l ata-tok1-addr2 -l tx-ata-tok1-addr2 --   spl-token create-account +token1 --owner +soladdr2
+amman run -l ata-tok1-addr2 -l tx-ata-tok1-addr2 --   spl-token create-account +token1 --owner +soladdr2 --fee-payer ~/.config/solana/id.json
 
 ### Transfer the token Soladdr2
 
