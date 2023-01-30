@@ -31,7 +31,7 @@ async fn create_payer_not_signer_panics() {
     let other_payer = Keypair::new();
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), other_payer.pubkey());
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), pass_rule)
+        .add(Operation::SimpleOwnerTransfer.to_string(), pass_rule)
         .unwrap();
 
     // Find RuleSet PDA.
@@ -83,7 +83,7 @@ async fn create_rule_set_empty_buffer_fails() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), adtl_signer)
+        .add(Operation::SimpleOwnerTransfer.to_string(), adtl_signer)
         .unwrap();
 
     // Serialize the RuleSet using RMP serde.
@@ -153,7 +153,7 @@ async fn create_rule_set_partial_buffer_fails() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), adtl_signer)
+        .add(Operation::SimpleOwnerTransfer.to_string(), adtl_signer)
         .unwrap();
 
     // Serialize the RuleSet using RMP serde.
@@ -298,7 +298,7 @@ async fn create_rule_set_name_too_long_fails() {
     );
 
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), adtl_signer)
+        .add(Operation::SimpleOwnerTransfer.to_string(), adtl_signer)
         .unwrap();
 
     // Serialize the RuleSet using RMP serde.
@@ -361,7 +361,7 @@ async fn create_rule_set_wrong_owner_fails() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), Keypair::new().pubkey());
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), adtl_signer)
+        .add(Operation::SimpleOwnerTransfer.to_string(), adtl_signer)
         .unwrap();
 
     // Serialize the RuleSet using RMP serde.
@@ -423,7 +423,7 @@ async fn create_rule_set_buffer_with_different_name_fails() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), adtl_signer)
+        .add(Operation::SimpleOwnerTransfer.to_string(), adtl_signer)
         .unwrap();
 
     // Serialize the RuleSet using RMP serde.
@@ -524,7 +524,7 @@ async fn create_rule_set_to_wallet_fails() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), adtl_signer)
+        .add(Operation::SimpleOwnerTransfer.to_string(), adtl_signer)
         .unwrap();
 
     // Serialize the RuleSet using RMP serde.
@@ -580,7 +580,7 @@ async fn create_rule_set_to_wrong_pda_fails() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::OwnerTransfer.to_string(), adtl_signer)
+        .add(Operation::SimpleOwnerTransfer.to_string(), adtl_signer)
         .unwrap();
 
     // Serialize the RuleSet using RMP serde.
