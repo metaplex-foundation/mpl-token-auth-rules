@@ -114,7 +114,7 @@ pub async fn create_rule_set_on_chain_with_loc(
         .serialize(&mut Serializer::new(&mut serialized_rule_set))
         .unwrap();
 
-    // Create a `create` instruction.
+    // Create a `create_or_update` instruction.
     let create_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
@@ -189,8 +189,8 @@ pub async fn create_big_rule_set_on_chain_with_loc(
 
     let mut overwrite = true;
     for serialized_rule_set_chunk in serialized_rule_set.chunks(1000) {
-        // Create a `create` instruction.
-        let create_ix = WriteToBufferBuilder::new()
+        // Create a `write_to_buffer` instruction.
+        let write_to_buffer_ix = WriteToBufferBuilder::new()
             .payer(context.payer.pubkey())
             .buffer_pda(buffer_pda)
             .build(WriteToBufferArgs::V1 {
@@ -201,23 +201,26 @@ pub async fn create_big_rule_set_on_chain_with_loc(
             .instruction();
 
         // Add it to a transaction.
-        let create_tx = Transaction::new_signed_with_payer(
-            &[create_ix],
+        let write_to_buffer_tx = Transaction::new_signed_with_payer(
+            &[write_to_buffer_ix],
             Some(&context.payer.pubkey()),
             &[&context.payer],
             context.last_blockhash,
         );
 
-        println!("TX Length: {:?}", create_tx.message.serialize().len());
+        println!(
+            "TX Length: {:?}",
+            write_to_buffer_tx.message.serialize().len()
+        );
         assert!(
-            create_tx.message.serialize().len() <= 1232,
+            write_to_buffer_tx.message.serialize().len() <= 1232,
             "Transaction exceeds packet limit of 1232"
         );
 
         // Process the transaction.
         context
             .banks_client
-            .process_transaction(create_tx)
+            .process_transaction(write_to_buffer_tx)
             .await
             .unwrap_or_else(|err| {
                 panic!(

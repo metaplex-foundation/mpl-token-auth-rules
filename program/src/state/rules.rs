@@ -490,6 +490,8 @@ impl Rule {
                 msg!("Validating Frequency");
 
                 if let Some(rule_authority) = rule_authority {
+                    // TODO: If it's the wrong account (first condition) the `IsNotASigner`
+                    // is misleading.  Should be improved, perhaps with a `Mismatch` error.
                     if authority != rule_authority.key || !rule_authority.is_signer {
                         return (false, RuleSetError::RuleAuthorityIsNotSigner.into());
                     }
