@@ -3,7 +3,7 @@ use crate::{
     payload::Payload,
     // TODO: Uncomment this after on-curve sycall available.
     // utils::is_on_curve,
-    utils::{assert_derivation, compute_merkle_root},
+    utils::{assert_derivation, compute_merkle_root, is_zeroed},
 };
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "serde-with-feature")]
@@ -398,7 +398,15 @@ impl Rule {
                 };
 
                 if let Some(account) = accounts.get(key) {
-                    if *account.owner == *program {
+                    let data = match account.data.try_borrow() {
+                        Ok(data) => data,
+                        Err(_) => return (false, ProgramError::AccountBorrowFailed),
+                    };
+
+                    if is_zeroed(&data) {
+                        // Account must have nonzero data to count as program-owned.
+                        return (false, self.to_error());
+                    } else if *account.owner == *program {
                         return (true, self.to_error());
                     }
                 } else {
@@ -420,7 +428,16 @@ impl Rule {
                     _ => return (false, RuleSetError::MissingAccount.into()),
                 };
 
-                if programs.iter().any(|program| *account.owner == *program) {
+                let data = match account.data.try_borrow() {
+                    Ok(data) => data,
+                    Err(_) => return (false, ProgramError::AccountBorrowFailed),
+                };
+
+                if is_zeroed(&data) {
+                    // Account must have nonzero data to count as program-owned.
+                    (false, self.to_error())
+                } else if programs.iter().any(|program| *account.owner == *program) {
+                    // Account owner must be on the list.
                     (true, self.to_error())
                 } else {
                     (false, self.to_error())
@@ -444,6 +461,16 @@ impl Rule {
                     Some(account) => account,
                     _ => return (false, RuleSetError::MissingAccount.into()),
                 };
+
+                let data = match account.data.try_borrow() {
+                    Ok(data) => data,
+                    Err(_) => return (false, ProgramError::AccountBorrowFailed),
+                };
+
+                // Account must have nonzero data to count as program-owned.
+                if is_zeroed(&data) {
+                    return (false, self.to_error());
+                }
 
                 // The account owner is the leaf.
                 let leaf = account.owner;
