@@ -13,7 +13,7 @@ use solana_sdk::{
     instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
     transaction::Transaction,
 };
-use utils::{program_test, Operation, PayloadKey};
+use utils::{create_associated_token_account, create_mint, program_test, Operation, PayloadKey};
 
 #[tokio::test]
 async fn program_owned() {
@@ -24,7 +24,7 @@ async fn program_owned() {
     // --------------------------------
     // Create a Rule.  The target must be owned by the program ID specified in the Rule.
     let rule = Rule::ProgramOwned {
-        program: mpl_token_metadata::id(),
+        program: mpl_token_auth_rules::ID,
         field: PayloadKey::Destination.to_string(),
     };
 
@@ -34,34 +34,60 @@ async fn program_owned() {
         .add(Operation::SimpleOwnerTransfer.to_string(), rule)
         .unwrap();
 
-    println!("{:#?}", rule_set);
-
     // Put the RuleSet on chain.
     let rule_set_addr =
         create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
-    // Validate fail
+    // Validate fail prog owned but zero data length
     // --------------------------------
     // Create a Keypair to simulate a token mint address.
-    let mint = Keypair::new().pubkey();
+    let mint = Keypair::new();
+
+    // Create an empty account owned by mpl-token-auth-rules.
+    let program_owned_account = Keypair::new();
+    let rent = context.banks_client.get_rent().await.unwrap();
+    let tx = Transaction::new_signed_with_payer(
+        &[system_instruction::create_account(
+            &context.payer.pubkey(),
+            &program_owned_account.pubkey(),
+            rent.minimum_balance(0),
+            0,
+            &mpl_token_auth_rules::ID,
+        )],
+        Some(&context.payer.pubkey()),
+        &[&context.payer, &program_owned_account],
+        context.last_blockhash,
+    );
+
+    context.banks_client.process_transaction(tx).await.unwrap();
+
+    // Get on-chain account.
+    let on_chain_account = context
+        .banks_client
+        .get_account(program_owned_account.pubkey())
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Verify data length is zero.
+    assert_eq!(0, on_chain_account.data.len());
+
+    // Verify account ownership.
+    assert_eq!(mpl_token_auth_rules::ID, on_chain_account.owner);
 
     // Store the payload of data to validate against the rule definition.
-    // In this case the Target will be used to look up the `AccountInfo`
-    // and see who the owner is.  Here we put in the WRONG Pubkey.
-    let wrong_account = Keypair::new();
     let payload = Payload::from([(
         PayloadKey::Destination.to_string(),
-        PayloadType::Pubkey(wrong_account.pubkey()),
+        PayloadType::Pubkey(program_owned_account.pubkey()),
     )]);
 
-    // We also pass the WRONG account as an additional rule account.
-    // It will be found by the Rule but owner will be wrong.
+    // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
-        .mint(mint)
+        .mint(mint.pubkey())
         .additional_rule_accounts(vec![AccountMeta::new_readonly(
-            wrong_account.pubkey(),
+            program_owned_account.pubkey(),
             false,
         )])
         .build(ValidateArgs::V1 {
@@ -80,40 +106,61 @@ async fn program_owned() {
     assert_custom_error!(err, RuleSetError::ProgramOwnedCheckFailed);
 
     // --------------------------------
-    // Validate pass
+    // Validate nonzero data but owned by different program
     // --------------------------------
-    // Create an account owned by mpl-token-metadata.
-    let program_owned_account = Keypair::new();
-    let rent = context.banks_client.get_rent().await.unwrap();
-    let tx = Transaction::new_signed_with_payer(
-        &[system_instruction::create_account(
-            &context.payer.pubkey(),
-            &program_owned_account.pubkey(),
-            rent.minimum_balance(0),
-            0,
-            &mpl_token_metadata::id(),
-        )],
-        Some(&context.payer.pubkey()),
-        &[&context.payer, &program_owned_account],
-        context.last_blockhash,
-    );
+    let source = Keypair::new();
 
-    context.banks_client.process_transaction(tx).await.unwrap();
+    // Create an associated token account for the sole purpose of having
+    // an account that is owned by a different program than what is in the rule.
+    create_mint(
+        &mut context,
+        &mint,
+        &source.pubkey(),
+        Some(&source.pubkey()),
+        0,
+    )
+    .await
+    .unwrap();
 
-    // This time put the CORRECT Pubkey into the Payload and the validate instruction.
-    let payload = Payload::from([(
-        PayloadKey::Destination.to_string(),
-        PayloadType::Pubkey(program_owned_account.pubkey()),
-    )]);
+    let associated_token_account =
+        create_associated_token_account(&mut context, &source, &mint.pubkey())
+            .await
+            .unwrap();
 
-    // Create a `validate` instruction.
+    // Get on-chain account.
+    let on_chain_account = context
+        .banks_client
+        .get_account(associated_token_account)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Account must have nonzero data to count as program-owned.
+    assert!(on_chain_account.data.iter().any(|&x| x != 0));
+
+    // Verify account ownership.
+    assert_eq!(spl_token::ID, on_chain_account.owner);
+
+    // Store the payload of data to validate against the rule definition.
+    let payload = Payload::from([
+        (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
+        (
+            PayloadKey::Source.to_string(),
+            PayloadType::Pubkey(source.pubkey()),
+        ),
+        (
+            PayloadKey::Destination.to_string(),
+            PayloadType::Pubkey(associated_token_account),
+        ),
+    ]);
+
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
-        .mint(mint)
-        .additional_rule_accounts(vec![AccountMeta::new_readonly(
-            program_owned_account.pubkey(),
-            false,
-        )])
+        .mint(mint.pubkey())
+        .additional_rule_accounts(vec![
+            AccountMeta::new_readonly(source.pubkey(), false),
+            AccountMeta::new_readonly(associated_token_account, false),
+        ])
         .build(ValidateArgs::V1 {
             operation: Operation::SimpleOwnerTransfer.to_string(),
             payload,
@@ -123,6 +170,49 @@ async fn program_owned() {
         .unwrap()
         .instruction();
 
-    // Validate Transfer operation.
+    // Fail to validate operation.
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+
+    // Check that error is what we expect.
+    assert_custom_error!(err, RuleSetError::ProgramOwnedCheckFailed);
+
+    // --------------------------------
+    // Validate pass
+    // --------------------------------
+    // Use the RuleSet since it has data and is owned by the program stored in the rule.
+    let payload = Payload::from([(
+        PayloadKey::Destination.to_string(),
+        PayloadType::Pubkey(rule_set_addr),
+    )]);
+
+    // Get on-chain account.
+    let on_chain_account = context
+        .banks_client
+        .get_account(rule_set_addr)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Account must have nonzero data to count as program-owned.
+    assert!(on_chain_account.data.iter().any(|&x| x != 0));
+
+    // Verify account ownership.
+    assert_eq!(mpl_token_auth_rules::ID, on_chain_account.owner);
+
+    // Create a `validate` instruction.
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint.pubkey())
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(rule_set_addr, false)])
+        .build(ValidateArgs::V1 {
+            operation: Operation::SimpleOwnerTransfer.to_string(),
+            payload,
+            update_rule_state: false,
+            rule_set_revision: None,
+        })
+        .unwrap()
+        .instruction();
+
+    // Validate transfer operation.
     process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 }
