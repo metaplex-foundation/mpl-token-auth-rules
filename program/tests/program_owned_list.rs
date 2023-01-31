@@ -16,15 +16,15 @@ use solana_sdk::{
 use utils::{create_associated_token_account, create_mint, program_test, Operation, PayloadKey};
 
 #[tokio::test]
-async fn program_owned() {
+async fn program_owned_list() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------
     // Create RuleSet
     // --------------------------------
     // Create a Rule.  The target must be owned by the program ID specified in the Rule.
-    let rule = Rule::ProgramOwned {
-        program: mpl_token_auth_rules::ID,
+    let rule = Rule::ProgramOwnedList {
+        programs: vec![mpl_token_auth_rules::ID],
         field: PayloadKey::Destination.to_string(),
     };
 
@@ -103,7 +103,7 @@ async fn program_owned() {
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_custom_error!(err, RuleSetError::ProgramOwnedCheckFailed);
+    assert_custom_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
 
     // --------------------------------
     // Validate nonzero data but owned by different program
@@ -142,10 +142,17 @@ async fn program_owned() {
     assert_eq!(spl_token::ID, on_chain_account.owner);
 
     // Store the payload of data to validate against the rule definition.
-    let payload = Payload::from([(
-        PayloadKey::Destination.to_string(),
-        PayloadType::Pubkey(associated_token_account),
-    )]);
+    let payload = Payload::from([
+        (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
+        (
+            PayloadKey::Source.to_string(),
+            PayloadType::Pubkey(source.pubkey()),
+        ),
+        (
+            PayloadKey::Destination.to_string(),
+            PayloadType::Pubkey(associated_token_account),
+        ),
+    ]);
 
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
@@ -167,7 +174,7 @@ async fn program_owned() {
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_custom_error!(err, RuleSetError::ProgramOwnedCheckFailed);
+    assert_custom_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
 
     // --------------------------------
     // Validate pass
