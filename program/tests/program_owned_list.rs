@@ -179,7 +179,8 @@ async fn program_owned_list() {
     // --------------------------------
     // Validate pass
     // --------------------------------
-    // Use the RuleSet since it has data and is owned by the program stored in the rule.
+    // Our destination key is going to be an account owned by the mpl-token-auth-rules program.
+    // Any one will do so for convenience we just use the `RuleSet`.
     let payload = Payload::from([(
         PayloadKey::Destination.to_string(),
         PayloadType::Pubkey(rule_set_addr),

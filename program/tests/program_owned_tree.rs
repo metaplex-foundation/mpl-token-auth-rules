@@ -191,9 +191,8 @@ async fn program_owned_tree() {
     // --------------------------------
     // Validate fail program owned with data, but bad proof
     // --------------------------------
-    // Corrupt the Merkle proof.
-    let mut incorrect_proof = tree.proof.clone();
-    incorrect_proof.proof[1] = [1; 32];
+    // Our authority key is going to be an account owned by the mpl-token-auth-rules program.
+    // Any one will do so for convenience we just use the `RuleSet`.
 
     // Get on-chain account.
     let on_chain_account = context
@@ -208,6 +207,10 @@ async fn program_owned_tree() {
 
     // Verify account ownership.
     assert_eq!(mpl_token_auth_rules::ID, on_chain_account.owner);
+
+    // Corrupt the Merkle proof.
+    let mut incorrect_proof = tree.proof.clone();
+    incorrect_proof.proof[1] = [1; 32];
 
     // Store the payload of data to validate against the rule definition, with an INCORRECT proof.
     let payload = Payload::from([
@@ -244,6 +247,9 @@ async fn program_owned_tree() {
     // --------------------------------
     // Validate pass
     // --------------------------------
+    // Our authority key is going to be an account owned by the mpl-token-auth-rules program.
+    // Any one will do so for convenience we just use the `RuleSet`.
+
     // Get on-chain account.
     let on_chain_account = context
         .banks_client

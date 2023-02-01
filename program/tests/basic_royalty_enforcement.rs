@@ -211,6 +211,21 @@ async fn wallet_to_prog_owned() {
 
     // Our destination key is going to be an account owned by the mpl-token-auth-rules program.
     // Any one will do so for convenience we just use the RuleSet.
+
+    // Get on-chain account.
+    let on_chain_account = context
+        .banks_client
+        .get_account(rule_set_addr)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Account must have nonzero data to count as program-owned.
+    assert!(on_chain_account.data.iter().any(|&x| x != 0));
+
+    // Verify account ownership.
+    assert_eq!(mpl_token_auth_rules::ID, on_chain_account.owner);
+
     let payload = Payload::from([
         (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
         (
@@ -254,11 +269,41 @@ async fn prog_owned_to_prog_owned() {
 
     // Our source and destination keys are going to be accounts owned by the mpl-token-auth-rules
     // program.  Any one will do so for convenience we just use two `RuleSets`.
+
+    // Get first on-chain account.
+    let first_on_chain_account = context
+        .banks_client
+        .get_account(rule_set_addr)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Account must have nonzero data to count as program-owned.
+    assert!(first_on_chain_account.data.iter().any(|&x| x != 0));
+
+    // Verify account ownership.
+    assert_eq!(mpl_token_auth_rules::ID, first_on_chain_account.owner);
+
+    // Create destination `RuleSet`.
     let second_rule_set = RuleSetV1::new("second_rule_set".to_string(), context.payer.pubkey());
 
     let second_rule_set_addr =
         create_rule_set_on_chain!(&mut context, second_rule_set, "second_rule_set".to_string())
             .await;
+
+    // Get second on-chain account.
+    let second_on_chain_account = context
+        .banks_client
+        .get_account(second_rule_set_addr)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Account must have nonzero data to count as program-owned.
+    assert!(second_on_chain_account.data.iter().any(|&x| x != 0));
+
+    // Verify account ownership.
+    assert_eq!(mpl_token_auth_rules::ID, second_on_chain_account.owner);
 
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
@@ -302,11 +347,26 @@ async fn prog_owned_to_wallet() {
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new();
 
+    // Our source key is going to be an account owned by the mpl-token-auth-rules program.  Any one
+    // will do so for convenience we just use the `RuleSet`.
+
+    // Get on-chain account.
+    let on_chain_account = context
+        .banks_client
+        .get_account(rule_set_addr)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Account must have nonzero data to count as program-owned.
+    assert!(on_chain_account.data.iter().any(|&x| x != 0));
+
+    // Verify account ownership.
+    assert_eq!(mpl_token_auth_rules::ID, on_chain_account.owner);
+
     // Destination key is a wallet.
     let dest = Keypair::new();
 
-    // Our source key is going to be an account owned by the mpl-token-auth-rules program.  Any one
-    // will do so for convenience we just use the `RuleSet`.
     let payload = Payload::from([
         (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
         (
@@ -348,12 +408,27 @@ async fn wrong_amount_fails() {
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new();
 
+    // Our source key is going to be an account owned by the mpl-token-auth-rules program.  Any one
+    // will do so for convenience we just use the `RuleSet`.
+
+    // Get on-chain account.
+    let on_chain_account = context
+        .banks_client
+        .get_account(rule_set_addr)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Account must have nonzero data to count as program-owned.
+    assert!(on_chain_account.data.iter().any(|&x| x != 0));
+
+    // Verify account ownership.
+    assert_eq!(mpl_token_auth_rules::ID, on_chain_account.owner);
+
     // Destination key is a wallet.
     let dest = Keypair::new();
 
     // Store the payload of data to validate against the rule definition, using the WRONG amount.
-    // Our source key is going to be an account owned by the mpl-token-auth-rules program.  Any one
-    // will do so for convenience we just use the `RuleSet`.
     let payload = Payload::from([
         (PayloadKey::Amount.to_string(), PayloadType::Number(2)),
         (
@@ -418,6 +493,20 @@ async fn prog_owner_not_on_list_fails() {
         create_associated_token_account(&mut context, &source, &mint.pubkey())
             .await
             .unwrap();
+
+    // Get on-chain account.
+    let on_chain_account = context
+        .banks_client
+        .get_account(associated_token_account)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Account must have nonzero data to count as program-owned.
+    assert!(on_chain_account.data.iter().any(|&x| x != 0));
+
+    // Verify account ownership.
+    assert_eq!(spl_token::ID, on_chain_account.owner);
 
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([
@@ -484,6 +573,20 @@ async fn prog_owned_but_zero_data_length() {
     );
 
     context.banks_client.process_transaction(tx).await.unwrap();
+
+    // Get on-chain account.
+    let on_chain_account = context
+        .banks_client
+        .get_account(program_owned_account.pubkey())
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Verify data length is zero.
+    assert_eq!(0, on_chain_account.data.len());
+
+    // Verify account ownership.
+    assert_eq!(mpl_token_auth_rules::ID, on_chain_account.owner);
 
     // Store the payload of data to validate against the rule definition.
     let payload = Payload::from([

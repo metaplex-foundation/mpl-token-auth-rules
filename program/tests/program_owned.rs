@@ -108,22 +108,22 @@ async fn program_owned() {
     // --------------------------------
     // Validate nonzero data but owned by different program
     // --------------------------------
-    let source = Keypair::new();
+    let owner = Keypair::new();
 
     // Create an associated token account for the sole purpose of having an account that is owned
     // by a different program than what is in the rule.
     create_mint(
         &mut context,
         &mint,
-        &source.pubkey(),
-        Some(&source.pubkey()),
+        &owner.pubkey(),
+        Some(&owner.pubkey()),
         0,
     )
     .await
     .unwrap();
 
     let associated_token_account =
-        create_associated_token_account(&mut context, &source, &mint.pubkey())
+        create_associated_token_account(&mut context, &owner, &mint.pubkey())
             .await
             .unwrap();
 
@@ -150,10 +150,10 @@ async fn program_owned() {
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint.pubkey())
-        .additional_rule_accounts(vec![
-            AccountMeta::new_readonly(source.pubkey(), false),
-            AccountMeta::new_readonly(associated_token_account, false),
-        ])
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(
+            associated_token_account,
+            false,
+        )])
         .build(ValidateArgs::V1 {
             operation: Operation::SimpleOwnerTransfer.to_string(),
             payload,
@@ -172,7 +172,8 @@ async fn program_owned() {
     // --------------------------------
     // Validate pass
     // --------------------------------
-    // Use the RuleSet since it has data and is owned by the program stored in the rule.
+    // Our destination key is going to be an account owned by the mpl-token-auth-rules program.
+    // Any one will do so for convenience we just use the `RuleSet`.
     let payload = Payload::from([(
         PayloadKey::Destination.to_string(),
         PayloadType::Pubkey(rule_set_addr),
