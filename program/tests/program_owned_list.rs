@@ -110,8 +110,8 @@ async fn program_owned_list() {
     // --------------------------------
     let source = Keypair::new();
 
-    // Create an associated token account for the sole purpose of having
-    // an account that is owned by a different program than what is in the rule.
+    // Create an associated token account for the sole purpose of having an account that is owned
+    // by a different program than what is in the rule.
     create_mint(
         &mut context,
         &mint,
