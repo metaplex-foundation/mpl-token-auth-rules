@@ -101,7 +101,7 @@ async fn test_update_ruleset_data_integrity() {
     // Create RuleSet 2 and update on chain
     // --------------------------------
     let program_owned = Rule::ProgramOwned {
-        program: mpl_token_metadata::id(),
+        program: mpl_token_auth_rules::ID,
         field: PayloadKey::Destination.to_string(),
     };
 
