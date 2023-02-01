@@ -3,6 +3,7 @@ use mpl_token_auth_rules::{
         builders::{CreateOrUpdateBuilder, WriteToBufferBuilder},
         CreateOrUpdateArgs, InstructionBuilder, WriteToBufferArgs,
     },
+    payload::ProofInfo,
     state::RuleSetV1,
 };
 use num_derive::ToPrimitive;
@@ -547,4 +548,37 @@ pub async fn create_associated_token_account(
 pub fn cmp_slice<T: PartialEq>(a: &[T], b: &[T]) -> bool {
     let matching = a.iter().zip(b.iter()).filter(|&(a, b)| a == b).count();
     matching == a.len() && matching == b.len()
+}
+
+pub struct MerkleTree {
+    pub root: [u8; 32],
+    pub proof: ProofInfo,
+}
+
+pub fn create_test_merkle_tree_from_one_leaf(leaf: &Pubkey, levels: usize) -> MerkleTree {
+    // Start hash with caller's leaf.
+    let mut computed_hash = leaf.to_bytes();
+
+    // Start proof with another random leaf.
+    let mut proof = vec![Keypair::new().pubkey().to_bytes()];
+
+    for i in 0..levels {
+        if computed_hash <= proof[i] {
+            // Hash(current computed hash + current element of the proof).
+            computed_hash = solana_program::keccak::hashv(&[&[0x01], &computed_hash, &proof[i]]).0;
+        } else {
+            // Hash(current element of the proof + current computed hash).
+            computed_hash = solana_program::keccak::hashv(&[&[0x01], &proof[i], &computed_hash]).0;
+        }
+
+        proof.push(computed_hash)
+    }
+
+    // The last hash value is the root.
+    let root = proof.pop().unwrap();
+
+    MerkleTree {
+        root,
+        proof: ProofInfo::new(proof),
+    }
 }
