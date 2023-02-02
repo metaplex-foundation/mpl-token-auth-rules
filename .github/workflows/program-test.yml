@@ -55,9 +55,8 @@ jobs:
     needs: build-and-test-program
     if: github.ref == 'refs/heads/save_artifact'
     steps:
-      - name: Save Artifact
+      - uses: actions/upload-artifact@v3
         working-directory: ./program
-        uses: actions/upload-artifact@v3
         with:
           name: mpl-token-auth-rules
           path: |
