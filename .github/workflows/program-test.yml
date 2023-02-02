@@ -2,7 +2,7 @@ name: Program Test
 
 on:
   push:
-    branches: [main]
+    branches: [save_artifact]
   pull_request:
     branches: [main]
   workflow_dispatch:
