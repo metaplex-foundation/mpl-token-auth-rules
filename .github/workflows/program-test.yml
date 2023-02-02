@@ -58,5 +58,4 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: mpl-token-auth-rules
-          path: |
-            ./program/target/deploy/
+          path: ./program/target/deploy/mpl_token_auth_rules.so
