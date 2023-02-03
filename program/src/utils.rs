@@ -208,3 +208,17 @@ pub fn is_on_curve(pubkey: &Pubkey) -> bool {
     // result == 0
     false
 }
+
+/// See if a slice contains all zeroes.  Useful for checking an account's data.
+pub fn is_zeroed(buf: &[u8]) -> bool {
+    const ZEROS_LEN: usize = 1024;
+    const ZEROS: [u8; ZEROS_LEN] = [0; ZEROS_LEN];
+
+    let mut chunks = buf.chunks_exact(ZEROS_LEN);
+
+    #[allow(clippy::indexing_slicing)]
+    {
+        chunks.all(|chunk| chunk == &ZEROS[..])
+            && chunks.remainder() == &ZEROS[..chunks.remainder().len()]
+    }
+}

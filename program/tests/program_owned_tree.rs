@@ -13,19 +13,26 @@ use solana_sdk::{
     instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
     transaction::Transaction,
 };
-use utils::{create_associated_token_account, create_mint, program_test, Operation, PayloadKey};
+use utils::{
+    create_associated_token_account, create_mint, create_test_merkle_tree_from_one_leaf,
+    program_test, Operation, PayloadKey,
+};
 
 #[tokio::test]
-async fn program_owned() {
+async fn program_owned_tree() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------
     // Create RuleSet
     // --------------------------------
-    // Create a Rule.  The target must be owned by the program ID specified in the Rule.
-    let rule = Rule::ProgramOwned {
-        program: mpl_token_auth_rules::ID,
-        field: PayloadKey::Destination.to_string(),
+    // Generate a Merkle tree containing mpl-token-auth-rules as a leaf.
+    let tree = create_test_merkle_tree_from_one_leaf(&mpl_token_auth_rules::ID, 4);
+
+    // Create a Rule.
+    let rule = Rule::ProgramOwnedTree {
+        root: tree.root,
+        pubkey_field: PayloadKey::Authority.to_string(),
+        proof_field: PayloadKey::AuthorityProof.to_string(),
     };
 
     // Create a RuleSet.
@@ -77,10 +84,16 @@ async fn program_owned() {
     assert_eq!(mpl_token_auth_rules::ID, on_chain_account.owner);
 
     // Store the payload of data to validate against the rule definition.
-    let payload = Payload::from([(
-        PayloadKey::Destination.to_string(),
-        PayloadType::Pubkey(program_owned_account.pubkey()),
-    )]);
+    let payload = Payload::from([
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(program_owned_account.pubkey()),
+        ),
+        (
+            PayloadKey::AuthorityProof.to_string(),
+            PayloadType::MerkleProof(tree.proof.clone()),
+        ),
+    ]);
 
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
@@ -99,31 +112,31 @@ async fn program_owned() {
         .unwrap()
         .instruction();
 
-    // Fail to validate Transfer operation.
+    // Validate Transfer operation.
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_custom_error!(err, RuleSetError::ProgramOwnedCheckFailed);
+    assert_custom_error!(err, RuleSetError::ProgramOwnedTreeCheckFailed);
 
     // --------------------------------
     // Validate nonzero data but owned by different program
     // --------------------------------
-    let owner = Keypair::new();
+    let source = Keypair::new();
 
     // Create an associated token account for the sole purpose of having an account that is owned
     // by a different program than what is in the rule.
     create_mint(
         &mut context,
         &mint,
-        &owner.pubkey(),
-        Some(&owner.pubkey()),
+        &source.pubkey(),
+        Some(&source.pubkey()),
         0,
     )
     .await
     .unwrap();
 
     let associated_token_account =
-        create_associated_token_account(&mut context, &owner, &mint.pubkey())
+        create_associated_token_account(&mut context, &source, &mint.pubkey())
             .await
             .unwrap();
 
@@ -142,10 +155,16 @@ async fn program_owned() {
     assert_eq!(spl_token::ID, on_chain_account.owner);
 
     // Store the payload of data to validate against the rule definition.
-    let payload = Payload::from([(
-        PayloadKey::Destination.to_string(),
-        PayloadType::Pubkey(associated_token_account),
-    )]);
+    let payload = Payload::from([
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(associated_token_account),
+        ),
+        (
+            PayloadKey::AuthorityProof.to_string(),
+            PayloadType::MerkleProof(tree.proof.clone()),
+        ),
+    ]);
 
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
@@ -167,17 +186,13 @@ async fn program_owned() {
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_custom_error!(err, RuleSetError::ProgramOwnedCheckFailed);
+    assert_custom_error!(err, RuleSetError::ProgramOwnedTreeCheckFailed);
 
     // --------------------------------
-    // Validate pass
+    // Validate fail program owned with data, but bad proof
     // --------------------------------
-    // Our destination key is going to be an account owned by the mpl-token-auth-rules program.
+    // Our authority key is going to be an account owned by the mpl-token-auth-rules program.
     // Any one will do so for convenience we just use the `RuleSet`.
-    let payload = Payload::from([(
-        PayloadKey::Destination.to_string(),
-        PayloadType::Pubkey(rule_set_addr),
-    )]);
 
     // Get on-chain account.
     let on_chain_account = context
@@ -193,6 +208,22 @@ async fn program_owned() {
     // Verify account ownership.
     assert_eq!(mpl_token_auth_rules::ID, on_chain_account.owner);
 
+    // Corrupt the Merkle proof.
+    let mut incorrect_proof = tree.proof.clone();
+    incorrect_proof.proof[1] = [1; 32];
+
+    // Store the payload of data to validate against the rule definition, with an INCORRECT proof.
+    let payload = Payload::from([
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(rule_set_addr),
+        ),
+        (
+            PayloadKey::AuthorityProof.to_string(),
+            PayloadType::MerkleProof(incorrect_proof),
+        ),
+    ]);
+
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
@@ -207,6 +238,58 @@ async fn program_owned() {
         .unwrap()
         .instruction();
 
-    // Validate transfer operation.
+    // Validate Transfer operation.
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+
+    // Check that error is what we expect.
+    assert_custom_error!(err, RuleSetError::ProgramOwnedTreeCheckFailed);
+
+    // --------------------------------
+    // Validate pass
+    // --------------------------------
+    // Our authority key is going to be an account owned by the mpl-token-auth-rules program.
+    // Any one will do so for convenience we just use the `RuleSet`.
+
+    // Get on-chain account.
+    let on_chain_account = context
+        .banks_client
+        .get_account(rule_set_addr)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Account must have nonzero data to count as program-owned.
+    assert!(on_chain_account.data.iter().any(|&x| x != 0));
+
+    // Verify account ownership.
+    assert_eq!(mpl_token_auth_rules::ID, on_chain_account.owner);
+
+    // Store the payload of data to validate against the rule definition.
+    let payload = Payload::from([
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(rule_set_addr),
+        ),
+        (
+            PayloadKey::AuthorityProof.to_string(),
+            PayloadType::MerkleProof(tree.proof),
+        ),
+    ]);
+
+    // Create a `validate` instruction.
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint.pubkey())
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(rule_set_addr, false)])
+        .build(ValidateArgs::V1 {
+            operation: Operation::SimpleOwnerTransfer.to_string(),
+            payload,
+            update_rule_state: false,
+            rule_set_revision: None,
+        })
+        .unwrap()
+        .instruction();
+
+    // Validate Transfer operation.
     process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 }
