@@ -404,6 +404,13 @@ impl Rule {
                     };
 
                     if is_zeroed(&data) {
+                        // Print helpful errors.
+                        if data.len() == 0 {
+                            msg!("Account data is empty");
+                        } else {
+                            msg!("Account data is zeroed");
+                        }
+
                         // Account must have nonzero data to count as program-owned.
                         return (false, self.to_error());
                     } else if *account.owner == *program {
@@ -434,6 +441,13 @@ impl Rule {
                 };
 
                 if is_zeroed(&data) {
+                    // Print helpful errors.
+                    if data.len() == 0 {
+                        msg!("Account data is empty");
+                    } else {
+                        msg!("Account data is zeroed");
+                    }
+
                     // Account must have nonzero data to count as program-owned.
                     (false, self.to_error())
                 } else if programs.iter().any(|program| *account.owner == *program) {
@@ -469,6 +483,13 @@ impl Rule {
 
                 // Account must have nonzero data to count as program-owned.
                 if is_zeroed(&data) {
+                    // Print helpful errors.
+                    if data.len() == 0 {
+                        msg!("Account data is empty");
+                    } else {
+                        msg!("Account data is zeroed");
+                    }
+
                     return (false, self.to_error());
                 }
 
