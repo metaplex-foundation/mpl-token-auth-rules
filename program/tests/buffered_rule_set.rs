@@ -45,7 +45,8 @@ async fn buffered_rule_set() {
 
     // Put the RuleSet on chain.
     let rule_set_addr =
-        create_big_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_big_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string(), None)
+            .await;
 
     // Serialize the RuleSet using RMP serde.
     let mut serialized_rule_set = Vec::new();

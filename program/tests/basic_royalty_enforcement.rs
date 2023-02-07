@@ -450,8 +450,13 @@ async fn create_royalty_rule_set(context: &mut ProgramTestContext) -> Pubkey {
     let royalty_rule_set = create_rule_set_v1(context.payer.pubkey());
 
     // Put the `RuleSet` on chain.
-    create_big_rule_set_on_chain!(context, royalty_rule_set.clone(), RULE_SET_NAME.to_string())
-        .await
+    create_big_rule_set_on_chain!(
+        context,
+        royalty_rule_set.clone(),
+        RULE_SET_NAME.to_string(),
+        Some(1_000_000)
+    )
+    .await
 }
 
 #[tokio::test]

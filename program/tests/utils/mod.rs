@@ -258,11 +258,12 @@ pub async fn create_rule_set_on_chain_with_loc(
 
 #[macro_export]
 macro_rules! create_big_rule_set_on_chain {
-    ($context:expr, $rule_set:expr, $rule_set_name:expr) => {
+    ($context:expr, $rule_set:expr, $rule_set_name:expr, $compute_budget:expr) => {
         $crate::utils::create_big_rule_set_on_chain_with_loc(
             $context,
             $rule_set,
             $rule_set_name,
+            $compute_budget,
             file!(),
             line!(),
             column!(),
@@ -274,12 +275,13 @@ pub async fn create_big_rule_set_on_chain_with_loc(
     context: &mut ProgramTestContext,
     rule_set: RuleSetV1,
     rule_set_name: String,
+    compute_budget: Option<u32>,
     file: &str,
     line: u32,
     column: u32,
 ) -> Pubkey {
     // Find RuleSet PDA.
-    let (rule_set_addr, rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
+    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
         context.payer.pubkey(),
         rule_set_name.clone(),
     );
@@ -348,9 +350,6 @@ pub async fn create_big_rule_set_on_chain_with_loc(
         "The buffer doesn't match the serialized rule set.",
     );
 
-    // Request more compute units.
-    let compute_ix = ComputeBudgetInstruction::set_compute_unit_limit(1_400_000);
-
     let puff_ix = PuffRuleSetBuilder::new()
         .payer(context.payer.pubkey())
         .rule_set_pda(rule_set_addr)
@@ -371,9 +370,18 @@ pub async fn create_big_rule_set_on_chain_with_loc(
         .unwrap()
         .instruction();
 
+    // Use user-provided compute budget if one was provided.
+    let instructions = match compute_budget {
+        Some(units) => {
+            let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(units);
+            vec![compute_budget_ix, puff_ix, create_ix]
+        }
+        None => vec![puff_ix, create_ix],
+    };
+
     // Add it to a transaction.
     let create_tx = Transaction::new_signed_with_payer(
-        &[compute_ix, puff_ix, create_ix],
+        &instructions,
         Some(&context.payer.pubkey()),
         &[&context.payer],
         context.last_blockhash,

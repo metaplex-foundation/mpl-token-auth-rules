@@ -87,15 +87,15 @@ pub enum RuleSetInstruction {
     #[default_optional_accounts]
     Validate(ValidateArgs),
 
-    /// This instruction appends a pre-serialized `RuleSet` chunk into the rule_set PDA account.  Needed with large `RuleSet`s
-    /// to stay within transaction size limit.
+    /// This instruction appends a pre-serialized `RuleSet` chunk into the rule_set PDA account.
+    /// Needed with large `RuleSet`s to stay within transaction size limit.
     #[account(0, signer, writable, name="payer", desc="Payer and creator of the RuleSet")]
     #[account(1, writable, name="buffer_pda", desc = "The PDA account where the RuleSet buffer is stored")]
     #[account(2, name = "system_program", desc = "System program")]
     WriteToBuffer(WriteToBufferArgs),
 
-    /// Add space to the end of a rule set account.  Needed with large `RuleSet`s to pre-allocate the space, to stay within
-    /// PDA allocation limits.
+    /// Add space to the end of a rule set account.  Needed with large `RuleSet`s to pre-allocate
+    /// the space, to stay within PDA allocation limits.
     #[account(0, signer, writable, name="payer", desc="Payer and creator of the RuleSet")]
     #[account(1, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
     #[account(2, name = "system_program", desc = "System program")]

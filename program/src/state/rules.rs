@@ -620,7 +620,7 @@ impl Rule {
                     // Account must have nonzero data to count as program-owned.
                     (false, self.to_error())
                 } else if programs.contains(account.owner) {
-                    // Account owner must be on the list.
+                    // Account owner must be in the set.
                     (true, self.to_error())
                 } else {
                     (false, self.to_error())
