@@ -2,6 +2,8 @@
 
 pub mod utils;
 
+use std::collections::HashSet;
+
 use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
@@ -18,11 +20,11 @@ use solana_sdk::{
     transaction::{Transaction, TransactionError},
 };
 use utils::{
-    create_associated_token_account, create_mint, program_test, DelegateScenario, Operation,
-    PayloadKey, TokenDelegateRole, TransferScenario,
+    create_associated_token_account, create_mint, program_test, DelegateScenario,
+    MetadataDelegateRole, Operation, PayloadKey, TokenDelegateRole, TransferScenario,
 };
 
-const ADDITIONAL_COMPUTE: u32 = 230_000;
+const ADDITIONAL_COMPUTE: u32 = 1_400_000;
 const RULE_SET_NAME: &str = "Metaplex Royalty RuleSet Dev";
 
 // --------------------------------
@@ -53,6 +55,7 @@ struct ComposedRules {
     wallet_to_wallet_rule: Rule,
     delegate_rule: Rule,
     advanced_delegate_rule: Rule,
+    namespace_rule: Rule,
 }
 
 // Get the four Composed Rules used in this RuleSet.
@@ -67,32 +70,38 @@ fn get_composed_rules() -> ComposedRules {
     };
 
     // Generate some random programs to add to the base lists.
-    let random_programs = (0..8).map(|_| Keypair::new().pubkey()).collect::<Vec<_>>();
+    let random_programs = (0..68).map(|_| Keypair::new().pubkey()).collect::<Vec<_>>();
 
-    let source_program_allow_list = Rule::ProgramOwnedList {
-        programs: [
-            TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
-            random_programs.clone(),
-        ]
-        .concat(),
+    let source_program_allow_list = Rule::ProgramOwnedSet {
+        programs: HashSet::from_iter(
+            [
+                TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
+                random_programs.clone(),
+            ]
+            .concat(),
+        ),
         field: PayloadKey::Source.to_string(),
     };
 
-    let dest_program_allow_list = Rule::ProgramOwnedList {
-        programs: [
-            TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
-            random_programs.clone(),
-        ]
-        .concat(),
+    let dest_program_allow_list = Rule::ProgramOwnedSet {
+        programs: HashSet::from_iter(
+            [
+                TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
+                random_programs.clone(),
+            ]
+            .concat(),
+        ),
         field: PayloadKey::Destination.to_string(),
     };
 
-    let authority_program_allow_list = Rule::ProgramOwnedList {
-        programs: [
-            TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
-            random_programs.clone(),
-        ]
-        .concat(),
+    let authority_program_allow_list = Rule::ProgramOwnedSet {
+        programs: HashSet::from_iter(
+            [
+                TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
+                random_programs.clone(),
+            ]
+            .concat(),
+        ),
         field: PayloadKey::Authority.to_string(),
     };
 
@@ -104,21 +113,25 @@ fn get_composed_rules() -> ComposedRules {
         field: PayloadKey::Destination.to_string(),
     };
 
-    let delegate_program_allow_list = Rule::ProgramOwnedList {
-        programs: [
-            DELEGATE_PROGRAM_BASE_ALLOW_LIST.to_vec(),
-            random_programs.clone(),
-        ]
-        .concat(),
+    let delegate_program_allow_list = Rule::ProgramOwnedSet {
+        programs: HashSet::from_iter(
+            [
+                DELEGATE_PROGRAM_BASE_ALLOW_LIST.to_vec(),
+                random_programs.clone(),
+            ]
+            .concat(),
+        ),
         field: PayloadKey::Delegate.to_string(),
     };
 
-    let advanced_delegate_program_allow_list = Rule::ProgramOwnedList {
-        programs: [
-            ADVANCED_DELEGATE_PROGRAM_BASE_ALLOW_LIST.to_vec(),
-            random_programs,
-        ]
-        .concat(),
+    let advanced_delegate_program_allow_list = Rule::ProgramOwnedSet {
+        programs: HashSet::from_iter(
+            [
+                ADVANCED_DELEGATE_PROGRAM_BASE_ALLOW_LIST.to_vec(),
+                random_programs,
+            ]
+            .concat(),
+        ),
         field: PayloadKey::Delegate.to_string(),
     };
 
@@ -153,11 +166,14 @@ fn get_composed_rules() -> ComposedRules {
         rules: vec![nft_amount, advanced_delegate_program_allow_list],
     };
 
+    let namespace_rule = Rule::Namespace;
+
     ComposedRules {
         transfer_rule,
         wallet_to_wallet_rule,
         delegate_rule,
         advanced_delegate_rule,
+        namespace_rule,
     }
 }
 
@@ -172,6 +188,21 @@ fn get_royalty_rule_set(owner: Pubkey) -> RuleSetV1 {
     // Set up transfer operations
     // --------------------------------
     let transfer_operation = Operation::TransferNamespace;
+    let transfer_owner_operation = Operation::Transfer {
+        scenario: TransferScenario::Holder,
+    };
+
+    let transfer_transfer_delegate_operation = Operation::Transfer {
+        scenario: TransferScenario::TransferDelegate,
+    };
+
+    let transfer_sale_delegate_operation = Operation::Transfer {
+        scenario: TransferScenario::SaleDelegate,
+    };
+
+    let transfer_migration_delegate_operation = Operation::Transfer {
+        scenario: TransferScenario::MigrationDelegate,
+    };
 
     let transfer_wallet_to_wallet_operation = Operation::Transfer {
         scenario: TransferScenario::WalletToWallet,
@@ -182,23 +213,119 @@ fn get_royalty_rule_set(owner: Pubkey) -> RuleSetV1 {
         .unwrap();
     royalty_rule_set
         .add(
+            transfer_owner_operation.to_string(),
+            rules.namespace_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            transfer_transfer_delegate_operation.to_string(),
+            rules.namespace_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            transfer_sale_delegate_operation.to_string(),
+            rules.namespace_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            transfer_migration_delegate_operation.to_string(),
+            rules.namespace_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
             transfer_wallet_to_wallet_operation.to_string(),
             rules.wallet_to_wallet_rule,
         )
         .unwrap();
 
     // --------------------------------
-    // Setup delegate operations
+    // Setup metadata delegate operations
     // --------------------------------
     let delegate_operation = Operation::DelegateNamespace;
+    let metadata_delegate_authority_operation = Operation::Delegate {
+        scenario: DelegateScenario::Metadata(MetadataDelegateRole::Authority),
+    };
+
+    let metadata_delegate_collection_operation = Operation::Delegate {
+        scenario: DelegateScenario::Metadata(MetadataDelegateRole::Collection),
+    };
+
+    let metadata_delegate_use_operation = Operation::Delegate {
+        scenario: DelegateScenario::Metadata(MetadataDelegateRole::Use),
+    };
+
+    let metadata_delegate_update_operation = Operation::Delegate {
+        scenario: DelegateScenario::Metadata(MetadataDelegateRole::Update),
+    };
 
     royalty_rule_set
         .add(delegate_operation.to_string(), rules.delegate_rule.clone())
         .unwrap();
 
+    royalty_rule_set
+        .add(
+            metadata_delegate_authority_operation.to_string(),
+            rules.namespace_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            metadata_delegate_collection_operation.to_string(),
+            rules.namespace_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            metadata_delegate_use_operation.to_string(),
+            rules.namespace_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            metadata_delegate_update_operation.to_string(),
+            rules.namespace_rule.clone(),
+        )
+        .unwrap();
+
+    // --------------------------------
+    // Setup token delegate operations
+    // --------------------------------
+    let token_delegate_sale_operation = Operation::Delegate {
+        scenario: DelegateScenario::Token(TokenDelegateRole::Sale),
+    };
+
+    let token_delegate_transfer_operation = Operation::Delegate {
+        scenario: DelegateScenario::Token(TokenDelegateRole::Transfer),
+    };
+
     let token_delegate_locked_transfer_operation = Operation::Delegate {
         scenario: DelegateScenario::Token(TokenDelegateRole::LockedTransfer),
     };
+
+    let token_delegate_utility_operation = Operation::Delegate {
+        scenario: DelegateScenario::Token(TokenDelegateRole::Utility),
+    };
+
+    let token_delegate_staking_operation = Operation::Delegate {
+        scenario: DelegateScenario::Token(TokenDelegateRole::Staking),
+    };
+
+    royalty_rule_set
+        .add(
+            token_delegate_sale_operation.to_string(),
+            rules.namespace_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            token_delegate_transfer_operation.to_string(),
+            rules.namespace_rule.clone(),
+        )
+        .unwrap();
 
     // --------------------------------
     // NOTE THIS IS THE ONLY OPERATION
@@ -212,7 +339,21 @@ fn get_royalty_rule_set(owner: Pubkey) -> RuleSetV1 {
         )
         .unwrap();
 
-    println!("Royalty Rule Set: {:#?}", royalty_rule_set);
+    royalty_rule_set
+        .add(
+            token_delegate_utility_operation.to_string(),
+            rules.namespace_rule.clone(),
+        )
+        .unwrap();
+
+    royalty_rule_set
+        .add(
+            token_delegate_staking_operation.to_string(),
+            rules.namespace_rule,
+        )
+        .unwrap();
+
+    print!("Royalty Rule Set: {:#?}", royalty_rule_set);
 
     royalty_rule_set
 }
@@ -702,7 +843,7 @@ async fn prog_owner_not_on_list_fails() {
         solana_program_test::BanksClientError::TransactionError(
             TransactionError::InstructionError(_, InstructionError::Custom(error)),
         ) => {
-            assert_eq!(error, RuleSetError::ProgramOwnedListCheckFailed as u32);
+            assert_eq!(error, RuleSetError::ProgramOwnedSetCheckFailed as u32);
         }
         _ => panic!("Unexpected error: {:?}", err),
     }
@@ -801,7 +942,7 @@ async fn prog_owned_but_zero_data_length() {
         solana_program_test::BanksClientError::TransactionError(
             TransactionError::InstructionError(_, InstructionError::Custom(error)),
         ) => {
-            assert_eq!(error, RuleSetError::ProgramOwnedListCheckFailed as u32);
+            assert_eq!(error, RuleSetError::ProgramOwnedSetCheckFailed as u32);
         }
         _ => panic!("Unexpected error: {:?}", err),
     }

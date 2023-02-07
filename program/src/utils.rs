@@ -228,9 +228,7 @@ pub fn get_operation(operation: String, rule_set: &RuleSetV1) -> Result<&Rule, P
     let rule = rule_set.get(operation.to_string());
 
     match rule {
-        // This operation exists, return it.
-        Some(rule) => Ok(rule),
-        None => {
+        Some(Rule::Namespace) => {
             // Check for a ':' namespace separator. If it exists try to operation namespace to see if
             // a fallback exists. E.g. 'transfer:owner' will check for a fallback for 'transfer'.
             // If it doesn't exist then fail.
@@ -241,5 +239,7 @@ pub fn get_operation(operation: String, rule_set: &RuleSetV1) -> Result<&Rule, P
                 Err(RuleSetError::OperationNotFound.into())
             }
         }
+        Some(r) => Ok(r),
+        None => Err(RuleSetError::OperationNotFound.into()),
     }
 }

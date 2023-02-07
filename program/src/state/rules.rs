@@ -195,6 +195,8 @@ pub enum Rule {
         /// The field in the `Payload` to be compared.
         field: String,
     },
+    /// A rule that tells the operation finder to use the default namespace rule.
+    Namespace,
 }
 
 impl Rule {
@@ -626,15 +628,21 @@ impl Rule {
                     (false, self.to_error())
                 }
             }
+            Rule::Namespace => {
+                msg!("Validating Namespace");
+                (false, self.to_error())
+            }
         }
     }
 
     /// Convert the rule to a corresponding error resulting from the rule failure.
     pub fn to_error(&self) -> ProgramError {
         match self {
-            Rule::All { .. } | Rule::Any { .. } | Rule::Not { .. } | Rule::Pass => {
-                RuleSetError::UnexpectedRuleSetFailure.into()
-            }
+            Rule::All { .. }
+            | Rule::Any { .. }
+            | Rule::Not { .. }
+            | Rule::Pass
+            | Rule::Namespace => RuleSetError::UnexpectedRuleSetFailure.into(),
             Rule::AdditionalSigner { .. } => RuleSetError::AdditionalSignerCheckFailed.into(),
             Rule::PubkeyMatch { .. } => RuleSetError::PubkeyMatchCheckFailed.into(),
             Rule::PubkeyListMatch { .. } => RuleSetError::PubkeyListMatchCheckFailed.into(),
