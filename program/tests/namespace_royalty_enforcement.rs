@@ -18,11 +18,11 @@ use solana_sdk::{
     transaction::{Transaction, TransactionError},
 };
 use utils::{
-    create_associated_token_account, create_mint, program_test, DelegateScenario,
-    MetadataDelegateRole, Operation, PayloadKey, TokenDelegateRole, TransferScenario,
+    create_associated_token_account, create_mint, program_test, DelegateScenario, Operation,
+    PayloadKey, TokenDelegateRole, TransferScenario,
 };
 
-const ADDITIONAL_COMPUTE: u32 = 1_000_000;
+const ADDITIONAL_COMPUTE: u32 = 230_000;
 const RULE_SET_NAME: &str = "Metaplex Royalty RuleSet Dev";
 
 // --------------------------------
@@ -171,49 +171,14 @@ fn get_royalty_rule_set(owner: Pubkey) -> RuleSetV1 {
     // --------------------------------
     // Set up transfer operations
     // --------------------------------
-    let transfer_owner_operation = Operation::Transfer {
-        scenario: TransferScenario::Holder,
-    };
-
-    let transfer_transfer_delegate_operation = Operation::Transfer {
-        scenario: TransferScenario::TransferDelegate,
-    };
-
-    let transfer_sale_delegate_operation = Operation::Transfer {
-        scenario: TransferScenario::SaleDelegate,
-    };
-
-    let transfer_migration_delegate_operation = Operation::Transfer {
-        scenario: TransferScenario::MigrationDelegate,
-    };
+    let transfer_operation = Operation::TransferNamespace;
 
     let transfer_wallet_to_wallet_operation = Operation::Transfer {
         scenario: TransferScenario::WalletToWallet,
     };
 
     royalty_rule_set
-        .add(
-            transfer_owner_operation.to_string(),
-            rules.transfer_rule.clone(),
-        )
-        .unwrap();
-    royalty_rule_set
-        .add(
-            transfer_transfer_delegate_operation.to_string(),
-            rules.transfer_rule.clone(),
-        )
-        .unwrap();
-    royalty_rule_set
-        .add(
-            transfer_sale_delegate_operation.to_string(),
-            rules.transfer_rule.clone(),
-        )
-        .unwrap();
-    royalty_rule_set
-        .add(
-            transfer_migration_delegate_operation.to_string(),
-            rules.transfer_rule,
-        )
+        .add(transfer_operation.to_string(), rules.transfer_rule.clone())
         .unwrap();
     royalty_rule_set
         .add(
@@ -223,84 +188,17 @@ fn get_royalty_rule_set(owner: Pubkey) -> RuleSetV1 {
         .unwrap();
 
     // --------------------------------
-    // Setup metadata delegate operations
+    // Setup delegate operations
     // --------------------------------
-    let metadata_delegate_authority_operation = Operation::Delegate {
-        scenario: DelegateScenario::Metadata(MetadataDelegateRole::Authority),
-    };
-
-    let metadata_delegate_collection_operation = Operation::Delegate {
-        scenario: DelegateScenario::Metadata(MetadataDelegateRole::Collection),
-    };
-
-    let metadata_delegate_use_operation = Operation::Delegate {
-        scenario: DelegateScenario::Metadata(MetadataDelegateRole::Use),
-    };
-
-    let metadata_delegate_update_operation = Operation::Delegate {
-        scenario: DelegateScenario::Metadata(MetadataDelegateRole::Update),
-    };
+    let delegate_operation = Operation::DelegateNamespace;
 
     royalty_rule_set
-        .add(
-            metadata_delegate_authority_operation.to_string(),
-            rules.delegate_rule.clone(),
-        )
+        .add(delegate_operation.to_string(), rules.delegate_rule.clone())
         .unwrap();
-    royalty_rule_set
-        .add(
-            metadata_delegate_collection_operation.to_string(),
-            rules.delegate_rule.clone(),
-        )
-        .unwrap();
-    royalty_rule_set
-        .add(
-            metadata_delegate_use_operation.to_string(),
-            rules.delegate_rule.clone(),
-        )
-        .unwrap();
-    royalty_rule_set
-        .add(
-            metadata_delegate_update_operation.to_string(),
-            rules.delegate_rule.clone(),
-        )
-        .unwrap();
-
-    // --------------------------------
-    // Setup token delegate operations
-    // --------------------------------
-    let token_delegate_sale_operation = Operation::Delegate {
-        scenario: DelegateScenario::Token(TokenDelegateRole::Sale),
-    };
-
-    let token_delegate_transfer_operation = Operation::Delegate {
-        scenario: DelegateScenario::Token(TokenDelegateRole::Transfer),
-    };
 
     let token_delegate_locked_transfer_operation = Operation::Delegate {
         scenario: DelegateScenario::Token(TokenDelegateRole::LockedTransfer),
     };
-
-    let token_delegate_utility_operation = Operation::Delegate {
-        scenario: DelegateScenario::Token(TokenDelegateRole::Utility),
-    };
-
-    let token_delegate_staking_operation = Operation::Delegate {
-        scenario: DelegateScenario::Token(TokenDelegateRole::Staking),
-    };
-
-    royalty_rule_set
-        .add(
-            token_delegate_sale_operation.to_string(),
-            rules.delegate_rule.clone(),
-        )
-        .unwrap();
-    royalty_rule_set
-        .add(
-            token_delegate_transfer_operation.to_string(),
-            rules.delegate_rule.clone(),
-        )
-        .unwrap();
 
     // --------------------------------
     // NOTE THIS IS THE ONLY OPERATION
@@ -314,19 +212,7 @@ fn get_royalty_rule_set(owner: Pubkey) -> RuleSetV1 {
         )
         .unwrap();
 
-    royalty_rule_set
-        .add(
-            token_delegate_utility_operation.to_string(),
-            rules.delegate_rule.clone(),
-        )
-        .unwrap();
-
-    royalty_rule_set
-        .add(
-            token_delegate_staking_operation.to_string(),
-            rules.delegate_rule,
-        )
-        .unwrap();
+    println!("Royalty Rule Set: {:#?}", royalty_rule_set);
 
     royalty_rule_set
 }
