@@ -63,8 +63,10 @@ pub struct RuleSetV1 {
     owner: Pubkey,
     /// Name of the RuleSet, used in PDA derivation.
     rule_set_name: String,
-    /// A map to determine the `Rule` that belongs to a given `Operation`.
-    pub operations: HashMap<String, Rule>,
+    /// A map to determine the index of the `Rule` that belongs to a given `Operation`.
+    pub operations: HashMap<String, usize>,
+    /// A Vec containing the unique `Rules`.
+    rules: Vec<Rule>,
 }
 
 impl RuleSetV1 {
@@ -75,6 +77,7 @@ impl RuleSetV1 {
             rule_set_name,
             owner,
             operations: HashMap::new(),
+            rules: vec![],
         }
     }
 
@@ -95,9 +98,15 @@ impl RuleSetV1 {
 
     /// Add a key-value pair into a `RuleSet`.  If this key is already in the `RuleSet`
     /// nothing is updated and an error is returned.
-    pub fn add(&mut self, operation: String, rules: Rule) -> ProgramResult {
+    pub fn add(&mut self, operation: String, rule: Rule) -> ProgramResult {
         if self.operations.get(&operation).is_none() {
-            self.operations.insert(operation, rules);
+            if let Some(index) = self.rules.iter().position(|r| r == &rule) {
+                self.operations.insert(operation, index);
+            } else {
+                self.rules.push(rule);
+                self.operations.insert(operation, self.rules.len() - 1);
+            }
+
             Ok(())
         } else {
             Err(RuleSetError::ValueOccupied.into())
@@ -106,6 +115,7 @@ impl RuleSetV1 {
 
     /// Retrieve the `Rule` tree for a given `Operation`.
     pub fn get(&self, operation: String) -> Option<&Rule> {
-        self.operations.get(&operation)
+        let index = self.operations.get(&operation)?;
+        self.rules.get(*index)
     }
 }

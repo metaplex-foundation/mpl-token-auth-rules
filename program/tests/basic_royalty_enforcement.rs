@@ -22,7 +22,6 @@ use utils::{
     MetadataDelegateRole, Operation, PayloadKey, TokenDelegateRole, TransferScenario,
 };
 
-const ADDITIONAL_COMPUTE: u32 = 1_000_000;
 const RULE_SET_NAME: &str = "Metaplex Royalty RuleSet Dev";
 
 // --------------------------------
@@ -339,7 +338,7 @@ async fn create_royalty_rule_set(context: &mut ProgramTestContext) -> Pubkey {
         context,
         royalty_rule_set.clone(),
         RULE_SET_NAME.to_string(),
-        Some(ADDITIONAL_COMPUTE)
+        None
     )
     .await
 }
@@ -397,9 +396,7 @@ async fn wallet_to_wallet_unimplemented() {
         .instruction();
 
     // Validate fail operation.
-    let err =
-        process_failing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE))
-            .await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.  The `IsWallet` rule currently returns `NotImplemented`.
     match err {
@@ -479,7 +476,7 @@ async fn wallet_to_prog_owned() {
         .instruction();
 
     // Validate operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE)).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 }
 
 #[tokio::test]
@@ -568,7 +565,7 @@ async fn prog_owned_to_prog_owned() {
         .instruction();
 
     // Validate operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE)).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 }
 
 #[tokio::test]
@@ -638,7 +635,7 @@ async fn prog_owned_to_wallet() {
         .instruction();
 
     // Validate operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE)).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 }
 
 #[tokio::test]
@@ -709,9 +706,7 @@ async fn wrong_amount_fails() {
         .instruction();
 
     // Fail to validate operation.
-    let err =
-        process_failing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE))
-            .await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.  Amount was greater than that allowed in the rule so it
     // failed.
@@ -807,9 +802,7 @@ async fn prog_owner_not_on_list_fails() {
         .instruction();
 
     // Fail to validate operation.
-    let err =
-        process_failing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE))
-            .await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.  Program owner was not on the allow list.
     match err {
@@ -905,9 +898,7 @@ async fn prog_owned_but_zero_data_length() {
         .instruction();
 
     // Fail to validate operation.
-    let err =
-        process_failing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE))
-            .await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.  Although the program owner is correct the data length is zero
     // so it fails the rule.
