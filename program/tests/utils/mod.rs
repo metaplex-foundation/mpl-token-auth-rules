@@ -1,7 +1,7 @@
 use mpl_token_auth_rules::{
     instruction::{
-        builders::{CreateOrUpdateBuilder, WriteToBufferBuilder},
-        CreateOrUpdateArgs, InstructionBuilder, WriteToBufferArgs,
+        builders::{CreateOrUpdateBuilder, PuffRuleSetBuilder, WriteToBufferBuilder},
+        CreateOrUpdateArgs, InstructionBuilder, PuffRuleSetArgs, WriteToBufferArgs,
     },
     payload::ProofInfo,
     state::RuleSetV1,
@@ -279,7 +279,7 @@ pub async fn create_big_rule_set_on_chain_with_loc(
     column: u32,
 ) -> Pubkey {
     // Find RuleSet PDA.
-    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
+    let (rule_set_addr, rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
         context.payer.pubkey(),
         rule_set_name.clone(),
     );
@@ -299,11 +299,9 @@ pub async fn create_big_rule_set_on_chain_with_loc(
         let write_to_buffer_ix = WriteToBufferBuilder::new()
             .payer(context.payer.pubkey())
             .buffer_pda(buffer_pda)
-            .rule_set_pda(rule_set_addr)
             .build(WriteToBufferArgs::V1 {
                 serialized_rule_set: serialized_rule_set_chunk.to_vec(),
                 overwrite,
-                rule_set_name: rule_set_name.to_string(),
             })
             .unwrap()
             .instruction();
@@ -353,12 +351,15 @@ pub async fn create_big_rule_set_on_chain_with_loc(
     // Request more compute units.
     let compute_ix = ComputeBudgetInstruction::set_compute_unit_limit(1_400_000);
 
-    // let puff_ix = PuffRuleSetBuilder::new()
-    //     .payer(context.payer.pubkey())
-    //     .rule_set_pda(rule_set_addr)
-    //     .build()
-    //     .unwrap()
-    //     .instruction();
+    let puff_ix = PuffRuleSetBuilder::new()
+        .payer(context.payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .build(PuffRuleSetArgs::V1 {
+            rule_set_name: rule_set_name.to_string(),
+            bump: rule_set_bump,
+        })
+        .unwrap()
+        .instruction();
 
     // Create a `create` instruction.
     let create_ix = CreateOrUpdateBuilder::new()
@@ -373,7 +374,7 @@ pub async fn create_big_rule_set_on_chain_with_loc(
 
     // Add it to a transaction.
     let create_tx = Transaction::new_signed_with_payer(
-        &[compute_ix, /*puff_ix,*/ create_ix],
+        &[compute_ix, puff_ix, create_ix],
         Some(&context.payer.pubkey()),
         &[&context.payer],
         context.last_blockhash,

@@ -4,12 +4,12 @@ use std::collections::HashMap;
 use crate::{
     error::RuleSetError,
     instruction::{
-        Context, CreateOrUpdate, CreateOrUpdateArgs, RuleSetInstruction, Validate, ValidateArgs,
-        WriteToBuffer, WriteToBufferArgs,
+        Context, CreateOrUpdate, CreateOrUpdateArgs, PuffRuleSet, PuffRuleSetArgs,
+        RuleSetInstruction, Validate, ValidateArgs, WriteToBuffer, WriteToBufferArgs,
     },
     pda::{PREFIX, STATE_PDA},
     state::{
-        RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RULE_SET_LIB_VERSION,
+        RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, CHUNK_SIZE, RULE_SET_LIB_VERSION,
         RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
     },
     utils::{
@@ -26,7 +26,6 @@ use solana_program::{
     program_error::ProgramError,
     program_memory::{sol_memcmp, sol_memcpy},
     pubkey::{Pubkey, PUBKEY_BYTES},
-    system_program,
 };
 
 /// The generic processor struct.
@@ -51,6 +50,10 @@ impl Processor {
             RuleSetInstruction::WriteToBuffer(args) => {
                 msg!("Instruction: WriteToBuffer");
                 write_to_buffer(program_id, accounts, args)
+            }
+            RuleSetInstruction::PuffRuleSet(args) => {
+                msg!("Instruction: PuffRuleSet");
+                puff_rule_set(program_id, accounts, args)
             }
         }
     }
@@ -125,7 +128,7 @@ fn create_or_update_v1(
     ];
 
     // Get new or existing revision map.
-    let revision_map = if *ctx.accounts.rule_set_pda_info.owner == system_program::ID {
+    let revision_map = if ctx.accounts.rule_set_pda_info.data_is_empty() {
         let mut revision_map = RuleSetRevisionMapV1::default();
 
         // Initially set the latest revision location to a the value right after the header.
@@ -402,7 +405,6 @@ fn write_to_buffer_v1(
     let WriteToBufferArgs::V1 {
         serialized_rule_set,
         overwrite,
-        rule_set_name,
     } = args;
 
     if !ctx.accounts.payer_info.is_signer {
@@ -474,86 +476,49 @@ fn write_to_buffer_v1(
     Ok(())
 }
 
-/// V1 implementation of the `write_to_buffer` instruction.
-// fn write_to_buffer_v2(
-//     program_id: &Pubkey,
-//     ctx: Context<WriteToBuffer>,
-//     args: WriteToBufferArgs,
-// ) -> ProgramResult {
-//     let WriteToBufferArgs::V2 {
-//         serialized_rule_set,
-//         overwrite,
-//         rule_set_name,
-//     } = args;
+/// Processor to puff the rule set account
+fn puff_rule_set<'a>(
+    program_id: &Pubkey,
+    accounts: &'a [AccountInfo<'a>],
+    args: PuffRuleSetArgs,
+) -> ProgramResult {
+    let PuffRuleSetArgs::V1 {
+        rule_set_name,
+        bump,
+    } = args;
 
-//     if !ctx.accounts.payer_info.is_signer {
-//         return Err(RuleSetError::PayerIsNotSigner.into());
-//     }
+    let ctx = PuffRuleSet::to_context(accounts)?;
 
-//     // Check buffer account info derivation.
-//     let bump = assert_derivation(
-//         program_id,
-//         ctx.accounts.buffer_pda_info.key,
-//         &[PREFIX.as_bytes(), ctx.accounts.payer_info.key.as_ref()],
-//     )?;
+    let rule_set_seeds = &[
+        PREFIX.as_ref(),
+        ctx.accounts.payer_info.key.as_ref(),
+        rule_set_name.as_ref(),
+        &[bump],
+    ];
 
-//     let buffer_seeds = &[
-//         PREFIX.as_ref(),
-//         ctx.accounts.payer_info.key.as_ref(),
-//         &[bump],
-//     ];
-
-//     // Fetch the offset before we realloc so we get the accurate account length.
-//     let offset = if overwrite {
-//         0
-//     } else {
-//         ctx.accounts.buffer_pda_info.data_len()
-//     };
-
-//     // Create or allocate, resize or reallocate buffer PDA.
-//     if ctx.accounts.buffer_pda_info.data_is_empty() {
-//         create_or_allocate_account_raw(
-//             *program_id,
-//             ctx.accounts.buffer_pda_info,
-//             ctx.accounts.system_program_info,
-//             ctx.accounts.payer_info,
-//             serialized_rule_set.len(),
-//             buffer_seeds,
-//         )?;
-//     } else if overwrite {
-//         resize_or_reallocate_account_raw(
-//             ctx.accounts.buffer_pda_info,
-//             ctx.accounts.payer_info,
-//             ctx.accounts.system_program_info,
-//             serialized_rule_set.len(),
-//         )?;
-//     } else {
-//         resize_or_reallocate_account_raw(
-//             ctx.accounts.buffer_pda_info,
-//             ctx.accounts.payer_info,
-//             ctx.accounts.system_program_info,
-//             ctx.accounts
-//                 .buffer_pda_info
-//                 .data_len()
-//                 .checked_add(serialized_rule_set.len())
-//                 .ok_or(RuleSetError::NumericalOverflow)?,
-//         )?;
-//     }
-
-//     msg!(
-//         "Writing {:?} bytes at offset {:?}",
-//         serialized_rule_set.len(),
-//         offset
-//     );
-//     // Copy user-pre-serialized RuleSet to PDA account.
-//     sol_memcpy(
-//         &mut ctx.accounts.buffer_pda_info.try_borrow_mut_data().unwrap()[offset..],
-//         &serialized_rule_set,
-//         serialized_rule_set.len(),
-//     );
-
-//     Ok(())
-// }
+    // Create or allocate, resize or reallocate the `RuleSet` PDA.
+    if ctx.accounts.rule_set_pda_info.data_is_empty() {
+        create_or_allocate_account_raw(
+            *program_id,
+            ctx.accounts.rule_set_pda_info,
+            ctx.accounts.system_program_info,
+            ctx.accounts.payer_info,
+            CHUNK_SIZE,
+            rule_set_seeds,
+        )
+    } else {
+        resize_or_reallocate_account_raw(
+            ctx.accounts.rule_set_pda_info,
+            ctx.accounts.payer_info,
+            ctx.accounts.system_program_info,
+            ctx.accounts
+                .rule_set_pda_info
+                .data_len()
+                .checked_add(CHUNK_SIZE)
+                .ok_or(RuleSetError::NumericalOverflow)?,
+        )
+    }
+}
 
 /// Convenience function for accessing the next item in an [`AccountInfo`]
 /// iterator and validating whether the account is present or not.

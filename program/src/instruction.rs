@@ -45,8 +45,19 @@ pub enum WriteToBufferArgs {
         serialized_rule_set: Vec<u8>,
         /// Whether the or not the any old data should be overwritten.
         overwrite: bool,
-        /// The name of the target rule set.
+    },
+}
+
+#[repr(C)]
+#[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+/// Args for `append_to_rule_set` instruction.
+pub enum PuffRuleSetArgs {
+    /// V1 implementation of the `create` instruction arguments.
+    V1 {
+        /// RuleSet name.
         rule_set_name: String,
+        /// RuleSet bump.
+        bump: u8,
     },
 }
 
@@ -82,8 +93,13 @@ pub enum RuleSetInstruction {
     #[account(0, signer, writable, name="payer", desc="Payer and creator of the RuleSet")]
     #[account(1, writable, name="buffer_pda", desc = "The PDA account where the RuleSet buffer is stored")]
     #[account(2, name = "system_program", desc = "System program")]
-    #[account(3, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
     WriteToBuffer(WriteToBufferArgs),
+
+    /// Add space to the end of a rule set account.
+    #[account(0, signer, writable, name="payer", desc="Payer and creator of the RuleSet")]
+    #[account(1, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
+    #[account(2, name = "system_program", desc = "System program")]
+    PuffRuleSet(PuffRuleSetArgs),
 }
 
 /// Builds a `CreateOrUpdate` instruction.
@@ -160,13 +176,31 @@ impl InstructionBuilder for builders::WriteToBuffer {
             AccountMeta::new(self.payer, true),
             AccountMeta::new(self.buffer_pda, false),
             AccountMeta::new_readonly(solana_program::system_program::id(), false),
-            AccountMeta::new(self.rule_set_pda, false),
         ];
 
         Instruction {
             program_id: crate::ID,
             accounts,
             data: RuleSetInstruction::WriteToBuffer(self.args.clone())
+                .try_to_vec()
+                .unwrap(),
+        }
+    }
+}
+
+/// Builds a `PuffRuleSet` instruction.
+impl InstructionBuilder for builders::PuffRuleSet {
+    fn instruction(&self) -> solana_program::instruction::Instruction {
+        let accounts = vec![
+            AccountMeta::new(self.payer, true),
+            AccountMeta::new(self.rule_set_pda, false),
+            AccountMeta::new_readonly(solana_program::system_program::id(), false),
+        ];
+
+        Instruction {
+            program_id: crate::ID,
+            accounts,
+            data: RuleSetInstruction::PuffRuleSet(self.args.clone())
                 .try_to_vec()
                 .unwrap(),
         }
