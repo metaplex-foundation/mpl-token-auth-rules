@@ -12,7 +12,7 @@ use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     pubkey::Pubkey, system_program,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 /// Operators that can be used to compare against an `Amount` rule.
@@ -183,6 +183,18 @@ pub enum Rule {
     },
     /// An operation that always succeeds.
     Pass,
+    /// The `Pubkey` must be owned by a program in the set of `Pubkey`s.  When the `Validate`
+    /// instruction is called, this rule requires a `PayloadType` value of `PayloadType::Pubkey`.
+    /// The `field` value in the rule is used to locate the `Pubkey` in the payload for which the
+    /// owner must be a program in the set in the rule.  Note this same `Pubkey` account must also
+    /// be provided to `Validate` via the `additional_rule_accounts` argument.  This is so that the
+    /// `Pubkey`'s owner can be found from its `AccountInfo` struct.
+    ProgramOwnedSet {
+        /// The program that must own the `Pubkey`.
+        programs: HashSet<Pubkey>,
+        /// The field in the `Payload` to be compared.
+        field: String,
+    },
 }
 
 impl Rule {
@@ -579,6 +591,41 @@ impl Rule {
                 (false, RuleSetError::NotImplemented.into())
                 //(is_on_curve(key), self.to_error())
             }
+            Rule::ProgramOwnedSet { programs, field } => {
+                msg!("Validating ProgramOwnedSet");
+
+                let key = match payload.get_pubkey(field) {
+                    Some(pubkey) => pubkey,
+                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                };
+
+                let account = match accounts.get(key) {
+                    Some(account) => account,
+                    _ => return (false, RuleSetError::MissingAccount.into()),
+                };
+
+                let data = match account.data.try_borrow() {
+                    Ok(data) => data,
+                    Err(_) => return (false, ProgramError::AccountBorrowFailed),
+                };
+
+                if is_zeroed(&data) {
+                    // Print helpful errors.
+                    if data.len() == 0 {
+                        msg!("Account data is empty");
+                    } else {
+                        msg!("Account data is zeroed");
+                    }
+
+                    // Account must have nonzero data to count as program-owned.
+                    (false, self.to_error())
+                } else if programs.contains(account.owner) {
+                    // Account owner must be on the list.
+                    (true, self.to_error())
+                } else {
+                    (false, self.to_error())
+                }
+            }
         }
     }
 
@@ -599,6 +646,7 @@ impl Rule {
             Rule::Amount { .. } => RuleSetError::AmountCheckFailed.into(),
             Rule::Frequency { .. } => RuleSetError::FrequencyCheckFailed.into(),
             Rule::IsWallet { .. } => RuleSetError::IsWalletCheckFailed.into(),
+            Rule::ProgramOwnedSet { .. } => RuleSetError::ProgramOwnedSetCheckFailed.into(),
         }
     }
 }

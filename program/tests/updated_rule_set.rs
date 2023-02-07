@@ -35,7 +35,10 @@ async fn test_update_ruleset_data_integrity() {
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
-            Operation::SimpleOwnerTransfer.to_string(),
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             first_overall_rule.clone(),
         )
         .unwrap();
@@ -74,14 +77,20 @@ async fn test_update_ruleset_data_integrity() {
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
-            Operation::SimpleDelegate.to_string(),
+            Operation::Delegate {
+                scenario: utils::DelegateScenario::Token(utils::TokenDelegateRole::Sale),
+            }
+            .to_string(),
             second_overall_rule.clone(),
         )
         .unwrap();
 
     rule_set
         .add(
-            Operation::SimpleSaleTransfer.to_string(),
+            Operation::Transfer {
+                scenario: utils::TransferScenario::SaleDelegate,
+            }
+            .to_string(),
             second_overall_rule.clone(),
         )
         .unwrap();
@@ -122,7 +131,10 @@ async fn test_update_ruleset_data_integrity() {
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
-            Operation::SimpleOwnerTransfer.to_string(),
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             third_overall_rule.clone(),
         )
         .unwrap();
@@ -145,19 +157,28 @@ async fn test_update_ruleset_data_integrity() {
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
-            Operation::SimpleOwnerTransfer.to_string(),
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             first_overall_rule,
         )
         .unwrap();
     rule_set
         .add(
-            Operation::SimpleDelegate.to_string(),
+            Operation::Delegate {
+                scenario: utils::DelegateScenario::Token(utils::TokenDelegateRole::Sale),
+            }
+            .to_string(),
             second_overall_rule.clone(),
         )
         .unwrap();
     rule_set
         .add(
-            Operation::SimpleSaleTransfer.to_string(),
+            Operation::Transfer {
+                scenario: utils::TransferScenario::TransferDelegate,
+            }
+            .to_string(),
             second_overall_rule,
         )
         .unwrap();
@@ -180,7 +201,10 @@ async fn test_update_ruleset_data_integrity() {
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
-            Operation::SimpleOwnerTransfer.to_string(),
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             third_overall_rule,
         )
         .unwrap();
@@ -296,7 +320,13 @@ async fn test_unknown_rule_set_revision_fails() {
     // Create a RuleSet.
     let mut first_rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     first_rule_set
-        .add(Operation::SimpleOwnerTransfer.to_string(), adtl_signer_rule)
+        .add(
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
+            adtl_signer_rule,
+        )
         .unwrap();
 
     // Put the RuleSet on chain.
@@ -316,7 +346,13 @@ async fn test_unknown_rule_set_revision_fails() {
     // Create a new RuleSet.
     let mut second_rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     second_rule_set
-        .add(Operation::SimpleOwnerTransfer.to_string(), amount_check)
+        .add(
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
+            amount_check,
+        )
         .unwrap();
 
     // Put the updated RuleSet on chain.
@@ -346,7 +382,10 @@ async fn test_unknown_rule_set_revision_fails() {
             true,
         )])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload: payload.clone(),
             update_rule_state: false,
             rule_set_revision: Some(3),
@@ -378,7 +417,13 @@ async fn test_correct_rule_set_is_used_after_update() {
     // Create a RuleSet.
     let mut first_rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     first_rule_set
-        .add(Operation::SimpleOwnerTransfer.to_string(), adtl_signer_rule)
+        .add(
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
+            adtl_signer_rule,
+        )
         .unwrap();
 
     // Put the RuleSet on chain.
@@ -398,7 +443,13 @@ async fn test_correct_rule_set_is_used_after_update() {
     // Create a new RuleSet.
     let mut second_rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     second_rule_set
-        .add(Operation::SimpleOwnerTransfer.to_string(), amount_check)
+        .add(
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
+            amount_check,
+        )
         .unwrap();
 
     // Put the updated RuleSet on chain.
@@ -428,7 +479,10 @@ async fn test_correct_rule_set_is_used_after_update() {
             false,
         )])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload: payload.clone(),
             update_rule_state: false,
             rule_set_revision: Some(0),
@@ -458,7 +512,10 @@ async fn test_correct_rule_set_is_used_after_update() {
             true,
         )])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload: payload.clone(),
             update_rule_state: false,
             rule_set_revision: Some(0),
@@ -485,7 +542,10 @@ async fn test_correct_rule_set_is_used_after_update() {
             true,
         )])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload: payload.clone(),
             update_rule_state: false,
             rule_set_revision: Some(1),
@@ -517,7 +577,10 @@ async fn test_correct_rule_set_is_used_after_update() {
             false,
         )])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload: payload.clone(),
             update_rule_state: false,
             rule_set_revision: Some(1),

@@ -38,7 +38,13 @@ async fn program_owned_tree() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::SimpleOwnerTransfer.to_string(), rule)
+        .add(
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
+            rule,
+        )
         .unwrap();
 
     // Put the RuleSet on chain.
@@ -104,7 +110,10 @@ async fn program_owned_tree() {
             false,
         )])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -174,7 +183,10 @@ async fn program_owned_tree() {
             false,
         )])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -230,7 +242,10 @@ async fn program_owned_tree() {
         .mint(mint.pubkey())
         .additional_rule_accounts(vec![AccountMeta::new_readonly(rule_set_addr, false)])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -282,7 +297,10 @@ async fn program_owned_tree() {
         .mint(mint.pubkey())
         .additional_rule_accounts(vec![AccountMeta::new_readonly(rule_set_addr, false)])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,

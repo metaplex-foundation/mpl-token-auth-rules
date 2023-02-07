@@ -26,6 +26,7 @@ use solana_program::{
     program_error::ProgramError,
     program_memory::{sol_memcmp, sol_memcpy},
     pubkey::{Pubkey, PUBKEY_BYTES},
+    system_program,
 };
 
 /// The generic processor struct.
@@ -124,7 +125,7 @@ fn create_or_update_v1(
     ];
 
     // Get new or existing revision map.
-    let revision_map = if ctx.accounts.rule_set_pda_info.data_is_empty() {
+    let revision_map = if *ctx.accounts.rule_set_pda_info.owner == system_program::ID {
         let mut revision_map = RuleSetRevisionMapV1::default();
 
         // Initially set the latest revision location to a the value right after the header.
@@ -401,6 +402,7 @@ fn write_to_buffer_v1(
     let WriteToBufferArgs::V1 {
         serialized_rule_set,
         overwrite,
+        rule_set_name,
     } = args;
 
     if !ctx.accounts.payer_info.is_signer {
@@ -471,6 +473,87 @@ fn write_to_buffer_v1(
 
     Ok(())
 }
+
+/// V1 implementation of the `write_to_buffer` instruction.
+// fn write_to_buffer_v2(
+//     program_id: &Pubkey,
+//     ctx: Context<WriteToBuffer>,
+//     args: WriteToBufferArgs,
+// ) -> ProgramResult {
+//     let WriteToBufferArgs::V2 {
+//         serialized_rule_set,
+//         overwrite,
+//         rule_set_name,
+//     } = args;
+
+//     if !ctx.accounts.payer_info.is_signer {
+//         return Err(RuleSetError::PayerIsNotSigner.into());
+//     }
+
+//     // Check buffer account info derivation.
+//     let bump = assert_derivation(
+//         program_id,
+//         ctx.accounts.buffer_pda_info.key,
+//         &[PREFIX.as_bytes(), ctx.accounts.payer_info.key.as_ref()],
+//     )?;
+
+//     let buffer_seeds = &[
+//         PREFIX.as_ref(),
+//         ctx.accounts.payer_info.key.as_ref(),
+//         &[bump],
+//     ];
+
+//     // Fetch the offset before we realloc so we get the accurate account length.
+//     let offset = if overwrite {
+//         0
+//     } else {
+//         ctx.accounts.buffer_pda_info.data_len()
+//     };
+
+//     // Create or allocate, resize or reallocate buffer PDA.
+//     if ctx.accounts.buffer_pda_info.data_is_empty() {
+//         create_or_allocate_account_raw(
+//             *program_id,
+//             ctx.accounts.buffer_pda_info,
+//             ctx.accounts.system_program_info,
+//             ctx.accounts.payer_info,
+//             serialized_rule_set.len(),
+//             buffer_seeds,
+//         )?;
+//     } else if overwrite {
+//         resize_or_reallocate_account_raw(
+//             ctx.accounts.buffer_pda_info,
+//             ctx.accounts.payer_info,
+//             ctx.accounts.system_program_info,
+//             serialized_rule_set.len(),
+//         )?;
+//     } else {
+//         resize_or_reallocate_account_raw(
+//             ctx.accounts.buffer_pda_info,
+//             ctx.accounts.payer_info,
+//             ctx.accounts.system_program_info,
+//             ctx.accounts
+//                 .buffer_pda_info
+//                 .data_len()
+//                 .checked_add(serialized_rule_set.len())
+//                 .ok_or(RuleSetError::NumericalOverflow)?,
+//         )?;
+//     }
+
+//     msg!(
+//         "Writing {:?} bytes at offset {:?}",
+//         serialized_rule_set.len(),
+//         offset
+//     );
+//     // Copy user-pre-serialized RuleSet to PDA account.
+//     sol_memcpy(
+//         &mut ctx.accounts.buffer_pda_info.try_borrow_mut_data().unwrap()[offset..],
+//         &serialized_rule_set,
+//         serialized_rule_set.len(),
+//     );
+
+//     Ok(())
+// }
 
 /// Convenience function for accessing the next item in an [`AccountInfo`]
 /// iterator and validating whether the account is present or not.

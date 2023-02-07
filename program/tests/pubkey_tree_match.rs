@@ -37,7 +37,13 @@ async fn pubkey_tree_match() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::SimpleOwnerTransfer.to_string(), rule)
+        .add(
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
+            rule,
+        )
         .unwrap();
 
     println!("{:#?}", rule_set);
@@ -94,7 +100,10 @@ async fn pubkey_tree_match() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -144,7 +153,10 @@ async fn pubkey_tree_match() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,

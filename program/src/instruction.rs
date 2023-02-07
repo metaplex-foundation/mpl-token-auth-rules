@@ -45,6 +45,8 @@ pub enum WriteToBufferArgs {
         serialized_rule_set: Vec<u8>,
         /// Whether the or not the any old data should be overwritten.
         overwrite: bool,
+        /// The name of the target rule set.
+        rule_set_name: String,
     },
 }
 
@@ -80,6 +82,7 @@ pub enum RuleSetInstruction {
     #[account(0, signer, writable, name="payer", desc="Payer and creator of the RuleSet")]
     #[account(1, writable, name="buffer_pda", desc = "The PDA account where the RuleSet buffer is stored")]
     #[account(2, name = "system_program", desc = "System program")]
+    #[account(3, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
     WriteToBuffer(WriteToBufferArgs),
 }
 
@@ -157,6 +160,7 @@ impl InstructionBuilder for builders::WriteToBuffer {
             AccountMeta::new(self.payer, true),
             AccountMeta::new(self.buffer_pda, false),
             AccountMeta::new_readonly(solana_program::system_program::id(), false),
+            AccountMeta::new(self.rule_set_pda, false),
         ];
 
         Instruction {

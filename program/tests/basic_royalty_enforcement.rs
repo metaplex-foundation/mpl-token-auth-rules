@@ -8,18 +8,22 @@ use mpl_token_auth_rules::{
     payload::{Payload, PayloadType},
     state::{CompareOp, Rule, RuleSetV1},
 };
-use solana_program::pubkey::Pubkey;
+use solana_program::{instruction::InstructionError, pubkey, pubkey::Pubkey};
 use solana_program_test::{tokio, ProgramTestContext};
 use solana_sdk::{
-    instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
-    transaction::Transaction,
+    instruction::AccountMeta,
+    signature::Signer,
+    signer::keypair::Keypair,
+    system_instruction,
+    transaction::{Transaction, TransactionError},
 };
 use utils::{
-    create_associated_token_account, create_mint, program_test, Operation, PayloadKey,
-    TransferScenario,
+    create_associated_token_account, create_mint, program_test, DelegateScenario,
+    MetadataDelegateRole, Operation, PayloadKey, TokenDelegateRole, TransferScenario,
 };
 
 static PROGRAM_ALLOW_LIST: [Pubkey; 1] = [mpl_token_auth_rules::ID];
+const ADDITIONAL_COMPUTE: u32 = 800_000;
 
 macro_rules! get_primitive_rules {
     (
@@ -108,35 +112,342 @@ const WALLET_TO_WALLET_OPERATION: Operation = Operation::Transfer {
     scenario: TransferScenario::WalletToWallet,
 };
 
+struct ComposedRules {
+    transfer_rule: Rule,
+    wallet_to_wallet_rule: Rule,
+    delegate_rule: Rule,
+    advanced_delegate_rule: Rule,
+}
+
+// --------------------------------
+// Define Program Allow List
+// --------------------------------
+const ROOSTER_PROGRAM_ID: Pubkey = pubkey!("Roostrnex2Z9Y2XZC49sFAdZARP8E4iFpEnZC5QJWdz");
+const TOKEN_METADATA_PROGRAM_ID: Pubkey = pubkey!("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+const TOKEN_AUTH_RULES_ID: Pubkey = pubkey!("auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg");
+const TRANSFER_PROGRAM_ALLOW_LIST: [Pubkey; 3] = [
+    TOKEN_METADATA_PROGRAM_ID,
+    ROOSTER_PROGRAM_ID,
+    TOKEN_AUTH_RULES_ID,
+];
+const DELEGATE_PROGRAM_ALLOW_LIST: [Pubkey; 3] = [
+    TOKEN_METADATA_PROGRAM_ID,
+    ROOSTER_PROGRAM_ID,
+    TOKEN_AUTH_RULES_ID,
+];
+const ADVANCED_DELEGATE_PROGRAM_ALLOW_LIST: [Pubkey; 3] = [
+    TOKEN_METADATA_PROGRAM_ID,
+    ROOSTER_PROGRAM_ID,
+    TOKEN_AUTH_RULES_ID,
+];
+
+// Get the four Composed Rules used in this RuleSet.
+fn get_composed_rules() -> ComposedRules {
+    // --------------------------------
+    // Create Primitive Rules
+    // --------------------------------
+    let nft_amount = Rule::Amount {
+        field: PayloadKey::Amount.to_string(),
+        amount: 1,
+        operator: CompareOp::Eq,
+    };
+
+    let random_programs = (0..4).map(|_| Keypair::new().pubkey()).collect::<Vec<_>>();
+
+    let source_program_allow_list = Rule::ProgramOwnedList {
+        programs: [
+            TRANSFER_PROGRAM_ALLOW_LIST.to_vec(),
+            random_programs.clone(),
+        ]
+        .concat(),
+        field: PayloadKey::Source.to_string(),
+    };
+
+    let dest_program_allow_list = Rule::ProgramOwnedList {
+        programs: [
+            TRANSFER_PROGRAM_ALLOW_LIST.to_vec(),
+            random_programs.clone(),
+        ]
+        .concat(),
+        field: PayloadKey::Destination.to_string(),
+    };
+
+    let authority_program_allow_list = Rule::ProgramOwnedList {
+        programs: [
+            TRANSFER_PROGRAM_ALLOW_LIST.to_vec(),
+            random_programs.clone(),
+        ]
+        .concat(),
+        field: PayloadKey::Authority.to_string(),
+    };
+
+    let source_is_wallet = Rule::IsWallet {
+        field: PayloadKey::Source.to_string(),
+    };
+
+    let dest_is_wallet = Rule::IsWallet {
+        field: PayloadKey::Destination.to_string(),
+    };
+
+    let delegate_program_allow_list = Rule::ProgramOwnedList {
+        programs: [
+            DELEGATE_PROGRAM_ALLOW_LIST.to_vec(),
+            random_programs.clone(),
+        ]
+        .concat(),
+        field: PayloadKey::Delegate.to_string(),
+    };
+
+    let advanced_delegate_program_allow_list = Rule::ProgramOwnedList {
+        programs: [
+            ADVANCED_DELEGATE_PROGRAM_ALLOW_LIST.to_vec(),
+            random_programs.clone(),
+        ]
+        .concat(),
+        field: PayloadKey::Delegate.to_string(),
+    };
+
+    // --------------------------------
+    // Create Composed Rules from
+    // Primitive Rules
+    // --------------------------------
+    // amount is 1 && (source owner on allow list || dest owner on allow list || authority owner on allow list )
+    let transfer_rule = Rule::All {
+        rules: vec![
+            nft_amount.clone(),
+            Rule::Any {
+                rules: vec![
+                    source_program_allow_list,
+                    dest_program_allow_list,
+                    authority_program_allow_list,
+                ],
+            },
+        ],
+    };
+
+    // (amount is 1 && source is wallet && dest is wallet)
+    let wallet_to_wallet_rule = Rule::All {
+        rules: vec![nft_amount.clone(), source_is_wallet, dest_is_wallet],
+    };
+
+    let delegate_rule = Rule::All {
+        rules: vec![nft_amount.clone(), delegate_program_allow_list],
+    };
+
+    let advanced_delegate_rule = Rule::All {
+        rules: vec![nft_amount, advanced_delegate_program_allow_list],
+    };
+
+    ComposedRules {
+        transfer_rule,
+        wallet_to_wallet_rule,
+        delegate_rule,
+        advanced_delegate_rule,
+    }
+}
+
+fn create_rule_set_v1(owner: Pubkey) -> RuleSetV1 {
+    // Create a RuleSet.
+    let mut royalty_rule_set = RuleSetV1::new(RULE_SET_NAME.to_string(), owner);
+
+    // Get transfer and wallet-to-wallet rules.
+    let rules = get_composed_rules();
+
+    // --------------------------------
+    // Set up transfer operations
+    // --------------------------------
+    let transfer_owner_operation = Operation::Transfer {
+        scenario: TransferScenario::Holder,
+    };
+
+    let transfer_transfer_delegate_operation = Operation::Transfer {
+        scenario: TransferScenario::TransferDelegate,
+    };
+
+    let transfer_sale_delegate_operation = Operation::Transfer {
+        scenario: TransferScenario::SaleDelegate,
+    };
+
+    let transfer_migration_delegate_operation = Operation::Transfer {
+        scenario: TransferScenario::MigrationDelegate,
+    };
+
+    let transfer_wallet_to_wallet_operation = Operation::Transfer {
+        scenario: TransferScenario::WalletToWallet,
+    };
+
+    royalty_rule_set
+        .add(
+            transfer_owner_operation.to_string(),
+            rules.transfer_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            transfer_transfer_delegate_operation.to_string(),
+            rules.transfer_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            transfer_sale_delegate_operation.to_string(),
+            rules.transfer_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            transfer_migration_delegate_operation.to_string(),
+            rules.transfer_rule,
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            transfer_wallet_to_wallet_operation.to_string(),
+            rules.wallet_to_wallet_rule,
+        )
+        .unwrap();
+
+    // --------------------------------
+    // Setup metadata delegate operations
+    // --------------------------------
+    let metadata_delegate_authority_operation = Operation::Delegate {
+        scenario: DelegateScenario::Metadata(MetadataDelegateRole::Authority),
+    };
+
+    let metadata_delegate_collection_operation = Operation::Delegate {
+        scenario: DelegateScenario::Metadata(MetadataDelegateRole::Collection),
+    };
+
+    let metadata_delegate_use_operation = Operation::Delegate {
+        scenario: DelegateScenario::Metadata(MetadataDelegateRole::Use),
+    };
+
+    let metadata_delegate_update_operation = Operation::Delegate {
+        scenario: DelegateScenario::Metadata(MetadataDelegateRole::Update),
+    };
+
+    royalty_rule_set
+        .add(
+            metadata_delegate_authority_operation.to_string(),
+            rules.delegate_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            metadata_delegate_collection_operation.to_string(),
+            rules.delegate_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            metadata_delegate_use_operation.to_string(),
+            rules.delegate_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            metadata_delegate_update_operation.to_string(),
+            rules.delegate_rule.clone(),
+        )
+        .unwrap();
+
+    // --------------------------------
+    // Setup token delegate operations
+    // --------------------------------
+    let token_delegate_sale_operation = Operation::Delegate {
+        scenario: DelegateScenario::Token(TokenDelegateRole::Sale),
+    };
+
+    let token_delegate_transfer_operation = Operation::Delegate {
+        scenario: DelegateScenario::Token(TokenDelegateRole::Transfer),
+    };
+
+    let token_delegate_locked_transfer_operation = Operation::Delegate {
+        scenario: DelegateScenario::Token(TokenDelegateRole::LockedTransfer),
+    };
+
+    let token_delegate_utility_operation = Operation::Delegate {
+        scenario: DelegateScenario::Token(TokenDelegateRole::Utility),
+    };
+
+    let token_delegate_staking_operation = Operation::Delegate {
+        scenario: DelegateScenario::Token(TokenDelegateRole::Staking),
+    };
+
+    royalty_rule_set
+        .add(
+            token_delegate_sale_operation.to_string(),
+            rules.delegate_rule.clone(),
+        )
+        .unwrap();
+    royalty_rule_set
+        .add(
+            token_delegate_transfer_operation.to_string(),
+            rules.delegate_rule.clone(),
+        )
+        .unwrap();
+
+    // --------------------------------
+    // NOTE THIS IS THE ONLY OPERATION
+    // THAT USES THE ADVANCED DELEGATE
+    // RULE.
+    // --------------------------------
+    royalty_rule_set
+        .add(
+            token_delegate_locked_transfer_operation.to_string(),
+            rules.advanced_delegate_rule,
+        )
+        .unwrap();
+
+    royalty_rule_set
+        .add(
+            token_delegate_utility_operation.to_string(),
+            rules.delegate_rule.clone(),
+        )
+        .unwrap();
+
+    royalty_rule_set
+        .add(
+            token_delegate_staking_operation.to_string(),
+            rules.delegate_rule,
+        )
+        .unwrap();
+
+    // println!("{:#?}", royalty_rule_set);
+
+    royalty_rule_set
+}
+
 async fn create_royalty_rule_set(context: &mut ProgramTestContext) -> Pubkey {
     // Create RuleSet
-    let (transfer_rule, wallet_to_wallet_rule) = get_rules();
-    let mut royalty_rule_set = RuleSetV1::new(RULE_SET_NAME.to_string(), context.payer.pubkey());
+    // let (transfer_rule, wallet_to_wallet_rule) = get_rules();
+    // let mut royalty_rule_set = RuleSetV1::new(RULE_SET_NAME.to_string(), context.payer.pubkey());
 
-    // Add operations to `RuleSet`.
-    royalty_rule_set
-        .add(OWNER_OPERATION.to_string(), transfer_rule.clone())
-        .unwrap();
-    royalty_rule_set
-        .add(
-            TRANSFER_DELEGATE_OPERATION.to_string(),
-            transfer_rule.clone(),
-        )
-        .unwrap();
-    royalty_rule_set
-        .add(SALE_DELEGATE_OPERATION.to_string(), transfer_rule.clone())
-        .unwrap();
-    royalty_rule_set
-        .add(MIGRATION_DELEGATE_OPERATION.to_string(), transfer_rule)
-        .unwrap();
-    royalty_rule_set
-        .add(
-            WALLET_TO_WALLET_OPERATION.to_string(),
-            wallet_to_wallet_rule,
-        )
-        .unwrap();
+    // // Add operations to `RuleSet`.
+    // royalty_rule_set
+    //     .add(OWNER_OPERATION.to_string(), transfer_rule.clone())
+    //     .unwrap();
+    // royalty_rule_set
+    //     .add(
+    //         TRANSFER_DELEGATE_OPERATION.to_string(),
+    //         transfer_rule.clone(),
+    //     )
+    //     .unwrap();
+    // royalty_rule_set
+    //     .add(SALE_DELEGATE_OPERATION.to_string(), transfer_rule.clone())
+    //     .unwrap();
+    // royalty_rule_set
+    //     .add(MIGRATION_DELEGATE_OPERATION.to_string(), transfer_rule)
+    //     .unwrap();
+    // royalty_rule_set
+    //     .add(
+    //         WALLET_TO_WALLET_OPERATION.to_string(),
+    //         wallet_to_wallet_rule,
+    //     )
+    //     .unwrap();
 
-    println!("{:#?}", royalty_rule_set);
+    // println!("{:#?}", royalty_rule_set);
+    let royalty_rule_set = create_rule_set_v1(context.payer.pubkey());
 
     // Put the `RuleSet` on chain.
     create_big_rule_set_on_chain!(context, royalty_rule_set.clone(), RULE_SET_NAME.to_string())
@@ -192,10 +503,19 @@ async fn wallet_to_wallet_unimplemented() {
         .instruction();
 
     // Validate fail operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    let err =
+        process_failing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE))
+            .await;
 
     // Check that error is what we expect.  The `IsWallet` rule currently returns `NotImplemented`.
-    assert_custom_error!(err, RuleSetError::NotImplemented);
+    match err {
+        solana_program_test::BanksClientError::TransactionError(
+            TransactionError::InstructionError(_, InstructionError::Custom(error)),
+        ) => {
+            assert_eq!(error, RuleSetError::NotImplemented as u32);
+        }
+        _ => panic!("Unexpected error: {:?}", err),
+    }
 }
 
 #[tokio::test]
@@ -236,6 +556,10 @@ async fn wallet_to_prog_owned() {
             PayloadKey::Destination.to_string(),
             PayloadType::Pubkey(rule_set_addr),
         ),
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(context.payer.pubkey()),
+        ),
     ]);
 
     // Create a `validate` instruction.
@@ -256,7 +580,7 @@ async fn wallet_to_prog_owned() {
         .instruction();
 
     // Validate operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE)).await;
 }
 
 #[tokio::test]
@@ -316,6 +640,10 @@ async fn prog_owned_to_prog_owned() {
             PayloadKey::Destination.to_string(),
             PayloadType::Pubkey(second_rule_set_addr),
         ),
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(context.payer.pubkey()),
+        ),
     ]);
 
     // Create a `validate` instruction.
@@ -325,6 +653,7 @@ async fn prog_owned_to_prog_owned() {
         .additional_rule_accounts(vec![
             AccountMeta::new_readonly(rule_set_addr, false),
             AccountMeta::new_readonly(second_rule_set_addr, false),
+            AccountMeta::new_readonly(context.payer.pubkey(), true),
         ])
         .build(ValidateArgs::V1 {
             operation: TRANSFER_DELEGATE_OPERATION.to_string(),
@@ -336,7 +665,7 @@ async fn prog_owned_to_prog_owned() {
         .instruction();
 
     // Validate operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE)).await;
 }
 
 #[tokio::test]
@@ -375,7 +704,11 @@ async fn prog_owned_to_wallet() {
         ),
         (
             PayloadKey::Destination.to_string(),
-            PayloadType::Pubkey(dest.pubkey()),
+            PayloadType::Pubkey(rule_set_addr),
+        ),
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(rule_set_addr),
         ),
     ]);
 
@@ -386,6 +719,7 @@ async fn prog_owned_to_wallet() {
         .additional_rule_accounts(vec![
             AccountMeta::new_readonly(rule_set_addr, false),
             AccountMeta::new_readonly(dest.pubkey(), false),
+            AccountMeta::new_readonly(context.payer.pubkey(), true),
         ])
         .build(ValidateArgs::V1 {
             operation: SALE_DELEGATE_OPERATION.to_string(),
@@ -397,7 +731,7 @@ async fn prog_owned_to_wallet() {
         .instruction();
 
     // Validate operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE)).await;
 }
 
 #[tokio::test]
@@ -459,11 +793,20 @@ async fn wrong_amount_fails() {
         .instruction();
 
     // Fail to validate operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    let err =
+        process_failing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE))
+            .await;
 
     // Check that error is what we expect.  Amount was greater than that allowed in the rule so it
     // failed.
-    assert_custom_error!(err, RuleSetError::AmountCheckFailed);
+    match err {
+        solana_program_test::BanksClientError::TransactionError(
+            TransactionError::InstructionError(_, InstructionError::Custom(error)),
+        ) => {
+            assert_eq!(error, RuleSetError::AmountCheckFailed as u32);
+        }
+        _ => panic!("Unexpected error: {:?}", err),
+    }
 }
 
 #[tokio::test]
@@ -519,6 +862,10 @@ async fn prog_owner_not_on_list_fails() {
             PayloadKey::Destination.to_string(),
             PayloadType::Pubkey(associated_token_account),
         ),
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(associated_token_account),
+        ),
     ]);
 
     // Create a `validate` instruction.
@@ -539,10 +886,19 @@ async fn prog_owner_not_on_list_fails() {
         .instruction();
 
     // Fail to validate operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    let err =
+        process_failing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE))
+            .await;
 
     // Check that error is what we expect.  Program owner was not on the allow list.
-    assert_custom_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
+    match err {
+        solana_program_test::BanksClientError::TransactionError(
+            TransactionError::InstructionError(_, InstructionError::Custom(error)),
+        ) => {
+            assert_eq!(error, RuleSetError::ProgramOwnedListCheckFailed as u32);
+        }
+        _ => panic!("Unexpected error: {:?}", err),
+    }
 }
 
 #[tokio::test]
@@ -599,6 +955,10 @@ async fn prog_owned_but_zero_data_length() {
             PayloadKey::Destination.to_string(),
             PayloadType::Pubkey(program_owned_account.pubkey()),
         ),
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(context.payer.pubkey()),
+        ),
     ]);
 
     // Create a `validate` instruction.
@@ -608,6 +968,7 @@ async fn prog_owned_but_zero_data_length() {
         .additional_rule_accounts(vec![
             AccountMeta::new_readonly(source.pubkey(), false),
             AccountMeta::new_readonly(program_owned_account.pubkey(), false),
+            AccountMeta::new_readonly(context.payer.pubkey(), true),
         ])
         .build(ValidateArgs::V1 {
             operation: OWNER_OPERATION.to_string(),
@@ -619,9 +980,18 @@ async fn prog_owned_but_zero_data_length() {
         .instruction();
 
     // Fail to validate operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    let err =
+        process_failing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE))
+            .await;
 
     // Check that error is what we expect.  Although the program owner is correct the data length is zero
     // so it fails the rule.
-    assert_custom_error!(err, RuleSetError::ProgramOwnedListCheckFailed);
+    match err {
+        solana_program_test::BanksClientError::TransactionError(
+            TransactionError::InstructionError(_, InstructionError::Custom(error)),
+        ) => {
+            assert_eq!(error, RuleSetError::ProgramOwnedListCheckFailed as u32);
+        }
+        _ => panic!("Unexpected error: {:?}", err),
+    }
 }
