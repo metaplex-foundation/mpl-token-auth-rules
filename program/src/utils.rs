@@ -223,23 +223,21 @@ pub fn is_zeroed(buf: &[u8]) -> bool {
     }
 }
 
-/// Gets the operation using namespaces.
+/// This function returns the rule for an operation by recursively searching through fallbacks
 pub fn get_operation(operation: String, rule_set: &RuleSetV1) -> Result<&Rule, ProgramError> {
     let rule = rule_set.get(operation.to_string());
 
     match rule {
-        Some(rule) => {
-            msg!("Found Operation: {:?}", operation);
-            Ok(rule)
-        }
+        // This operation exists, return it.
+        Some(rule) => Ok(rule),
         None => {
+            // Check for a ':' namespace separator. If it exists try to operation namespace to see if
+            // a fallback exists. E.g. 'transfer:owner' will check for a fallback for 'transfer'.
+            // If it doesn't exist then fail.
             let split = operation.split(':').collect::<Vec<&str>>();
             if split.len() > 1 {
-                msg!("Can't Find Operation: {:?}", operation);
-                msg!("Looking for: {:?}", split[0]);
                 get_operation(split[0].to_owned(), rule_set)
             } else {
-                msg!("Operation Not Found: {:?}", operation);
                 Err(RuleSetError::OperationNotFound.into())
             }
         }
