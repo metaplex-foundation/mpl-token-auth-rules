@@ -3,7 +3,7 @@ use crate::{
     error::RuleSetError,
     payload::ProofInfo,
     state::{
-        RuleSetHeader, RuleSetRevisionMapV1, RULE_SET_REV_MAP_VERSION,
+        Rule, RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RULE_SET_REV_MAP_VERSION,
         RULE_SET_SERIALIZED_HEADER_LEN,
     },
 };
@@ -220,5 +220,28 @@ pub fn is_zeroed(buf: &[u8]) -> bool {
     {
         chunks.all(|chunk| chunk == &ZEROS[..])
             && chunks.remainder() == &ZEROS[..chunks.remainder().len()]
+    }
+}
+
+/// Gets the operation using namespaces.
+pub fn get_operation(operation: String, rule_set: &RuleSetV1) -> Result<&Rule, ProgramError> {
+    let rule = rule_set.get(operation.to_string());
+
+    match rule {
+        Some(rule) => {
+            msg!("Found Operation: {:?}", operation);
+            Ok(rule)
+        }
+        None => {
+            let split = operation.split(':').collect::<Vec<&str>>();
+            if split.len() > 1 {
+                msg!("Can't Find Operation: {:?}", operation);
+                msg!("Looking for: {:?}", split[0]);
+                get_operation(split[0].to_owned(), rule_set)
+            } else {
+                msg!("Operation Not Found: {:?}", operation);
+                Err(RuleSetError::OperationNotFound.into())
+            }
+        }
     }
 }
