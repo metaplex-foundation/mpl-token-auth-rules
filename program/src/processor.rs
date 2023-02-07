@@ -13,8 +13,8 @@ use crate::{
         RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
     },
     utils::{
-        assert_derivation, create_or_allocate_account_raw, get_existing_revision_map, is_zeroed,
-        resize_or_reallocate_account_raw,
+        assert_derivation, create_or_allocate_account_raw, get_existing_revision_map,
+        get_operation, is_zeroed, resize_or_reallocate_account_raw,
     },
     MAX_NAME_LENGTH,
 };
@@ -366,9 +366,7 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         .collect::<HashMap<Pubkey, &AccountInfo>>();
 
     // Get the `Rule` from the `RuleSet` based on the user-specified operation.
-    let rule = rule_set
-        .get(operation)
-        .ok_or(RuleSetError::OperationNotFound)?;
+    let rule = get_operation(operation, &rule_set)?;
 
     // Validate the `Rule`.
     if let Err(err) = rule.validate(

@@ -116,16 +116,22 @@ impl Display for DelegateScenario {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Operation {
     Transfer { scenario: TransferScenario },
+    TransferNamespace,
     Update { scenario: UpdateScenario },
+    UpdateNamespace,
     Delegate { scenario: DelegateScenario },
+    DelegateNamespace,
 }
 
 impl ToString for Operation {
     fn to_string(&self) -> String {
         match self {
             Self::Transfer { scenario } => format!("Transfer:{}", scenario),
+            Self::TransferNamespace => "Transfer".to_string(),
             Self::Update { scenario } => format!("Update:{}", scenario),
+            Self::UpdateNamespace => "Update".to_string(),
             Self::Delegate { scenario } => format!("Delegate:{}", scenario),
+            Self::DelegateNamespace => "Delegate".to_string(),
         }
     }
 }
