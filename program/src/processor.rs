@@ -478,18 +478,41 @@ fn write_to_buffer_v1(
     Ok(())
 }
 
-/// Processor to puff the rule set account
+// Function to match on `PuffRuleSet` version and call correct implementation.
 fn puff_rule_set<'a>(
     program_id: &Pubkey,
     accounts: &'a [AccountInfo<'a>],
     args: PuffRuleSetArgs,
 ) -> ProgramResult {
-    let PuffRuleSetArgs::V1 {
-        rule_set_name,
-        bump,
-    } = args;
+    let context = PuffRuleSet::to_context(accounts)?;
 
-    let ctx = PuffRuleSet::to_context(accounts)?;
+    match args {
+        PuffRuleSetArgs::V1 { .. } => puff_rule_set_v1(program_id, context, args),
+    }
+}
+
+/// V1 implementation of the `puff_rule_set` instruction.
+fn puff_rule_set_v1(
+    program_id: &Pubkey,
+    ctx: Context<PuffRuleSet>,
+    args: PuffRuleSetArgs,
+) -> ProgramResult {
+    let PuffRuleSetArgs::V1 { rule_set_name } = args;
+
+    if !ctx.accounts.payer_info.is_signer {
+        return Err(RuleSetError::PayerIsNotSigner.into());
+    }
+
+    // Check `RuleSet` account info derivation.
+    let bump = assert_derivation(
+        program_id,
+        ctx.accounts.rule_set_pda_info.key,
+        &[
+            PREFIX.as_bytes(),
+            ctx.accounts.payer_info.key.as_ref(),
+            rule_set_name.as_bytes(),
+        ],
+    )?;
 
     let rule_set_seeds = &[
         PREFIX.as_ref(),

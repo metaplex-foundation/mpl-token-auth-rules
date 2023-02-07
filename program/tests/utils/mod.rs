@@ -356,7 +356,6 @@ pub async fn create_big_rule_set_on_chain_with_loc(
         .rule_set_pda(rule_set_addr)
         .build(PuffRuleSetArgs::V1 {
             rule_set_name: rule_set_name.to_string(),
-            bump: rule_set_bump,
         })
         .unwrap()
         .instruction();
