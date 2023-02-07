@@ -149,6 +149,10 @@ pub enum RuleSetError {
     /// 34 - IsWallet check failed
     #[error("IsWallet check failed")]
     IsWalletCheckFailed,
+
+    /// 35 - Program Owned Set check failed
+    #[error("Program Owned Set check failed")]
+    ProgramOwnedSetCheckFailed,
 }
 
 impl PrintProgramError for RuleSetError {

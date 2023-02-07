@@ -4,16 +4,16 @@ use std::collections::HashMap;
 use crate::{
     error::RuleSetError,
     instruction::{
-        Context, CreateOrUpdate, CreateOrUpdateArgs, RuleSetInstruction, Validate, ValidateArgs,
-        WriteToBuffer, WriteToBufferArgs,
+        Context, CreateOrUpdate, CreateOrUpdateArgs, PuffRuleSet, PuffRuleSetArgs,
+        RuleSetInstruction, Validate, ValidateArgs, WriteToBuffer, WriteToBufferArgs,
     },
     pda::{PREFIX, STATE_PDA},
     state::{
-        RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RULE_SET_LIB_VERSION,
+        RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, CHUNK_SIZE, RULE_SET_LIB_VERSION,
         RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
     },
     utils::{
-        assert_derivation, create_or_allocate_account_raw, get_existing_revision_map,
+        assert_derivation, create_or_allocate_account_raw, get_existing_revision_map, is_zeroed,
         resize_or_reallocate_account_raw,
     },
     MAX_NAME_LENGTH,
@@ -50,6 +50,10 @@ impl Processor {
             RuleSetInstruction::WriteToBuffer(args) => {
                 msg!("Instruction: WriteToBuffer");
                 write_to_buffer(program_id, accounts, args)
+            }
+            RuleSetInstruction::PuffRuleSet(args) => {
+                msg!("Instruction: PuffRuleSet");
+                puff_rule_set(program_id, accounts, args)
             }
         }
     }
@@ -124,7 +128,9 @@ fn create_or_update_v1(
     ];
 
     // Get new or existing revision map.
-    let revision_map = if ctx.accounts.rule_set_pda_info.data_is_empty() {
+    let revision_map = if ctx.accounts.rule_set_pda_info.data_is_empty()
+        || is_zeroed(&ctx.accounts.rule_set_pda_info.data.borrow())
+    {
         let mut revision_map = RuleSetRevisionMapV1::default();
 
         // Initially set the latest revision location to a the value right after the header.
@@ -470,6 +476,73 @@ fn write_to_buffer_v1(
     );
 
     Ok(())
+}
+
+// Function to match on `PuffRuleSet` version and call correct implementation.
+fn puff_rule_set<'a>(
+    program_id: &Pubkey,
+    accounts: &'a [AccountInfo<'a>],
+    args: PuffRuleSetArgs,
+) -> ProgramResult {
+    let context = PuffRuleSet::to_context(accounts)?;
+
+    match args {
+        PuffRuleSetArgs::V1 { .. } => puff_rule_set_v1(program_id, context, args),
+    }
+}
+
+/// V1 implementation of the `puff_rule_set` instruction.
+fn puff_rule_set_v1(
+    program_id: &Pubkey,
+    ctx: Context<PuffRuleSet>,
+    args: PuffRuleSetArgs,
+) -> ProgramResult {
+    let PuffRuleSetArgs::V1 { rule_set_name } = args;
+
+    if !ctx.accounts.payer_info.is_signer {
+        return Err(RuleSetError::PayerIsNotSigner.into());
+    }
+
+    // Check `RuleSet` account info derivation.
+    let bump = assert_derivation(
+        program_id,
+        ctx.accounts.rule_set_pda_info.key,
+        &[
+            PREFIX.as_bytes(),
+            ctx.accounts.payer_info.key.as_ref(),
+            rule_set_name.as_bytes(),
+        ],
+    )?;
+
+    let rule_set_seeds = &[
+        PREFIX.as_ref(),
+        ctx.accounts.payer_info.key.as_ref(),
+        rule_set_name.as_ref(),
+        &[bump],
+    ];
+
+    // Create or allocate, resize or reallocate the `RuleSet` PDA.
+    if ctx.accounts.rule_set_pda_info.data_is_empty() {
+        create_or_allocate_account_raw(
+            *program_id,
+            ctx.accounts.rule_set_pda_info,
+            ctx.accounts.system_program_info,
+            ctx.accounts.payer_info,
+            CHUNK_SIZE,
+            rule_set_seeds,
+        )
+    } else {
+        resize_or_reallocate_account_raw(
+            ctx.accounts.rule_set_pda_info,
+            ctx.accounts.payer_info,
+            ctx.accounts.system_program_info,
+            ctx.accounts
+                .rule_set_pda_info
+                .data_len()
+                .checked_add(CHUNK_SIZE)
+                .ok_or(RuleSetError::NumericalOverflow)?,
+        )
+    }
 }
 
 /// Convenience function for accessing the next item in an [`AccountInfo`]

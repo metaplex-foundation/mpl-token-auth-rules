@@ -29,7 +29,13 @@ async fn write_to_buffer_payer_not_signer_panics() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::SimpleOwnerTransfer.to_string(), adtl_signer)
+        .add(
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
+            adtl_signer,
+        )
         .unwrap();
 
     // Serialize the RuleSet using RMP serde.
@@ -86,7 +92,13 @@ async fn write_to_buffer_wrong_pda_fails() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::SimpleOwnerTransfer.to_string(), adtl_signer)
+        .add(
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
+            adtl_signer,
+        )
         .unwrap();
 
     // Serialize the RuleSet using RMP serde.

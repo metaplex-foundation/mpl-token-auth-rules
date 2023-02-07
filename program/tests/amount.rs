@@ -63,7 +63,10 @@ async fn parametric_amount_check(
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
-            Operation::SimpleOwnerTransfer.to_string(),
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             less_than_amount_check,
         )
         .unwrap();
@@ -92,7 +95,10 @@ async fn parametric_amount_check(
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -121,7 +127,10 @@ async fn parametric_amount_check(
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,

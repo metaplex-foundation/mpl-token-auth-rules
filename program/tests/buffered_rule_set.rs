@@ -33,13 +33,20 @@ async fn buffered_rule_set() {
     // Create a RuleSet.
     let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
-        .add(Operation::SimpleOwnerTransfer.to_string(), rule)
+        .add(
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
+            rule,
+        )
         .unwrap();
     let test_rule_set = rule_set.clone();
 
     // Put the RuleSet on chain.
     let rule_set_addr =
-        create_big_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_big_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string(), None)
+            .await;
 
     // Serialize the RuleSet using RMP serde.
     let mut serialized_rule_set = Vec::new();
@@ -82,7 +89,10 @@ async fn buffered_rule_set() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -114,7 +124,10 @@ async fn buffered_rule_set() {
         .mint(mint)
         .additional_rule_accounts(vec![])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,

@@ -2,6 +2,8 @@
 
 pub mod utils;
 
+use std::collections::HashSet;
+
 use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
@@ -16,15 +18,15 @@ use solana_sdk::{
 use utils::{create_associated_token_account, create_mint, program_test, Operation, PayloadKey};
 
 #[tokio::test]
-async fn program_owned() {
+async fn program_owned_set() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------
     // Create RuleSet
     // --------------------------------
     // Create a Rule.  The target must be owned by the program ID specified in the Rule.
-    let rule = Rule::ProgramOwned {
-        program: mpl_token_auth_rules::ID,
+    let rule = Rule::ProgramOwnedSet {
+        programs: HashSet::from_iter(vec![mpl_token_auth_rules::ID]),
         field: PayloadKey::Destination.to_string(),
     };
 
@@ -112,27 +114,27 @@ async fn program_owned() {
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_custom_error!(err, RuleSetError::ProgramOwnedCheckFailed);
+    assert_custom_error!(err, RuleSetError::ProgramOwnedSetCheckFailed);
 
     // --------------------------------
     // Validate nonzero data but owned by different program
     // --------------------------------
-    let owner = Keypair::new();
+    let source = Keypair::new();
 
     // Create an associated token account for the sole purpose of having an account that is owned
     // by a different program than what is in the rule.
     create_mint(
         &mut context,
         &mint,
-        &owner.pubkey(),
-        Some(&owner.pubkey()),
+        &source.pubkey(),
+        Some(&source.pubkey()),
         0,
     )
     .await
     .unwrap();
 
     let associated_token_account =
-        create_associated_token_account(&mut context, &owner, &mint.pubkey())
+        create_associated_token_account(&mut context, &source, &mint.pubkey())
             .await
             .unwrap();
 
@@ -179,7 +181,7 @@ async fn program_owned() {
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_custom_error!(err, RuleSetError::ProgramOwnedCheckFailed);
+    assert_custom_error!(err, RuleSetError::ProgramOwnedSetCheckFailed);
 
     // --------------------------------
     // Validate pass

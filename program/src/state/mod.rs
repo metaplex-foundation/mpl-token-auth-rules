@@ -40,6 +40,9 @@ pub use rules::*;
 
 use crate::{error::RuleSetError, utils::assert_owned_by};
 
+/// The maximum size that can be allocated at one time for a PDA.
+pub const CHUNK_SIZE: usize = 10_000;
+
 #[repr(C)]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Copy, FromPrimitive)]
 /// The key at the beginning of the serialized account that identifies the account type.

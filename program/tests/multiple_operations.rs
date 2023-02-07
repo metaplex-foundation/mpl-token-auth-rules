@@ -36,11 +36,23 @@ async fn correct_rule_used_for_each_operation() {
 
     // Use different rules for each operation.
     rule_set
-        .add(Operation::SimpleOwnerTransfer.to_string(), adtl_signer_rule)
+        .add(
+            Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
+            adtl_signer_rule,
+        )
         .unwrap();
 
     rule_set
-        .add(Operation::SimpleDelegate.to_string(), amount_check)
+        .add(
+            Operation::Delegate {
+                scenario: utils::DelegateScenario::Token(utils::TokenDelegateRole::Sale),
+            }
+            .to_string(),
+            amount_check,
+        )
         .unwrap();
 
     // Put the RuleSet on chain.
@@ -69,7 +81,10 @@ async fn correct_rule_used_for_each_operation() {
             false,
         )])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload: payload.clone(),
             update_rule_state: false,
             rule_set_revision: None,
@@ -101,7 +116,10 @@ async fn correct_rule_used_for_each_operation() {
             true,
         )])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleOwnerTransfer.to_string(),
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
             payload: payload.clone(),
             update_rule_state: false,
             rule_set_revision: None,
@@ -130,7 +148,10 @@ async fn correct_rule_used_for_each_operation() {
             true,
         )])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleDelegate.to_string(),
+            operation: Operation::Delegate {
+                scenario: utils::DelegateScenario::Token(utils::TokenDelegateRole::Sale),
+            }
+            .to_string(),
             payload: payload.clone(),
             update_rule_state: false,
             rule_set_revision: None,
@@ -164,7 +185,10 @@ async fn correct_rule_used_for_each_operation() {
             false,
         )])
         .build(ValidateArgs::V1 {
-            operation: Operation::SimpleDelegate.to_string(),
+            operation: Operation::Delegate {
+                scenario: utils::DelegateScenario::Token(utils::TokenDelegateRole::Sale),
+            }
+            .to_string(),
             payload: payload.clone(),
             update_rule_state: false,
             rule_set_revision: None,

@@ -1,12 +1,11 @@
 use mpl_token_auth_rules::{
     instruction::{
-        builders::{CreateOrUpdateBuilder, WriteToBufferBuilder},
-        CreateOrUpdateArgs, InstructionBuilder, WriteToBufferArgs,
+        builders::{CreateOrUpdateBuilder, PuffRuleSetBuilder, WriteToBufferBuilder},
+        CreateOrUpdateArgs, InstructionBuilder, PuffRuleSetArgs, WriteToBufferArgs,
     },
     payload::ProofInfo,
     state::RuleSetV1,
 };
-use num_derive::ToPrimitive;
 use rmp_serde::Serializer;
 use serde::Serialize;
 use solana_program::{instruction::Instruction, pubkey::Pubkey};
@@ -17,6 +16,11 @@ use solana_sdk::{
 };
 use std::fmt::Display;
 
+// --------------------------------
+// RuleSet operations and scenarios
+// from token-metadata
+// --------------------------------
+// Type from token-metadata.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TransferScenario {
     Holder,
@@ -38,6 +42,7 @@ impl Display for TransferScenario {
     }
 }
 
+// Type from token-metadata.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UpdateScenario {
     MetadataAuth,
@@ -55,39 +60,99 @@ impl Display for UpdateScenario {
     }
 }
 
+// Type from token-metadata.
+#[repr(C)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub enum MetadataDelegateRole {
+    Authority,
+    Collection,
+    Use,
+    Update,
+}
+
+#[repr(C)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub enum TokenDelegateRole {
+    Sale,
+    Transfer,
+    Utility,
+    Staking,
+    Standard,
+    LockedTransfer,
+    Migration = 255,
+}
+
+// Type from token-metadata.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DelegateScenario {
+    Metadata(MetadataDelegateRole),
+    Token(TokenDelegateRole),
+}
+
+impl Display for DelegateScenario {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let message = match self {
+            Self::Metadata(role) => match role {
+                MetadataDelegateRole::Authority => "Authority".to_string(),
+                MetadataDelegateRole::Collection => "Collection".to_string(),
+                MetadataDelegateRole::Use => "Use".to_string(),
+                MetadataDelegateRole::Update => "Update".to_string(),
+            },
+            Self::Token(role) => match role {
+                TokenDelegateRole::Sale => "Sale".to_string(),
+                TokenDelegateRole::Transfer => "Transfer".to_string(),
+                TokenDelegateRole::LockedTransfer => "LockedTransfer".to_string(),
+                TokenDelegateRole::Utility => "Utility".to_string(),
+                TokenDelegateRole::Staking => "Staking".to_string(),
+                _ => panic!("Invalid delegate role"),
+            },
+        };
+
+        write!(f, "{message}")
+    }
+}
+
+// Type from token-metadata.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Operation {
-    SimpleOwnerTransfer,
-    SimpleDelegate,
-    SimpleSaleTransfer,
     Transfer { scenario: TransferScenario },
     Update { scenario: UpdateScenario },
+    Delegate { scenario: DelegateScenario },
 }
 
 impl ToString for Operation {
     fn to_string(&self) -> String {
         match self {
-            Operation::SimpleOwnerTransfer => "SimpleOwnerTransfer".to_string(),
-            Operation::SimpleDelegate => "SimpleDelegate".to_string(),
-            Operation::SimpleSaleTransfer => "SimpleSaleTransfer".to_string(),
             Self::Transfer { scenario } => format!("Transfer:{}", scenario),
             Self::Update { scenario } => format!("Update:{}", scenario),
+            Self::Delegate { scenario } => format!("Delegate:{}", scenario),
         }
     }
 }
 
+// Payload key type from token-metadata.
 #[repr(C)]
-#[derive(ToPrimitive)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum PayloadKey {
     /// The amount being transferred.
     Amount,
-    /// The authority of a transfer, e.g. the delegate of token.
+    /// The authority of an operation, e.g. the delegate of token.
     Authority,
     /// Seeds for a PDA authority of the operation, e.g. when the authority is a PDA.
     AuthoritySeeds,
     /// Merkle proof for the source of the operation, e.g. when the authority is a member
     /// of a Merkle tree.
     AuthorityProof,
+    /// Delegate for an operation.
+    Delegate,
+    /// Seeds for a PDA delegate of the operation.
+    DelegateSeeds,
+    /// The destination of the operation, e.g. the recipient of a transfer.
+    Destination,
+    /// Seeds for a PDA destination of the operation, e.g. when the recipient is a PDA.
+    DestinationSeeds,
+    /// A token holder.
+    Holder,
     /// The source of the operation, e.g. the owner initiating a transfer.
     Source,
     /// Seeds for a PDA source of the operation, e.g. when the source is a PDA.
@@ -95,10 +160,6 @@ pub enum PayloadKey {
     /// Merkle proof for the source of the operation, e.g. when the source is a member
     /// of a Merkle tree.
     SourceProof,
-    /// The destination of the operation, e.g. the recipient of a transfer.
-    Destination,
-    /// Seeds for a PDA destination of the operation, e.g. when the recipient is a PDA.
-    DestinationSeeds,
     /// Merkle proof for the destination of the operation, e.g. when the distination
     /// is a member of a Merkle tree.
     DestinationProof,
@@ -107,17 +168,21 @@ pub enum PayloadKey {
 impl ToString for PayloadKey {
     fn to_string(&self) -> String {
         match self {
-            PayloadKey::Amount => "Amount".to_string(),
-            PayloadKey::Authority => "Authority".to_string(),
-            PayloadKey::AuthoritySeeds => "AuthoritySeeds".to_string(),
-            PayloadKey::AuthorityProof => "AuthorityProof".to_string(),
-            PayloadKey::Source => "Source".to_string(),
-            PayloadKey::SourceSeeds => "SourceSeeds".to_string(),
-            PayloadKey::SourceProof => "SourceProof".to_string(),
-            PayloadKey::Destination => "Destination".to_string(),
-            PayloadKey::DestinationSeeds => "DestinationSeeds".to_string(),
-            PayloadKey::DestinationProof => "DestinationProof".to_string(),
+            PayloadKey::Amount => "Amount",
+            PayloadKey::Authority => "Authority",
+            PayloadKey::AuthoritySeeds => "AuthoritySeeds",
+            PayloadKey::AuthorityProof => "AuthorityProof",
+            PayloadKey::Delegate => "Delegate",
+            PayloadKey::DelegateSeeds => "DelegateSeeds",
+            PayloadKey::SourceProof => "SourceProof",
+            PayloadKey::Destination => "Destination",
+            PayloadKey::DestinationSeeds => "DestinationSeeds",
+            PayloadKey::DestinationProof => "DestinationProof",
+            PayloadKey::Holder => "Holder",
+            PayloadKey::Source => "Source",
+            PayloadKey::SourceSeeds => "SourceSeeds",
         }
+        .to_string()
     }
 }
 
@@ -197,11 +262,12 @@ pub async fn create_rule_set_on_chain_with_loc(
 
 #[macro_export]
 macro_rules! create_big_rule_set_on_chain {
-    ($context:expr, $rule_set:expr, $rule_set_name:expr) => {
+    ($context:expr, $rule_set:expr, $rule_set_name:expr, $compute_budget:expr) => {
         $crate::utils::create_big_rule_set_on_chain_with_loc(
             $context,
             $rule_set,
             $rule_set_name,
+            $compute_budget,
             file!(),
             line!(),
             column!(),
@@ -213,13 +279,16 @@ pub async fn create_big_rule_set_on_chain_with_loc(
     context: &mut ProgramTestContext,
     rule_set: RuleSetV1,
     rule_set_name: String,
+    compute_budget: Option<u32>,
     file: &str,
     line: u32,
     column: u32,
 ) -> Pubkey {
     // Find RuleSet PDA.
-    let (rule_set_addr, _rule_set_bump) =
-        mpl_token_auth_rules::pda::find_rule_set_address(context.payer.pubkey(), rule_set_name);
+    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
+        context.payer.pubkey(),
+        rule_set_name.clone(),
+    );
 
     let (buffer_pda, _buffer_bump) =
         mpl_token_auth_rules::pda::find_buffer_address(context.payer.pubkey());
@@ -231,7 +300,7 @@ pub async fn create_big_rule_set_on_chain_with_loc(
         .unwrap();
 
     let mut overwrite = true;
-    for serialized_rule_set_chunk in serialized_rule_set.chunks(1000) {
+    for serialized_rule_set_chunk in serialized_rule_set.chunks(750) {
         // Create a `write_to_buffer` instruction.
         let write_to_buffer_ix = WriteToBufferBuilder::new()
             .payer(context.payer.pubkey())
@@ -251,10 +320,6 @@ pub async fn create_big_rule_set_on_chain_with_loc(
             context.last_blockhash,
         );
 
-        println!(
-            "TX Length: {:?}",
-            write_to_buffer_tx.message.serialize().len()
-        );
         assert!(
             write_to_buffer_tx.message.serialize().len() <= 1232,
             "Transaction exceeds packet limit of 1232"
@@ -289,6 +354,15 @@ pub async fn create_big_rule_set_on_chain_with_loc(
         "The buffer doesn't match the serialized rule set.",
     );
 
+    let puff_ix = PuffRuleSetBuilder::new()
+        .payer(context.payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .build(PuffRuleSetArgs::V1 {
+            rule_set_name: rule_set_name.to_string(),
+        })
+        .unwrap()
+        .instruction();
+
     // Create a `create` instruction.
     let create_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
@@ -300,9 +374,18 @@ pub async fn create_big_rule_set_on_chain_with_loc(
         .unwrap()
         .instruction();
 
+    // Use user-provided compute budget if one was provided.
+    let instructions = match compute_budget {
+        Some(units) => {
+            let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(units);
+            vec![compute_budget_ix, puff_ix, create_ix]
+        }
+        None => vec![puff_ix, create_ix],
+    };
+
     // Add it to a transaction.
     let create_tx = Transaction::new_signed_with_payer(
-        &[create_ix],
+        &instructions,
         Some(&context.payer.pubkey()),
         &[&context.payer],
         context.last_blockhash,
