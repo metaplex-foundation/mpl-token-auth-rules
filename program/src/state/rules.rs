@@ -320,16 +320,20 @@ impl Rule {
             Rule::PubkeyListMatch { pubkeys, field } => {
                 msg!("Validating PubkeyListMatch");
 
-                let key = match payload.get_pubkey(field) {
-                    Some(pubkey) => pubkey,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
-                };
+                let fields = field.split('|').collect::<Vec<&str>>();
 
-                if pubkeys.iter().any(|pubkey| pubkey == key) {
-                    (true, self.to_error())
-                } else {
-                    (false, self.to_error())
+                for field in fields {
+                    let key = match payload.get_pubkey(&field.to_owned()) {
+                        Some(pubkey) => pubkey,
+                        _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                    };
+
+                    if pubkeys.iter().any(|pubkey| pubkey == key) {
+                        return (true, self.to_error());
+                    }
                 }
+
+                (false, self.to_error())
             }
             Rule::PubkeyTreeMatch {
                 root,
@@ -439,37 +443,37 @@ impl Rule {
             Rule::ProgramOwnedList { programs, field } => {
                 msg!("Validating ProgramOwnedList");
 
-                let key = match payload.get_pubkey(field) {
-                    Some(pubkey) => pubkey,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
-                };
+                let fields = field.split('|').collect::<Vec<&str>>();
 
-                let account = match accounts.get(key) {
-                    Some(account) => account,
-                    _ => return (false, RuleSetError::MissingAccount.into()),
-                };
+                for field in fields {
+                    let key = match payload.get_pubkey(&field.to_string()) {
+                        Some(pubkey) => pubkey,
+                        _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                    };
 
-                let data = match account.data.try_borrow() {
-                    Ok(data) => data,
-                    Err(_) => return (false, ProgramError::AccountBorrowFailed),
-                };
+                    let account = match accounts.get(key) {
+                        Some(account) => account,
+                        _ => return (false, RuleSetError::MissingAccount.into()),
+                    };
 
-                if is_zeroed(&data) {
-                    // Print helpful errors.
-                    if data.len() == 0 {
-                        msg!("Account data is empty");
-                    } else {
-                        msg!("Account data is zeroed");
+                    let data = match account.data.try_borrow() {
+                        Ok(data) => data,
+                        Err(_) => return (false, ProgramError::AccountBorrowFailed),
+                    };
+
+                    if is_zeroed(&data) {
+                        // Print helpful errors.
+                        if data.len() == 0 {
+                            msg!("Account data is empty");
+                        } else {
+                            msg!("Account data is zeroed");
+                        }
+                    } else if programs.iter().any(|program| *account.owner == *program) {
+                        // Account owner must be on the list.
+                        return (true, self.to_error());
                     }
-
-                    // Account must have nonzero data to count as program-owned.
-                    (false, self.to_error())
-                } else if programs.iter().any(|program| *account.owner == *program) {
-                    // Account owner must be on the list.
-                    (true, self.to_error())
-                } else {
-                    (false, self.to_error())
                 }
+                (false, self.to_error())
             }
             Rule::ProgramOwnedTree {
                 root,
@@ -596,37 +600,38 @@ impl Rule {
             Rule::ProgramOwnedSet { programs, field } => {
                 msg!("Validating ProgramOwnedSet");
 
-                let key = match payload.get_pubkey(field) {
-                    Some(pubkey) => pubkey,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
-                };
+                let fields = field.split('|').collect::<Vec<&str>>();
 
-                let account = match accounts.get(key) {
-                    Some(account) => account,
-                    _ => return (false, RuleSetError::MissingAccount.into()),
-                };
+                for field in fields {
+                    let key = match payload.get_pubkey(&field.to_string()) {
+                        Some(pubkey) => pubkey,
+                        _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                    };
 
-                let data = match account.data.try_borrow() {
-                    Ok(data) => data,
-                    Err(_) => return (false, ProgramError::AccountBorrowFailed),
-                };
+                    let account = match accounts.get(key) {
+                        Some(account) => account,
+                        _ => return (false, RuleSetError::MissingAccount.into()),
+                    };
 
-                if is_zeroed(&data) {
-                    // Print helpful errors.
-                    if data.len() == 0 {
-                        msg!("Account data is empty");
-                    } else {
-                        msg!("Account data is zeroed");
+                    let data = match account.data.try_borrow() {
+                        Ok(data) => data,
+                        Err(_) => return (false, ProgramError::AccountBorrowFailed),
+                    };
+
+                    if is_zeroed(&data) {
+                        // Print helpful errors.
+                        if data.len() == 0 {
+                            msg!("Account data is empty");
+                        } else {
+                            msg!("Account data is zeroed");
+                        }
+                    } else if programs.contains(account.owner) {
+                        // Account owner must be in the set.
+                        return (true, self.to_error());
                     }
-
-                    // Account must have nonzero data to count as program-owned.
-                    (false, self.to_error())
-                } else if programs.contains(account.owner) {
-                    // Account owner must be in the set.
-                    (true, self.to_error())
-                } else {
-                    (false, self.to_error())
                 }
+
+                (false, self.to_error())
             }
             Rule::Namespace => {
                 msg!("Validating Namespace");
