@@ -24,7 +24,7 @@ use utils::{
     MetadataDelegateRole, Operation, PayloadKey, TokenDelegateRole, TransferScenario,
 };
 
-const ADDITIONAL_COMPUTE: u32 = 1_400_000;
+const ADDITIONAL_COMPUTE: u32 = 400_000;
 const RULE_SET_NAME: &str = "Metaplex Royalty RuleSet Dev";
 
 // --------------------------------
@@ -70,38 +70,32 @@ fn get_composed_rules() -> ComposedRules {
     };
 
     // Generate some random programs to add to the base lists.
-    let random_programs = (0..68).map(|_| Keypair::new().pubkey()).collect::<Vec<_>>();
+    let random_programs = (0..18).map(|_| Keypair::new().pubkey()).collect::<Vec<_>>();
 
-    let source_program_allow_list = Rule::ProgramOwnedSet {
-        programs: HashSet::from_iter(
-            [
-                TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
-                random_programs.clone(),
-            ]
-            .concat(),
-        ),
+    let source_program_allow_list = Rule::ProgramOwnedList {
+        programs: [
+            TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
+            random_programs.clone(),
+        ]
+        .concat(),
         field: PayloadKey::Source.to_string(),
     };
 
-    let dest_program_allow_list = Rule::ProgramOwnedSet {
-        programs: HashSet::from_iter(
-            [
-                TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
-                random_programs.clone(),
-            ]
-            .concat(),
-        ),
+    let dest_program_allow_list = Rule::ProgramOwnedList {
+        programs: [
+            TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
+            random_programs.clone(),
+        ]
+        .concat(),
         field: PayloadKey::Destination.to_string(),
     };
 
-    let authority_program_allow_list = Rule::ProgramOwnedSet {
-        programs: HashSet::from_iter(
-            [
-                TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
-                random_programs.clone(),
-            ]
-            .concat(),
-        ),
+    let authority_program_allow_list = Rule::ProgramOwnedList {
+        programs: [
+            TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
+            random_programs.clone(),
+        ]
+        .concat(),
         field: PayloadKey::Authority.to_string(),
     };
 
@@ -113,25 +107,21 @@ fn get_composed_rules() -> ComposedRules {
         field: PayloadKey::Destination.to_string(),
     };
 
-    let delegate_program_allow_list = Rule::ProgramOwnedSet {
-        programs: HashSet::from_iter(
-            [
-                DELEGATE_PROGRAM_BASE_ALLOW_LIST.to_vec(),
-                random_programs.clone(),
-            ]
-            .concat(),
-        ),
+    let delegate_program_allow_list = Rule::ProgramOwnedList {
+        programs: [
+            DELEGATE_PROGRAM_BASE_ALLOW_LIST.to_vec(),
+            random_programs.clone(),
+        ]
+        .concat(),
         field: PayloadKey::Delegate.to_string(),
     };
 
-    let advanced_delegate_program_allow_list = Rule::ProgramOwnedSet {
-        programs: HashSet::from_iter(
-            [
-                ADVANCED_DELEGATE_PROGRAM_BASE_ALLOW_LIST.to_vec(),
-                random_programs,
-            ]
-            .concat(),
-        ),
+    let advanced_delegate_program_allow_list = Rule::ProgramOwnedList {
+        programs: [
+            ADVANCED_DELEGATE_PROGRAM_BASE_ALLOW_LIST.to_vec(),
+            random_programs,
+        ]
+        .concat(),
         field: PayloadKey::Delegate.to_string(),
     };
 
@@ -1027,7 +1017,7 @@ async fn prog_owner_not_on_list_fails() {
         solana_program_test::BanksClientError::TransactionError(
             TransactionError::InstructionError(_, InstructionError::Custom(error)),
         ) => {
-            assert_eq!(error, RuleSetError::ProgramOwnedSetCheckFailed as u32);
+            assert_eq!(error, RuleSetError::ProgramOwnedListCheckFailed as u32);
         }
         _ => panic!("Unexpected error: {:?}", err),
     }
@@ -1126,7 +1116,7 @@ async fn prog_owned_but_zero_data_length() {
         solana_program_test::BanksClientError::TransactionError(
             TransactionError::InstructionError(_, InstructionError::Custom(error)),
         ) => {
-            assert_eq!(error, RuleSetError::ProgramOwnedSetCheckFailed as u32);
+            assert_eq!(error, RuleSetError::ProgramOwnedListCheckFailed as u32);
         }
         _ => panic!("Unexpected error: {:?}", err),
     }
