@@ -2,12 +2,15 @@
 
 pub mod utils;
 
+use std::str::FromStr;
+
 use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
     state::{Rule, RuleSetV1},
 };
+use solana_program::pubkey::Pubkey;
 use solana_program_test::tokio;
 use solana_sdk::{
     instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
@@ -23,8 +26,27 @@ async fn program_owned_list() {
     // Create RuleSet
     // --------------------------------
     // Create a Rule.  The target must be owned by the program ID specified in the Rule.
+    let programs = vec![
+        "M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K",
+        "mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc",
+        "HYPERfwdTjyJ2SCaKHmpF2MtrXqWxrsotYDsTrshHWq8",
+        "9ehXDD5bnhSpFVRf99veikjgq8VajtRH7e3D9aVPLqYd",
+        "RainEraPU5yDoJmTrHdYynK9739GkEfDsE4ffqce2BR",
+        "TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN",
+        "TL1ST2iRBzuGTqLn1KXnGdSnEow62BzPnGiqyRXhWtW",
+        "farmL4xeBFVXJqtfxCzU9b28QACM7E2W2ctT6epAjvE",
+        "bankHHdqMuaaST4qQk6mkzxGeKPHWmqdgor6Gs8r88m",
+        "stkBL96RZkjY5ine4TvPihGqW8UHJfch2cokjAPzV8i",
+        "crcBwD7wUjzwsy8tJsVCzZvBTHeq5GoboGg84YraRyd",
+    ];
+
+    let programs: Vec<Pubkey> = programs
+        .into_iter()
+        .map(|p| Pubkey::from_str(p).unwrap())
+        .collect();
+
     let rule = Rule::ProgramOwnedList {
-        programs: vec![mpl_token_auth_rules::ID],
+        programs,
         field: PayloadKey::Destination.to_string(),
     };
 

@@ -22,6 +22,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
+    log::sol_log_compute_units,
     msg,
     program_error::ProgramError,
     program_memory::{sol_memcmp, sol_memcpy},
@@ -240,6 +241,7 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         rule_set_revision,
     } = args;
 
+    sol_log_compute_units();
     // If state is being updated for any `Rule`s, the payer must be present and must be a signer so
     // that the `RuleSet` state PDA can be created or reallocated.
     if update_rule_state {
@@ -266,6 +268,7 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
     let (revision_map, rev_map_location) =
         get_existing_revision_map(ctx.accounts.rule_set_pda_info)?;
 
+    sol_log_compute_units();
     // Use the user-provided revision number to look up the `RuleSet` revision location in the PDA.
     let (start, end) = match rule_set_revision {
         Some(revision) => {
@@ -292,7 +295,7 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
             (*start, rev_map_location)
         }
     };
-
+    sol_log_compute_units();
     // Mutably borrow the existing `RuleSet` PDA data.
     let data = ctx
         .accounts
@@ -301,6 +304,8 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         .try_borrow()
         .map_err(|_| ProgramError::AccountBorrowFailed)?;
 
+    msg!("before deserialize");
+    sol_log_compute_units();
     // Check `RuleSet` lib version.
     let rule_set = match data.get(start) {
         Some(&RULE_SET_LIB_VERSION) => {
@@ -320,6 +325,8 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         Some(_) => return Err(RuleSetError::UnsupportedRuleSetVersion.into()),
         None => return Err(RuleSetError::DataTypeMismatch.into()),
     };
+
+    sol_log_compute_units();
 
     // Check `RuleSet` account info derivation.
     let _bump = assert_derivation(
@@ -364,6 +371,9 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         .get(operation)
         .ok_or(RuleSetError::OperationNotFound)?;
 
+    msg!("before validate");
+    sol_log_compute_units();
+
     // Validate the `Rule`.
     if let Err(err) = rule.validate(
         &accounts_map,
@@ -375,6 +385,8 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         msg!("Failed to validate: {}", err);
         return Err(err);
     }
+    sol_log_compute_units();
+    msg!("after validate");
 
     Ok(())
 }

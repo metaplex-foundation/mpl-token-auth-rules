@@ -300,9 +300,11 @@ pub async fn create_big_rule_set_on_chain_with_loc(
         .unwrap()
         .instruction();
 
+    let compute_ix = ComputeBudgetInstruction::set_compute_unit_limit(400_000);
+
     // Add it to a transaction.
     let create_tx = Transaction::new_signed_with_payer(
-        &[create_ix],
+        &[compute_ix, create_ix],
         Some(&context.payer.pubkey()),
         &[&context.payer],
         context.last_blockhash,

@@ -8,7 +8,7 @@ use mpl_token_auth_rules::{
     payload::{Payload, PayloadType},
     state::{CompareOp, Rule, RuleSetV1},
 };
-use solana_program::pubkey::Pubkey;
+use solana_program::{pubkey, pubkey::Pubkey};
 use solana_program_test::{tokio, ProgramTestContext};
 use solana_sdk::{
     instruction::AccountMeta, signature::Signer, signer::keypair::Keypair, system_instruction,
@@ -19,7 +19,20 @@ use utils::{
     TransferScenario,
 };
 
-static PROGRAM_ALLOW_LIST: [Pubkey; 1] = [mpl_token_auth_rules::ID];
+static PROGRAM_ALLOW_LIST: [Pubkey; 12] = [
+    pubkey!("M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K"),
+    pubkey!("mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc"),
+    pubkey!("HYPERfwdTjyJ2SCaKHmpF2MtrXqWxrsotYDsTrshHWq8"),
+    pubkey!("9ehXDD5bnhSpFVRf99veikjgq8VajtRH7e3D9aVPLqYd"),
+    pubkey!("RainEraPU5yDoJmTrHdYynK9739GkEfDsE4ffqce2BR"),
+    pubkey!("TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN"),
+    pubkey!("TL1ST2iRBzuGTqLn1KXnGdSnEow62BzPnGiqyRXhWtW"),
+    pubkey!("farmL4xeBFVXJqtfxCzU9b28QACM7E2W2ctT6epAjvE"),
+    pubkey!("bankHHdqMuaaST4qQk6mkzxGeKPHWmqdgor6Gs8r88m"),
+    pubkey!("stkBL96RZkjY5ine4TvPihGqW8UHJfch2cokjAPzV8i"),
+    pubkey!("crcBwD7wUjzwsy8tJsVCzZvBTHeq5GoboGg84YraRyd"),
+    mpl_token_auth_rules::ID,
+];
 
 macro_rules! get_primitive_rules {
     (
@@ -256,7 +269,7 @@ async fn wallet_to_prog_owned() {
         .instruction();
 
     // Validate operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], Some(1_400_000)).await;
 }
 
 #[tokio::test]
