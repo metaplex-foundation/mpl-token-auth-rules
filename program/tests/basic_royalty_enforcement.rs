@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
-    state::{CompareOp, Rule, RuleSetV1},
+    state::{CompareOp, Rule, RuleSetV2},
 };
 use solana_program::{instruction::InstructionError, pubkey, pubkey::Pubkey};
 use solana_program_test::{tokio, ProgramTestContext};
@@ -160,9 +160,9 @@ fn get_composed_rules() -> ComposedRules {
     }
 }
 
-fn get_royalty_rule_set(owner: Pubkey) -> RuleSetV1 {
+fn get_royalty_rule_set(owner: Pubkey) -> RuleSetV2 {
     // Create a RuleSet.
-    let mut royalty_rule_set = RuleSetV1::new(RULE_SET_NAME.to_string(), owner);
+    let mut royalty_rule_set = RuleSetV2::new(RULE_SET_NAME.to_string(), owner);
 
     // Get transfer and wallet-to-wallet rules.
     let rules = get_composed_rules();
@@ -505,7 +505,7 @@ async fn prog_owned_to_prog_owned() {
     assert_eq!(mpl_token_auth_rules::ID, first_on_chain_account.owner);
 
     // Create destination `RuleSet`.
-    let second_rule_set = RuleSetV1::new("second_rule_set".to_string(), context.payer.pubkey());
+    let second_rule_set = RuleSetV2::new("second_rule_set".to_string(), context.payer.pubkey());
 
     let second_rule_set_addr =
         create_rule_set_on_chain!(&mut context, second_rule_set, "second_rule_set".to_string())

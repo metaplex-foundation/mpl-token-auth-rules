@@ -4,7 +4,7 @@ use mpl_token_auth_rules::{
         CreateOrUpdateArgs, InstructionBuilder, PuffRuleSetArgs, WriteToBufferArgs,
     },
     payload::ProofInfo,
-    state::RuleSetV1,
+    state::RuleSetV2,
 };
 use rmp_serde::Serializer;
 use serde::Serialize;
@@ -206,7 +206,7 @@ macro_rules! create_rule_set_on_chain {
 
 pub async fn create_rule_set_on_chain_with_loc(
     context: &mut ProgramTestContext,
-    rule_set: RuleSetV1,
+    rule_set: RuleSetV2,
     rule_set_name: String,
     file: &str,
     line: u32,
@@ -277,7 +277,7 @@ macro_rules! create_big_rule_set_on_chain {
 
 pub async fn create_big_rule_set_on_chain_with_loc(
     context: &mut ProgramTestContext,
-    rule_set: RuleSetV1,
+    rule_set: RuleSetV2,
     rule_set_name: String,
     compute_budget: Option<u32>,
     file: &str,

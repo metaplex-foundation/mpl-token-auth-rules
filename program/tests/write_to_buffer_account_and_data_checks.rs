@@ -5,7 +5,7 @@ pub mod utils;
 use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::WriteToBufferBuilder, InstructionBuilder, WriteToBufferArgs},
-    state::{Rule, RuleSetV1},
+    state::{Rule, RuleSetV2},
 };
 use rmp_serde::Serializer;
 use serde::Serialize;
@@ -27,7 +27,7 @@ async fn write_to_buffer_payer_not_signer_panics() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -90,7 +90,7 @@ async fn write_to_buffer_wrong_pda_fails() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {

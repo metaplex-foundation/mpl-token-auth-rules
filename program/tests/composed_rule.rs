@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
-    state::{CompareOp, Rule, RuleSetV1},
+    state::{CompareOp, Rule, RuleSetV2},
 };
 
 use solana_program::instruction::AccountMeta;
@@ -50,7 +50,7 @@ async fn composed_rule() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {

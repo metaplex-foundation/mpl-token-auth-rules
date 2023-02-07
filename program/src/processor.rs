@@ -9,8 +9,9 @@ use crate::{
     },
     pda::{PREFIX, STATE_PDA},
     state::{
-        RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, CHUNK_SIZE, RULE_SET_LIB_VERSION,
-        RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
+        RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RuleSetV2, CHUNK_SIZE,
+        RULE_SET_LIB_VERSION_1, RULE_SET_LIB_VERSION_2, RULE_SET_REV_MAP_VERSION,
+        RULE_SET_SERIALIZED_HEADER_LEN,
     },
     utils::{
         assert_derivation, create_or_allocate_account_raw, get_existing_revision_map, is_zeroed,
@@ -89,7 +90,7 @@ fn create_or_update_v1(
 
     // Deserialize `RuleSet`.
     let rule_set = match ctx.accounts.buffer_pda_info {
-        Some(account_info) => rmp_serde::from_slice::<RuleSetV1>(&account_info.data.borrow())
+        Some(account_info) => rmp_serde::from_slice::<RuleSetV2>(&account_info.data.borrow())
             .map_err(|_| RuleSetError::MessagePackDeserializationError)?,
         None => rmp_serde::from_slice(&serialized_rule_set)
             .map_err(|_| RuleSetError::MessagePackDeserializationError)?,
@@ -100,7 +101,7 @@ fn create_or_update_v1(
     }
 
     // Make sure we know how to work with this RuleSet.
-    if rule_set.lib_version() != RULE_SET_LIB_VERSION {
+    if rule_set.lib_version() != RULE_SET_LIB_VERSION_2 {
         return Err(RuleSetError::UnsupportedRuleSetVersion.into());
     }
 
@@ -299,6 +300,15 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         }
     };
 
+    // Convert remaining `Rule` accounts into a map of `Pubkey`s to the corresponding
+    // `AccountInfo`s.  This makes it easy to pass the account infos into validation functions
+    // since they store the `Pubkey`s.
+    let accounts_map = ctx
+        .remaining_accounts
+        .iter()
+        .map(|account| (*account.key, *account))
+        .collect::<HashMap<Pubkey, &AccountInfo>>();
+
     // Mutably borrow the existing `RuleSet` PDA data.
     let data = ctx
         .accounts
@@ -308,20 +318,71 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         .map_err(|_| ProgramError::AccountBorrowFailed)?;
 
     // Check `RuleSet` lib version.
-    let rule_set = match data.get(start) {
-        Some(&RULE_SET_LIB_VERSION) => {
+    let (owner, name) = match data.get(start) {
+        Some(&RULE_SET_LIB_VERSION_1) => {
             // Increment starting location by size of lib version.
             let start = start
                 .checked_add(1)
                 .ok_or(RuleSetError::NumericalOverflow)?;
 
             // Deserialize `RuleSet`.
-            if end < ctx.accounts.rule_set_pda_info.data_len() {
+            let rule_set = if end < ctx.accounts.rule_set_pda_info.data_len() {
                 rmp_serde::from_slice::<RuleSetV1>(&data[start..end])
                     .map_err(|_| RuleSetError::MessagePackDeserializationError)?
             } else {
                 return Err(RuleSetError::DataTypeMismatch.into());
+            };
+
+            // Get the `Rule` from the `RuleSet` based on the user-specified operation.
+            let rule = rule_set
+                .get(operation)
+                .ok_or(RuleSetError::OperationNotFound)?;
+
+            // Validate the `Rule`.
+            if let Err(err) = rule.validate(
+                &accounts_map,
+                &payload,
+                update_rule_state,
+                &ctx.accounts.rule_set_state_pda_info,
+                &ctx.accounts.rule_authority_info,
+            ) {
+                msg!("Failed to validate: {}", err);
+                return Err(err);
             }
+
+            (rule_set.owner().to_owned(), rule_set.name().to_owned())
+        }
+        Some(&RULE_SET_LIB_VERSION_2) => {
+            // Increment starting location by size of lib version.
+            let start = start
+                .checked_add(1)
+                .ok_or(RuleSetError::NumericalOverflow)?;
+
+            // Deserialize `RuleSet`.
+            let rule_set = if end < ctx.accounts.rule_set_pda_info.data_len() {
+                rmp_serde::from_slice::<RuleSetV2>(&data[start..end])
+                    .map_err(|_| RuleSetError::MessagePackDeserializationError)?
+            } else {
+                return Err(RuleSetError::DataTypeMismatch.into());
+            };
+
+            // Get the `Rule` from the `RuleSet` based on the user-specified operation.
+            let rule = rule_set
+                .get(operation)
+                .ok_or(RuleSetError::OperationNotFound)?;
+
+            // Validate the `Rule`.
+            if let Err(err) = rule.validate(
+                &accounts_map,
+                &payload,
+                update_rule_state,
+                &ctx.accounts.rule_set_state_pda_info,
+                &ctx.accounts.rule_authority_info,
+            ) {
+                msg!("Failed to validate: {}", err);
+                return Err(err);
+            }
+            (rule_set.owner().to_owned(), rule_set.name().to_owned())
         }
         Some(_) => return Err(RuleSetError::UnsupportedRuleSetVersion.into()),
         None => return Err(RuleSetError::DataTypeMismatch.into()),
@@ -331,11 +392,7 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
     let _bump = assert_derivation(
         program_id,
         ctx.accounts.rule_set_pda_info.key,
-        &[
-            PREFIX.as_bytes(),
-            rule_set.owner().as_ref(),
-            rule_set.name().as_bytes(),
-        ],
+        &[PREFIX.as_bytes(), owner.as_ref(), name.as_bytes()],
     )?;
 
     // If `RuleSet` state is to be updated, check account info derivation.
@@ -346,40 +403,14 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
                 rule_set_state_pda_info.key,
                 &[
                     STATE_PDA.as_bytes(),
-                    rule_set.owner().as_ref(),
-                    rule_set.name().as_bytes(),
+                    owner.as_ref(),
+                    name.as_bytes(),
                     ctx.accounts.mint_info.key.as_ref(),
                 ],
             )?;
         } else {
             return Err(ProgramError::NotEnoughAccountKeys);
         }
-    }
-
-    // Convert remaining `Rule` accounts into a map of `Pubkey`s to the corresponding
-    // `AccountInfo`s.  This makes it easy to pass the account infos into validation functions
-    // since they store the `Pubkey`s.
-    let accounts_map = ctx
-        .remaining_accounts
-        .iter()
-        .map(|account| (*account.key, *account))
-        .collect::<HashMap<Pubkey, &AccountInfo>>();
-
-    // Get the `Rule` from the `RuleSet` based on the user-specified operation.
-    let rule = rule_set
-        .get(operation)
-        .ok_or(RuleSetError::OperationNotFound)?;
-
-    // Validate the `Rule`.
-    if let Err(err) = rule.validate(
-        &accounts_map,
-        &payload,
-        update_rule_state,
-        &ctx.accounts.rule_set_state_pda_info,
-        &ctx.accounts.rule_authority_info,
-    ) {
-        msg!("Failed to validate: {}", err);
-        return Err(err);
     }
 
     Ok(())
@@ -588,7 +619,7 @@ fn write_data_to_pda(
         .checked_add(1)
         .ok_or(RuleSetError::NumericalOverflow)?;
     if end <= data.len() {
-        sol_memcpy(&mut data[start..end], &[RULE_SET_LIB_VERSION], 1);
+        sol_memcpy(&mut data[start..end], &[RULE_SET_LIB_VERSION_2], 1);
     } else {
         return Err(RuleSetError::DataSliceUnexpectedIndexError.into());
     }

@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
-    state::{CompareOp, Rule, RuleSetV1},
+    state::{CompareOp, Rule, RuleSetV2},
 };
 use solana_program_test::tokio;
 use solana_sdk::{instruction::AccountMeta, signature::Signer, signer::keypair::Keypair};
@@ -32,7 +32,7 @@ async fn correct_rule_used_for_each_operation() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
 
     // Use different rules for each operation.
     rule_set

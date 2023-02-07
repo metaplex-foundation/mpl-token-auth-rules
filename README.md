@@ -71,7 +71,7 @@ use mpl_token_auth_rules::{
         CreateOrUpdateArgs, InstructionBuilder, ValidateArgs,
     },
     payload::{Payload, PayloadType},
-    state::{CompareOp, Rule, RuleSetV1},
+    state::{CompareOp, Rule, RuleSetV2},
 };
 use num_derive::ToPrimitive;
 use rmp_serde::Serializer;
@@ -146,7 +146,7 @@ fn main() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), payer.pubkey());
     rule_set
         .add(Operation::OwnerTransfer.to_string(), overall_rule)
         .unwrap();

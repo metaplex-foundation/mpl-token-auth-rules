@@ -8,7 +8,7 @@ use mpl_token_auth_rules::{
         builders::{CreateOrUpdateBuilder, WriteToBufferBuilder},
         CreateOrUpdateArgs, InstructionBuilder, WriteToBufferArgs,
     },
-    state::{Rule, RuleSetV1},
+    state::{Rule, RuleSetV2},
 };
 use rmp_serde::Serializer;
 use serde::Serialize;
@@ -29,7 +29,7 @@ async fn create_payer_not_signer_panics() {
 
     // Create a RuleSet.
     let other_payer = Keypair::new();
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), other_payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), other_payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -87,7 +87,7 @@ async fn create_rule_set_empty_buffer_fails() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -163,7 +163,7 @@ async fn create_rule_set_partial_buffer_fails() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -310,7 +310,7 @@ async fn create_rule_set_name_too_long_fails() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new(
+    let mut rule_set = RuleSetV2::new(
         "test rule_set that has too long of a name".to_string(),
         context.payer.pubkey(),
     );
@@ -383,7 +383,7 @@ async fn create_rule_set_wrong_owner_fails() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), Keypair::new().pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), Keypair::new().pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -451,7 +451,7 @@ async fn create_rule_set_buffer_with_different_name_fails() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -558,7 +558,7 @@ async fn create_rule_set_to_wallet_fails() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -620,7 +620,7 @@ async fn create_rule_set_to_wrong_pda_fails() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {

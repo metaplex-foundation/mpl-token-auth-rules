@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
-    state::{Rule, RuleSetV1, RULE_SET_SERIALIZED_HEADER_LEN},
+    state::{Rule, RuleSetV2, RULE_SET_SERIALIZED_HEADER_LEN},
 };
 use rmp_serde::Serializer;
 use serde::Serialize;
@@ -31,7 +31,7 @@ async fn buffered_rule_set() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {

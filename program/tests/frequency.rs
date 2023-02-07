@@ -7,7 +7,7 @@ use mpl_token_auth_rules::{
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::Payload,
     pda::find_rule_set_state_address,
-    state::{Rule, RuleSetV1},
+    state::{Rule, RuleSetV2},
 };
 use solana_program::program_error::ProgramError;
 use solana_program_test::tokio;
@@ -29,7 +29,7 @@ async fn test_frequency() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {

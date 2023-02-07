@@ -1,6 +1,6 @@
 //! All structures and related functions representing a Rule Set on-chain.
 //!
-//! Key types include the main `RuleSetV1` type which keeps the the map of operations to `Rules`,
+//! Key types include the main `RuleSetV2` type which keeps the the map of operations to `Rules`,
 //! as well as `RuleSetHeader` and `RuleSetRevisionMapV1` types used to manage data within the
 //! `RuleSet` PDA.
 //!

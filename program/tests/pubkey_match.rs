@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
-    state::{Rule, RuleSetV1},
+    state::{Rule, RuleSetV2},
 };
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
@@ -28,7 +28,7 @@ async fn test_pubkey_match() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {

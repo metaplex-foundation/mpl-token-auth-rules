@@ -8,7 +8,7 @@ use mpl_token_auth_rules::{
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
     state::{
-        CompareOp, Rule, RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RULE_SET_LIB_VERSION,
+        CompareOp, Rule, RuleSetHeader, RuleSetRevisionMapV1, RuleSetV2, RULE_SET_LIB_VERSION_2,
         RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
     },
 };
@@ -32,7 +32,7 @@ async fn test_update_ruleset_data_integrity() {
     let first_overall_rule = Rule::Pass;
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -74,7 +74,7 @@ async fn test_update_ruleset_data_integrity() {
     };
 
     // Create a new RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Delegate {
@@ -128,7 +128,7 @@ async fn test_update_ruleset_data_integrity() {
     };
 
     // Create a new RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -154,7 +154,7 @@ async fn test_update_ruleset_data_integrity() {
     // Create RuleSet 3 and update on chain
     // --------------------------------
     // Create a new RuleSet reusing some previous rules.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -198,7 +198,7 @@ async fn test_update_ruleset_data_integrity() {
     // Create RuleSet 4 and update on chain
     // --------------------------------
     // Create a new RuleSet reusing some previous rules.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -239,7 +239,7 @@ async fn test_update_ruleset_data_integrity() {
 
         // Check the nth `RuleSet` lib version.
         assert_eq!(
-            data[rule_set_version_loc], RULE_SET_LIB_VERSION,
+            data[rule_set_version_loc], RULE_SET_LIB_VERSION_2,
             "The buffer doesn't match rule set {} lib version,",
             n
         );
@@ -318,7 +318,7 @@ async fn test_unknown_rule_set_revision_fails() {
     };
 
     // Create a RuleSet.
-    let mut first_rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut first_rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     first_rule_set
         .add(
             Operation::Transfer {
@@ -344,7 +344,7 @@ async fn test_unknown_rule_set_revision_fails() {
     };
 
     // Create a new RuleSet.
-    let mut second_rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut second_rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     second_rule_set
         .add(
             Operation::Transfer {
@@ -415,7 +415,7 @@ async fn test_correct_rule_set_is_used_after_update() {
     };
 
     // Create a RuleSet.
-    let mut first_rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut first_rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     first_rule_set
         .add(
             Operation::Transfer {
@@ -441,7 +441,7 @@ async fn test_correct_rule_set_is_used_after_update() {
     };
 
     // Create a new RuleSet.
-    let mut second_rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut second_rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     second_rule_set
         .add(
             Operation::Transfer {

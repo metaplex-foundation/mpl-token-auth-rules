@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType, SeedsVec},
-    state::{Rule, RuleSetV1},
+    state::{Rule, RuleSetV2},
 };
 use solana_program::{instruction::AccountMeta, pubkey::Pubkey};
 use solana_program_test::tokio;
@@ -28,7 +28,7 @@ async fn test_pda_match_assumed_owner() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -147,7 +147,7 @@ async fn test_pda_match_specified_owner() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {

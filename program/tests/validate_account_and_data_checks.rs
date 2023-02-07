@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::Payload,
-    state::{Rule, RuleSetV1},
+    state::{Rule, RuleSetV2},
 };
 
 use solana_program::program_error::ProgramError;
@@ -25,7 +25,7 @@ async fn validate_update_rule_state_payer_not_signer_panics() {
     let mut context = program_test().start_with_context().await;
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -90,7 +90,7 @@ async fn validate_update_rule_state_payer_not_provided_fails() {
     let mut context = program_test().start_with_context().await;
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -330,7 +330,7 @@ async fn validate_update_rule_state_wrong_state_pda_fails() {
     let mut context = program_test().start_with_context().await;
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -391,7 +391,7 @@ async fn validate_update_rule_state_state_pda_not_provided_fails() {
     let mut context = program_test().start_with_context().await;
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -459,7 +459,7 @@ async fn validate_update_rule_state_incorrect_auth() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
@@ -522,7 +522,7 @@ async fn validate_update_rule_state_missing_auth() {
     };
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
+    let mut rule_set = RuleSetV2::new("test rule_set".to_string(), context.payer.pubkey());
     rule_set
         .add(
             Operation::Transfer {
