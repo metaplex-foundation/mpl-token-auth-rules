@@ -467,6 +467,7 @@ async fn wallet_to_prog_owned() {
         .additional_rule_accounts(vec![
             AccountMeta::new_readonly(source.pubkey(), false),
             AccountMeta::new_readonly(rule_set_addr, false),
+            AccountMeta::new_readonly(context.payer.pubkey(), true),
         ])
         .build(ValidateArgs::V1 {
             operation: transfer_owner_operation.to_string(),
@@ -610,7 +611,7 @@ async fn prog_owned_to_wallet() {
         ),
         (
             PayloadKey::Authority.to_string(),
-            PayloadType::Pubkey(rule_set_addr),
+            PayloadType::Pubkey(context.payer.pubkey()),
         ),
     ]);
 
@@ -679,6 +680,10 @@ async fn wrong_amount_fails() {
             PayloadKey::Destination.to_string(),
             PayloadType::Pubkey(dest.pubkey()),
         ),
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(context.payer.pubkey()),
+        ),
     ]);
 
     let transfer_sale_delegate_operation = Operation::Transfer {
@@ -692,6 +697,7 @@ async fn wrong_amount_fails() {
         .additional_rule_accounts(vec![
             AccountMeta::new_readonly(rule_set_addr, false),
             AccountMeta::new_readonly(dest.pubkey(), false),
+            AccountMeta::new_readonly(context.payer.pubkey(), true),
         ])
         .build(ValidateArgs::V1 {
             operation: transfer_sale_delegate_operation.to_string(),
@@ -774,7 +780,7 @@ async fn prog_owner_not_on_list_fails() {
         ),
         (
             PayloadKey::Authority.to_string(),
-            PayloadType::Pubkey(associated_token_account),
+            PayloadType::Pubkey(context.payer.pubkey()),
         ),
     ]);
 
@@ -789,6 +795,7 @@ async fn prog_owner_not_on_list_fails() {
         .additional_rule_accounts(vec![
             AccountMeta::new_readonly(source.pubkey(), false),
             AccountMeta::new_readonly(associated_token_account, false),
+            AccountMeta::new_readonly(context.payer.pubkey(), true),
         ])
         .build(ValidateArgs::V1 {
             operation: transfer_owner_operation.to_string(),
