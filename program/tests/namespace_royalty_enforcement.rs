@@ -371,6 +371,24 @@ async fn create_royalty_rule_set(context: &mut ProgramTestContext) -> Pubkey {
     .await
 }
 
+async fn create_incomplete_royalty_rule_set(
+    context: &mut ProgramTestContext,
+    missing_op: String,
+) -> Pubkey {
+    let mut royalty_rule_set = get_royalty_rule_set(context.payer.pubkey());
+    // Remove a namespaced operation to verify it fails.
+    royalty_rule_set.operations.remove(&missing_op);
+
+    // Put the `RuleSet` on chain.
+    create_big_rule_set_on_chain!(
+        context,
+        royalty_rule_set.clone(),
+        RULE_SET_NAME.to_string(),
+        Some(ADDITIONAL_COMPUTE)
+    )
+    .await
+}
+
 #[tokio::test]
 async fn create_rule_set() {
     let mut context = program_test().start_with_context().await;
@@ -507,6 +525,172 @@ async fn wallet_to_prog_owned() {
 
     // Validate operation.
     process_passing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE)).await;
+}
+
+#[tokio::test]
+async fn wallet_to_prog_owned_missing_namespace() {
+    let mut context = program_test().start_with_context().await;
+    let rule_set_addr =
+        create_incomplete_royalty_rule_set(&mut context, "Transfer:Owner".to_string()).await;
+
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new();
+
+    // Source key is a wallet.
+    let source = Keypair::new();
+
+    // Our destination key is going to be an account owned by the mpl-token-auth-rules program.
+    // Any one will do so for convenience we just use the RuleSet.
+
+    // Get on-chain account.
+    let on_chain_account = context
+        .banks_client
+        .get_account(rule_set_addr)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Account must have nonzero data to count as program-owned.
+    assert!(on_chain_account.data.iter().any(|&x| x != 0));
+
+    // Verify account ownership.
+    assert_eq!(mpl_token_auth_rules::ID, on_chain_account.owner);
+
+    let payload = Payload::from([
+        (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
+        (
+            PayloadKey::Source.to_string(),
+            PayloadType::Pubkey(source.pubkey()),
+        ),
+        (
+            PayloadKey::Destination.to_string(),
+            PayloadType::Pubkey(rule_set_addr),
+        ),
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(context.payer.pubkey()),
+        ),
+    ]);
+
+    let transfer_owner_operation = Operation::Transfer {
+        scenario: TransferScenario::Holder,
+    };
+
+    // Create a `validate` instruction.
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint.pubkey())
+        .additional_rule_accounts(vec![
+            AccountMeta::new_readonly(source.pubkey(), false),
+            AccountMeta::new_readonly(rule_set_addr, false),
+            AccountMeta::new_readonly(context.payer.pubkey(), true),
+        ])
+        .build(ValidateArgs::V1 {
+            operation: transfer_owner_operation.to_string(),
+            payload,
+            update_rule_state: false,
+            rule_set_revision: None,
+        })
+        .unwrap()
+        .instruction();
+
+    // Fail to validate operation.
+    let err =
+        process_failing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE))
+            .await;
+
+    // Check that error is what we expect.  Program owner was not on the allow list.
+    match err {
+        solana_program_test::BanksClientError::TransactionError(
+            TransactionError::InstructionError(_, InstructionError::Custom(error)),
+        ) => {
+            assert_eq!(error, RuleSetError::OperationNotFound as u32);
+        }
+        _ => panic!("Unexpected error: {:?}", err),
+    }
+}
+
+#[tokio::test]
+async fn wallet_to_prog_owned_no_default() {
+    let mut context = program_test().start_with_context().await;
+    let rule_set_addr =
+        create_incomplete_royalty_rule_set(&mut context, "Transfer".to_string()).await;
+
+    // Create a Keypair to simulate a token mint address.
+    let mint = Keypair::new();
+
+    // Source key is a wallet.
+    let source = Keypair::new();
+
+    // Our destination key is going to be an account owned by the mpl-token-auth-rules program.
+    // Any one will do so for convenience we just use the RuleSet.
+
+    // Get on-chain account.
+    let on_chain_account = context
+        .banks_client
+        .get_account(rule_set_addr)
+        .await
+        .unwrap()
+        .unwrap();
+
+    // Account must have nonzero data to count as program-owned.
+    assert!(on_chain_account.data.iter().any(|&x| x != 0));
+
+    // Verify account ownership.
+    assert_eq!(mpl_token_auth_rules::ID, on_chain_account.owner);
+
+    let payload = Payload::from([
+        (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
+        (
+            PayloadKey::Source.to_string(),
+            PayloadType::Pubkey(source.pubkey()),
+        ),
+        (
+            PayloadKey::Destination.to_string(),
+            PayloadType::Pubkey(rule_set_addr),
+        ),
+        (
+            PayloadKey::Authority.to_string(),
+            PayloadType::Pubkey(context.payer.pubkey()),
+        ),
+    ]);
+
+    let transfer_owner_operation = Operation::Transfer {
+        scenario: TransferScenario::Holder,
+    };
+
+    // Create a `validate` instruction.
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint.pubkey())
+        .additional_rule_accounts(vec![
+            AccountMeta::new_readonly(source.pubkey(), false),
+            AccountMeta::new_readonly(rule_set_addr, false),
+            AccountMeta::new_readonly(context.payer.pubkey(), true),
+        ])
+        .build(ValidateArgs::V1 {
+            operation: transfer_owner_operation.to_string(),
+            payload,
+            update_rule_state: false,
+            rule_set_revision: None,
+        })
+        .unwrap()
+        .instruction();
+
+    // Fail to validate operation.
+    let err =
+        process_failing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE))
+            .await;
+
+    // Check that error is what we expect.  Program owner was not on the allow list.
+    match err {
+        solana_program_test::BanksClientError::TransactionError(
+            TransactionError::InstructionError(_, InstructionError::Custom(error)),
+        ) => {
+            assert_eq!(error, RuleSetError::OperationNotFound as u32);
+        }
+        _ => panic!("Unexpected error: {:?}", err),
+    }
 }
 
 #[tokio::test]
