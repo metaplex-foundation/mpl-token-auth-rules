@@ -446,7 +446,6 @@ impl Rule {
                 let fields = field.split('|').collect::<Vec<&str>>();
 
                 for field in fields {
-                    msg!("Validating ProgramOwnedList field: {}", field);
                     let key = match payload.get_pubkey(&field.to_string()) {
                         Some(pubkey) => pubkey,
                         _ => return (false, RuleSetError::MissingPayloadValue.into()),
@@ -601,37 +600,38 @@ impl Rule {
             Rule::ProgramOwnedSet { programs, field } => {
                 msg!("Validating ProgramOwnedSet");
 
-                let key = match payload.get_pubkey(field) {
-                    Some(pubkey) => pubkey,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
-                };
+                let fields = field.split('|').collect::<Vec<&str>>();
 
-                let account = match accounts.get(key) {
-                    Some(account) => account,
-                    _ => return (false, RuleSetError::MissingAccount.into()),
-                };
+                for field in fields {
+                    let key = match payload.get_pubkey(&field.to_string()) {
+                        Some(pubkey) => pubkey,
+                        _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                    };
 
-                let data = match account.data.try_borrow() {
-                    Ok(data) => data,
-                    Err(_) => return (false, ProgramError::AccountBorrowFailed),
-                };
+                    let account = match accounts.get(key) {
+                        Some(account) => account,
+                        _ => return (false, RuleSetError::MissingAccount.into()),
+                    };
 
-                if is_zeroed(&data) {
-                    // Print helpful errors.
-                    if data.len() == 0 {
-                        msg!("Account data is empty");
-                    } else {
-                        msg!("Account data is zeroed");
+                    let data = match account.data.try_borrow() {
+                        Ok(data) => data,
+                        Err(_) => return (false, ProgramError::AccountBorrowFailed),
+                    };
+
+                    if is_zeroed(&data) {
+                        // Print helpful errors.
+                        if data.len() == 0 {
+                            msg!("Account data is empty");
+                        } else {
+                            msg!("Account data is zeroed");
+                        }
+                    } else if programs.contains(account.owner) {
+                        // Account owner must be in the set.
+                        return (true, self.to_error());
                     }
-
-                    // Account must have nonzero data to count as program-owned.
-                    (false, self.to_error())
-                } else if programs.contains(account.owner) {
-                    // Account owner must be in the set.
-                    (true, self.to_error())
-                } else {
-                    (false, self.to_error())
                 }
+
+                (false, self.to_error())
             }
             Rule::Namespace => {
                 msg!("Validating Namespace");
