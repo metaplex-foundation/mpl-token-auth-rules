@@ -23,7 +23,7 @@ use utils::{
 };
 
 static PROGRAM_ALLOW_LIST: [Pubkey; 1] = [mpl_token_auth_rules::ID];
-const ADDITIONAL_COMPUTE: u32 = 800_000;
+const ADDITIONAL_COMPUTE: u32 = 1_400_000;
 
 macro_rules! get_primitive_rules {
     (
@@ -152,7 +152,7 @@ fn get_composed_rules() -> ComposedRules {
         operator: CompareOp::Eq,
     };
 
-    let random_programs = (0..4).map(|_| Keypair::new().pubkey()).collect::<Vec<_>>();
+    let random_programs = (0..8).map(|_| Keypair::new().pubkey()).collect::<Vec<_>>();
 
     let source_program_allow_list = Rule::ProgramOwnedList {
         programs: [

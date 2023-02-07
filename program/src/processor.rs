@@ -13,7 +13,7 @@ use crate::{
         RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
     },
     utils::{
-        assert_derivation, create_or_allocate_account_raw, get_existing_revision_map,
+        assert_derivation, create_or_allocate_account_raw, get_existing_revision_map, is_zeroed,
         resize_or_reallocate_account_raw,
     },
     MAX_NAME_LENGTH,
@@ -128,7 +128,9 @@ fn create_or_update_v1(
     ];
 
     // Get new or existing revision map.
-    let revision_map = if ctx.accounts.rule_set_pda_info.data_is_empty() {
+    let revision_map = if ctx.accounts.rule_set_pda_info.data_is_empty()
+        || is_zeroed(&ctx.accounts.rule_set_pda_info.data.borrow())
+    {
         let mut revision_map = RuleSetRevisionMapV1::default();
 
         // Initially set the latest revision location to a the value right after the header.
