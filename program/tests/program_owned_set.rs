@@ -153,25 +153,18 @@ async fn program_owned_set() {
     assert_eq!(spl_token::ID, on_chain_account.owner);
 
     // Store the payload of data to validate against the rule definition.
-    let payload = Payload::from([
-        (PayloadKey::Amount.to_string(), PayloadType::Number(1)),
-        (
-            PayloadKey::Source.to_string(),
-            PayloadType::Pubkey(source.pubkey()),
-        ),
-        (
-            PayloadKey::Destination.to_string(),
-            PayloadType::Pubkey(associated_token_account),
-        ),
-    ]);
+    let payload = Payload::from([(
+        PayloadKey::Destination.to_string(),
+        PayloadType::Pubkey(associated_token_account),
+    )]);
 
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint.pubkey())
-        .additional_rule_accounts(vec![
-            AccountMeta::new_readonly(source.pubkey(), false),
-            AccountMeta::new_readonly(associated_token_account, false),
-        ])
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(
+            associated_token_account,
+            false,
+        )])
         .build(ValidateArgs::V1 {
             operation: Operation::Transfer {
                 scenario: utils::TransferScenario::Holder,

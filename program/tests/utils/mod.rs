@@ -42,6 +42,7 @@ impl Display for TransferScenario {
     }
 }
 
+// Type from token-metadata.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UpdateScenario {
     MetadataAuth,
@@ -135,19 +136,22 @@ impl ToString for Operation {
 pub enum PayloadKey {
     /// The amount being transferred.
     Amount,
-    /// The authority of a transfer, e.g. the delegate of token.
+    /// The authority of an operation, e.g. the delegate of token.
     Authority,
     /// Seeds for a PDA authority of the operation, e.g. when the authority is a PDA.
     AuthoritySeeds,
     /// Merkle proof for the source of the operation, e.g. when the authority is a member
     /// of a Merkle tree.
     AuthorityProof,
+    /// Delegate for an operation.
     Delegate,
+    /// Seeds for a PDA delegate of the operation.
     DelegateSeeds,
     /// The destination of the operation, e.g. the recipient of a transfer.
     Destination,
     /// Seeds for a PDA destination of the operation, e.g. when the recipient is a PDA.
     DestinationSeeds,
+    /// A token holder.
     Holder,
     /// The source of the operation, e.g. the owner initiating a transfer.
     Source,

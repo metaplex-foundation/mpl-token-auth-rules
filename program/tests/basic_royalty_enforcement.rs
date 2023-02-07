@@ -22,102 +22,8 @@ use utils::{
     MetadataDelegateRole, Operation, PayloadKey, TokenDelegateRole, TransferScenario,
 };
 
-static PROGRAM_ALLOW_LIST: [Pubkey; 1] = [mpl_token_auth_rules::ID];
-const ADDITIONAL_COMPUTE: u32 = 1_400_000;
-
-macro_rules! get_primitive_rules {
-    (
-        $nft_amount:ident,
-        $source_program_allow_list:ident,
-        $dest_program_allow_list:ident,
-        $source_is_wallet:ident,
-        $dest_is_wallet:ident
-    ) => {
-        let $nft_amount = Rule::Amount {
-            field: PayloadKey::Amount.to_string(),
-            amount: 1,
-            operator: CompareOp::Eq,
-        };
-
-        let $source_program_allow_list = Rule::ProgramOwnedList {
-            programs: PROGRAM_ALLOW_LIST.to_vec(),
-            field: PayloadKey::Source.to_string(),
-        };
-
-        let $dest_program_allow_list = Rule::ProgramOwnedList {
-            programs: PROGRAM_ALLOW_LIST.to_vec(),
-            field: PayloadKey::Destination.to_string(),
-        };
-
-        let $source_is_wallet = Rule::IsWallet {
-            field: PayloadKey::Source.to_string(),
-        };
-
-        let $dest_is_wallet = Rule::IsWallet {
-            field: PayloadKey::Destination.to_string(),
-        };
-    };
-}
-
-fn get_rules() -> (Rule, Rule) {
-    get_primitive_rules!(
-        nft_amount,
-        source_program_allow_list,
-        dest_program_allow_list,
-        source_is_wallet,
-        dest_is_wallet
-    );
-
-    // --------------------------------
-    // Create Rules
-    // --------------------------------
-    // amount is 1 && (source is on allow list || dest is on allow list)
-    let transfer_rule = Rule::All {
-        rules: vec![
-            nft_amount.clone(),
-            Rule::Any {
-                rules: vec![source_program_allow_list, dest_program_allow_list],
-            },
-        ],
-    };
-
-    // (amount is 1 && source is wallet && dest is wallet)
-    let wallet_to_wallet_rule = Rule::All {
-        rules: vec![nft_amount, source_is_wallet, dest_is_wallet],
-    };
-
-    (transfer_rule, wallet_to_wallet_rule)
-}
-
+const ADDITIONAL_COMPUTE: u32 = 1_000_000;
 const RULE_SET_NAME: &str = "Metaplex Royalty RuleSet Dev";
-
-// Compose operations with scenarios.
-const OWNER_OPERATION: Operation = Operation::Transfer {
-    scenario: TransferScenario::Holder,
-};
-
-const TRANSFER_DELEGATE_OPERATION: Operation = Operation::Transfer {
-    scenario: TransferScenario::TransferDelegate,
-};
-
-const SALE_DELEGATE_OPERATION: Operation = Operation::Transfer {
-    scenario: TransferScenario::SaleDelegate,
-};
-
-const MIGRATION_DELEGATE_OPERATION: Operation = Operation::Transfer {
-    scenario: TransferScenario::MigrationDelegate,
-};
-
-const WALLET_TO_WALLET_OPERATION: Operation = Operation::Transfer {
-    scenario: TransferScenario::WalletToWallet,
-};
-
-struct ComposedRules {
-    transfer_rule: Rule,
-    wallet_to_wallet_rule: Rule,
-    delegate_rule: Rule,
-    advanced_delegate_rule: Rule,
-}
 
 // --------------------------------
 // Define Program Allow List
@@ -125,21 +31,29 @@ struct ComposedRules {
 const ROOSTER_PROGRAM_ID: Pubkey = pubkey!("Roostrnex2Z9Y2XZC49sFAdZARP8E4iFpEnZC5QJWdz");
 const TOKEN_METADATA_PROGRAM_ID: Pubkey = pubkey!("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 const TOKEN_AUTH_RULES_ID: Pubkey = pubkey!("auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg");
-const TRANSFER_PROGRAM_ALLOW_LIST: [Pubkey; 3] = [
+
+const TRANSFER_PROGRAM_BASE_ALLOW_LIST: [Pubkey; 3] = [
     TOKEN_METADATA_PROGRAM_ID,
     ROOSTER_PROGRAM_ID,
     TOKEN_AUTH_RULES_ID,
 ];
-const DELEGATE_PROGRAM_ALLOW_LIST: [Pubkey; 3] = [
+const DELEGATE_PROGRAM_BASE_ALLOW_LIST: [Pubkey; 3] = [
     TOKEN_METADATA_PROGRAM_ID,
     ROOSTER_PROGRAM_ID,
     TOKEN_AUTH_RULES_ID,
 ];
-const ADVANCED_DELEGATE_PROGRAM_ALLOW_LIST: [Pubkey; 3] = [
+const ADVANCED_DELEGATE_PROGRAM_BASE_ALLOW_LIST: [Pubkey; 3] = [
     TOKEN_METADATA_PROGRAM_ID,
     ROOSTER_PROGRAM_ID,
     TOKEN_AUTH_RULES_ID,
 ];
+
+struct ComposedRules {
+    transfer_rule: Rule,
+    wallet_to_wallet_rule: Rule,
+    delegate_rule: Rule,
+    advanced_delegate_rule: Rule,
+}
 
 // Get the four Composed Rules used in this RuleSet.
 fn get_composed_rules() -> ComposedRules {
@@ -152,11 +66,12 @@ fn get_composed_rules() -> ComposedRules {
         operator: CompareOp::Eq,
     };
 
+    // Generate some random programs to add to the base lists.
     let random_programs = (0..8).map(|_| Keypair::new().pubkey()).collect::<Vec<_>>();
 
     let source_program_allow_list = Rule::ProgramOwnedList {
         programs: [
-            TRANSFER_PROGRAM_ALLOW_LIST.to_vec(),
+            TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
             random_programs.clone(),
         ]
         .concat(),
@@ -165,7 +80,7 @@ fn get_composed_rules() -> ComposedRules {
 
     let dest_program_allow_list = Rule::ProgramOwnedList {
         programs: [
-            TRANSFER_PROGRAM_ALLOW_LIST.to_vec(),
+            TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
             random_programs.clone(),
         ]
         .concat(),
@@ -174,7 +89,7 @@ fn get_composed_rules() -> ComposedRules {
 
     let authority_program_allow_list = Rule::ProgramOwnedList {
         programs: [
-            TRANSFER_PROGRAM_ALLOW_LIST.to_vec(),
+            TRANSFER_PROGRAM_BASE_ALLOW_LIST.to_vec(),
             random_programs.clone(),
         ]
         .concat(),
@@ -191,7 +106,7 @@ fn get_composed_rules() -> ComposedRules {
 
     let delegate_program_allow_list = Rule::ProgramOwnedList {
         programs: [
-            DELEGATE_PROGRAM_ALLOW_LIST.to_vec(),
+            DELEGATE_PROGRAM_BASE_ALLOW_LIST.to_vec(),
             random_programs.clone(),
         ]
         .concat(),
@@ -200,8 +115,8 @@ fn get_composed_rules() -> ComposedRules {
 
     let advanced_delegate_program_allow_list = Rule::ProgramOwnedList {
         programs: [
-            ADVANCED_DELEGATE_PROGRAM_ALLOW_LIST.to_vec(),
-            random_programs.clone(),
+            ADVANCED_DELEGATE_PROGRAM_BASE_ALLOW_LIST.to_vec(),
+            random_programs,
         ]
         .concat(),
         field: PayloadKey::Delegate.to_string(),
@@ -246,7 +161,7 @@ fn get_composed_rules() -> ComposedRules {
     }
 }
 
-fn create_rule_set_v1(owner: Pubkey) -> RuleSetV1 {
+fn get_royalty_rule_set(owner: Pubkey) -> RuleSetV1 {
     // Create a RuleSet.
     let mut royalty_rule_set = RuleSetV1::new(RULE_SET_NAME.to_string(), owner);
 
@@ -413,48 +328,18 @@ fn create_rule_set_v1(owner: Pubkey) -> RuleSetV1 {
         )
         .unwrap();
 
-    // println!("{:#?}", royalty_rule_set);
-
     royalty_rule_set
 }
 
 async fn create_royalty_rule_set(context: &mut ProgramTestContext) -> Pubkey {
-    // Create RuleSet
-    // let (transfer_rule, wallet_to_wallet_rule) = get_rules();
-    // let mut royalty_rule_set = RuleSetV1::new(RULE_SET_NAME.to_string(), context.payer.pubkey());
-
-    // // Add operations to `RuleSet`.
-    // royalty_rule_set
-    //     .add(OWNER_OPERATION.to_string(), transfer_rule.clone())
-    //     .unwrap();
-    // royalty_rule_set
-    //     .add(
-    //         TRANSFER_DELEGATE_OPERATION.to_string(),
-    //         transfer_rule.clone(),
-    //     )
-    //     .unwrap();
-    // royalty_rule_set
-    //     .add(SALE_DELEGATE_OPERATION.to_string(), transfer_rule.clone())
-    //     .unwrap();
-    // royalty_rule_set
-    //     .add(MIGRATION_DELEGATE_OPERATION.to_string(), transfer_rule)
-    //     .unwrap();
-    // royalty_rule_set
-    //     .add(
-    //         WALLET_TO_WALLET_OPERATION.to_string(),
-    //         wallet_to_wallet_rule,
-    //     )
-    //     .unwrap();
-
-    // println!("{:#?}", royalty_rule_set);
-    let royalty_rule_set = create_rule_set_v1(context.payer.pubkey());
+    let royalty_rule_set = get_royalty_rule_set(context.payer.pubkey());
 
     // Put the `RuleSet` on chain.
     create_big_rule_set_on_chain!(
         context,
         royalty_rule_set.clone(),
         RULE_SET_NAME.to_string(),
-        Some(1_000_000)
+        Some(ADDITIONAL_COMPUTE)
     )
     .await
 }
@@ -490,6 +375,10 @@ async fn wallet_to_wallet_unimplemented() {
         ),
     ]);
 
+    let transfer_wallet_to_wallet_operation = Operation::Transfer {
+        scenario: TransferScenario::WalletToWallet,
+    };
+
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
@@ -499,7 +388,7 @@ async fn wallet_to_wallet_unimplemented() {
             AccountMeta::new_readonly(dest.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
-            operation: WALLET_TO_WALLET_OPERATION.to_string(),
+            operation: transfer_wallet_to_wallet_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -567,6 +456,10 @@ async fn wallet_to_prog_owned() {
         ),
     ]);
 
+    let transfer_owner_operation = Operation::Transfer {
+        scenario: TransferScenario::Holder,
+    };
+
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
@@ -576,7 +469,7 @@ async fn wallet_to_prog_owned() {
             AccountMeta::new_readonly(rule_set_addr, false),
         ])
         .build(ValidateArgs::V1 {
-            operation: OWNER_OPERATION.to_string(),
+            operation: transfer_owner_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -651,6 +544,10 @@ async fn prog_owned_to_prog_owned() {
         ),
     ]);
 
+    let transfer_transfer_delegate_operation = Operation::Transfer {
+        scenario: TransferScenario::TransferDelegate,
+    };
+
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
@@ -661,7 +558,7 @@ async fn prog_owned_to_prog_owned() {
             AccountMeta::new_readonly(context.payer.pubkey(), true),
         ])
         .build(ValidateArgs::V1 {
-            operation: TRANSFER_DELEGATE_OPERATION.to_string(),
+            operation: transfer_transfer_delegate_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -717,6 +614,10 @@ async fn prog_owned_to_wallet() {
         ),
     ]);
 
+    let transfer_sale_delegate_operation = Operation::Transfer {
+        scenario: TransferScenario::SaleDelegate,
+    };
+
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
@@ -727,7 +628,7 @@ async fn prog_owned_to_wallet() {
             AccountMeta::new_readonly(context.payer.pubkey(), true),
         ])
         .build(ValidateArgs::V1 {
-            operation: SALE_DELEGATE_OPERATION.to_string(),
+            operation: transfer_sale_delegate_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -780,6 +681,10 @@ async fn wrong_amount_fails() {
         ),
     ]);
 
+    let transfer_sale_delegate_operation = Operation::Transfer {
+        scenario: TransferScenario::SaleDelegate,
+    };
+
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
@@ -789,7 +694,7 @@ async fn wrong_amount_fails() {
             AccountMeta::new_readonly(dest.pubkey(), false),
         ])
         .build(ValidateArgs::V1 {
-            operation: SALE_DELEGATE_OPERATION.to_string(),
+            operation: transfer_sale_delegate_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -873,6 +778,10 @@ async fn prog_owner_not_on_list_fails() {
         ),
     ]);
 
+    let transfer_owner_operation = Operation::Transfer {
+        scenario: TransferScenario::Holder,
+    };
+
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
@@ -882,7 +791,7 @@ async fn prog_owner_not_on_list_fails() {
             AccountMeta::new_readonly(associated_token_account, false),
         ])
         .build(ValidateArgs::V1 {
-            operation: OWNER_OPERATION.to_string(),
+            operation: transfer_owner_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
@@ -966,6 +875,10 @@ async fn prog_owned_but_zero_data_length() {
         ),
     ]);
 
+    let transfer_owner_operation = Operation::Transfer {
+        scenario: TransferScenario::Holder,
+    };
+
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
@@ -976,7 +889,7 @@ async fn prog_owned_but_zero_data_length() {
             AccountMeta::new_readonly(context.payer.pubkey(), true),
         ])
         .build(ValidateArgs::V1 {
-            operation: OWNER_OPERATION.to_string(),
+            operation: transfer_owner_operation.to_string(),
             payload,
             update_rule_state: false,
             rule_set_revision: None,
