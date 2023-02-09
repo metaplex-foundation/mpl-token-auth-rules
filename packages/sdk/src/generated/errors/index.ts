@@ -754,6 +754,29 @@ createErrorFromCodeLookup.set(0x22, () => new IsWalletCheckFailedError());
 createErrorFromNameLookup.set('IsWalletCheckFailed', () => new IsWalletCheckFailedError());
 
 /**
+ * ProgramOwnedSetCheckFailed: 'Program Owned Set check failed'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class ProgramOwnedSetCheckFailedError extends Error {
+  readonly code: number = 0x23;
+  readonly name: string = 'ProgramOwnedSetCheckFailed';
+  constructor() {
+    super('Program Owned Set check failed');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, ProgramOwnedSetCheckFailedError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x23, () => new ProgramOwnedSetCheckFailedError());
+createErrorFromNameLookup.set(
+  'ProgramOwnedSetCheckFailed',
+  () => new ProgramOwnedSetCheckFailedError(),
+);
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

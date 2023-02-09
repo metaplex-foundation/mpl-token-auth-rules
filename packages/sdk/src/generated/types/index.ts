@@ -3,6 +3,7 @@ export * from './Key';
 export * from './Payload';
 export * from './PayloadType';
 export * from './ProofInfo';
+export * from './PuffRuleSetArgs';
 export * from './RuleSetHeader';
 export * from './RuleSetRevisionMapV1';
 export * from './SeedsVec';
