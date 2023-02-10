@@ -82,7 +82,7 @@ pub enum RuleSetError {
     #[error("Name too long")]
     NameTooLong,
 
-    /// 18 - Name too long
+    /// 18 - The operation retrieved is not in the selected RuleSet
     #[error("The operation retrieved is not in the selected RuleSet")]
     OperationNotFound,
 
