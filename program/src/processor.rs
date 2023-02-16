@@ -9,8 +9,8 @@ use crate::{
     },
     pda::{PREFIX, STATE_PDA},
     state::{
-        RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, CHUNK_SIZE, RULE_SET_LIB_VERSION,
-        RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
+        PartialSecOpDeserializer, RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, CHUNK_SIZE,
+        RULE_SET_LIB_VERSION, RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
     },
     utils::{
         assert_derivation, create_or_allocate_account_raw, get_existing_revision_map,
@@ -19,6 +19,7 @@ use crate::{
     MAX_NAME_LENGTH,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
+use serde::{de::DeserializeSeed, Deserialize};
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
@@ -87,11 +88,24 @@ fn create_or_update_v1(
         return Err(RuleSetError::PayerIsNotSigner.into());
     }
 
+    // // Deserialize `RuleSet`.
+    // let rule_set = match ctx.accounts.buffer_pda_info {
+    //     Some(account_info) => RuleSetV1::deserialize(&mut rmp_serde::Deserializer::new(
+    //         &account_info.data.borrow()[..],
+    //     ))
+    //     .map_err(|_| RuleSetError::MessagePackDeserializationError)?,
+    //     None => RuleSetV1::deserialize(&mut rmp_serde::Deserializer::new(&serialized_rule_set[..]))
+    //         .map_err(|_| RuleSetError::MessagePackDeserializationError)?,
+    // };
     // Deserialize `RuleSet`.
     let rule_set = match ctx.accounts.buffer_pda_info {
-        Some(account_info) => rmp_serde::from_slice::<RuleSetV1>(&account_info.data.borrow())
+        Some(account_info) => PartialSecOpDeserializer::new("null".to_owned())
+            .deserialize(&mut rmp_serde::Deserializer::new(
+                &account_info.data.borrow()[..],
+            ))
             .map_err(|_| RuleSetError::MessagePackDeserializationError)?,
-        None => rmp_serde::from_slice(&serialized_rule_set)
+        None => PartialSecOpDeserializer::new("null".to_owned())
+            .deserialize(&mut rmp_serde::Deserializer::new(&serialized_rule_set[..]))
             .map_err(|_| RuleSetError::MessagePackDeserializationError)?,
     };
 
@@ -317,7 +331,8 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
 
             // Deserialize `RuleSet`.
             if end < ctx.accounts.rule_set_pda_info.data_len() {
-                rmp_serde::from_slice::<RuleSetV1>(&data[start..end])
+                PartialSecOpDeserializer::new(operation.clone())
+                    .deserialize(&mut rmp_serde::Deserializer::new(&data[start..end]))
                     .map_err(|_| RuleSetError::MessagePackDeserializationError)?
             } else {
                 return Err(RuleSetError::DataTypeMismatch.into());

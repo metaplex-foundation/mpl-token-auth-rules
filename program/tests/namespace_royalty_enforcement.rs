@@ -22,7 +22,7 @@ use utils::{
     MetadataDelegateRole, Operation, PayloadKey, TokenDelegateRole, TransferScenario,
 };
 
-const ADDITIONAL_COMPUTE: u32 = 400_000;
+const ADDITIONAL_COMPUTE: u32 = 999_999;
 const RULE_SET_NAME: &str = "Metaplex Royalty RuleSet Dev";
 
 // --------------------------------
@@ -68,7 +68,7 @@ fn get_composed_rules() -> ComposedRules {
     };
 
     // Generate some random programs to add to the base lists.
-    let random_programs = (0..18).map(|_| Keypair::new().pubkey()).collect::<Vec<_>>();
+    let random_programs = (0..48).map(|_| Keypair::new().pubkey()).collect::<Vec<_>>();
 
     let multi_field_program_allow_list = Rule::ProgramOwnedList {
         programs: [
@@ -319,7 +319,7 @@ fn get_royalty_rule_set(owner: Pubkey) -> RuleSetV1 {
         )
         .unwrap();
 
-    print!("Royalty Rule Set: {:#?}", royalty_rule_set);
+    // print!("Royalty Rule Set: {:#?}", royalty_rule_set);
 
     royalty_rule_set
 }
