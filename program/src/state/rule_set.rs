@@ -5,13 +5,13 @@ use crate::{
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{
-    de::{DeserializeSeed, Deserializer, IgnoredAny, MapAccess, SeqAccess, Visitor},
+    de::{DeserializeSeed, Deserializer, IgnoredAny, SeqAccess, Visitor},
     Deserialize, Serialize,
 };
 #[cfg(feature = "serde-with-feature")]
 use serde_with::{As, DisplayFromStr};
-use solana_program::{entrypoint::ProgramResult, log::sol_log_compute_units, pubkey::Pubkey};
-use std::{collections::HashMap, marker::PhantomData};
+use solana_program::{entrypoint::ProgramResult, pubkey::Pubkey};
+use std::collections::HashMap;
 
 /// Version of the `RuleSetRevisionMapV1` struct.
 pub const RULE_SET_REV_MAP_VERSION: u8 = 1;
@@ -143,7 +143,7 @@ impl<'de> serde::de::Visitor<'de> for MyHmVisitor {
         let mut hm = HashMap::with_capacity(capacity);
 
         while let Some((k, v)) = map.next_entry()? {
-            solana_program::msg!("k: {}", k);
+            // solana_program::msg!("k: {}", k);
             hm.insert(k, v);
         }
 
@@ -239,24 +239,6 @@ impl<'de> Visitor<'de> for PartialSecOpDeserializer {
                 ));
             }
         };
-        // solana_program::msg!("test: {:?}", test);
-        // let field3 = match match SeqAccess::next_element::<HashMap<String, Rule>>(&mut seq) {
-        //     Ok(val) => {
-        //         solana_program::msg!("val: {:?}", val);
-        //         val
-        //     }
-        //     Err(err) => {
-        //         return Err(err);
-        //     }
-        // } {
-        //     Some(value) => value,
-        //     None => {
-        //         return Err(serde::de::Error::invalid_length(
-        //             3usize,
-        //             &"struct RuleSetV1 with 4 elements",
-        //         ));
-        //     }
-        // };
         Ok(RuleSetV1 {
             lib_version: field0,
             owner: field1,
@@ -273,7 +255,7 @@ impl<'de> DeserializeSeed<'de> for PartialSecOpDeserializer {
     where
         D: Deserializer<'de>,
     {
-        solana_program::msg!("deserialize sec {}", self.op);
+        // solana_program::msg!("deserialize sec {}", self.op);
         deserializer.deserialize_any(self)
     }
 }
@@ -307,22 +289,29 @@ impl<'de> Visitor<'de> for PartialMapOpDeserializer {
         let mut hm = HashMap::with_capacity(capacity);
 
         let namespace = self.op.split(':').next().unwrap_or("null");
-        solana_program::msg!("namespace: {}", namespace);
+        // solana_program::msg!("namespace: {}", namespace);
         let mut deser_num = 0;
-        while let Some((k, v)) = map.next_entry::<String, Rule>()? {
+        while let Some(k) = map.next_key::<String>()? {
             // solana_program::msg!("o: {:#?}", self.op.as_bytes());
             // solana_program::msg!("k: {:#?}", k.as_bytes());
             // solana_program::msg!("n: {:#?}", namespace.as_bytes());
             if (k == self.op) || (namespace == k) {
-                solana_program::msg!("{}", k);
+                let v = map.next_value::<Rule>()?;
+                // solana_program::msg!("{}", k);
                 hm.insert(k, v);
                 deser_num += 1;
             } else {
-                solana_program::msg!("f@ck off {}", k);
+                // solana_program::msg!("f@ck off {}", k);
+                let _ = map.next_value::<IgnoredAny>()?;
             }
-            if deser_num > 1 {
+            if deser_num == 2 {
                 break;
             }
+        }
+
+        // Skip over any remaining elements in the sequence after `n`.
+        while (map.next_entry::<IgnoredAny, IgnoredAny>()?).is_some() {
+            // ignore
         }
 
         Ok(hm)
@@ -340,7 +329,3 @@ impl<'de> DeserializeSeed<'de> for PartialMapOpDeserializer {
         deserializer.deserialize_map(self)
     }
 }
-
-// fn print_type_of<T>(_: &T) {
-//     solana_program::msg!("{}", std::any::type_name::<T>())
-// }

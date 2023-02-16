@@ -9,7 +9,7 @@ use crate::{
     },
     pda::{PREFIX, STATE_PDA},
     state::{
-        PartialSecOpDeserializer, RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, CHUNK_SIZE,
+        PartialSecOpDeserializer, RuleSetHeader, RuleSetRevisionMapV1, CHUNK_SIZE,
         RULE_SET_LIB_VERSION, RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
     },
     utils::{
@@ -19,7 +19,7 @@ use crate::{
     MAX_NAME_LENGTH,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
-use serde::{de::DeserializeSeed, Deserialize};
+use serde::de::DeserializeSeed;
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
