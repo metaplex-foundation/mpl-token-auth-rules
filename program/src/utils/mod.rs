@@ -22,6 +22,10 @@ use solana_program::{
 // TODO: Uncomment this when the syscall is available.
 //use solana_zk_token_sdk::curve25519::curve_syscall_traits::CURVE25519_EDWARDS;
 
+mod deserializer;
+
+pub use deserializer::*;
+
 /// Create account almost from scratch, lifted from
 /// <https://github.com/solana-labs/solana-program-library/tree/master/associated-token-account/program/src/processor.rs#L51-L98>
 #[inline(always)]

@@ -9,12 +9,12 @@ use crate::{
     },
     pda::{PREFIX, STATE_PDA},
     state::{
-        PartialSecOpDeserializer, RuleSetHeader, RuleSetRevisionMapV1, CHUNK_SIZE,
-        RULE_SET_LIB_VERSION, RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
+        RuleSetHeader, RuleSetRevisionMapV1, CHUNK_SIZE, RULE_SET_LIB_VERSION,
+        RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
     },
     utils::{
         assert_derivation, create_or_allocate_account_raw, get_existing_revision_map,
-        get_operation, is_zeroed, resize_or_reallocate_account_raw,
+        get_operation, is_zeroed, resize_or_reallocate_account_raw, PartialSecOpDeserializer,
     },
     MAX_NAME_LENGTH,
 };
@@ -331,9 +331,15 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
 
             // Deserialize `RuleSet`.
             if end < ctx.accounts.rule_set_pda_info.data_len() {
-                PartialSecOpDeserializer::new(operation.clone())
-                    .deserialize(&mut rmp_serde::Deserializer::new(&data[start..end]))
-                    .map_err(|_| RuleSetError::MessagePackDeserializationError)?
+                let result = PartialSecOpDeserializer::new(operation.clone())
+                    .deserialize(&mut rmp_serde::Deserializer::new(&data[start..end]));
+                match result {
+                    Ok(rule_set) => rule_set,
+                    Err(err) => {
+                        msg!("Error deserializing `RuleSet`: {:?}", err);
+                        return Err(RuleSetError::DataTypeMismatch.into());
+                    }
+                }
             } else {
                 return Err(RuleSetError::DataTypeMismatch.into());
             }
