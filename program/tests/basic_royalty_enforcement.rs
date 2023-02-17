@@ -915,7 +915,7 @@ async fn prog_owned_but_zero_data_length() {
         solana_program_test::BanksClientError::TransactionError(
             TransactionError::InstructionError(_, InstructionError::Custom(error)),
         ) => {
-            assert_eq!(error, RuleSetError::ProgramOwnedListCheckFailed as u32);
+            assert_eq!(error, RuleSetError::DataIsEmpty as u32);
         }
         _ => panic!("Unexpected error: {:?}", err),
     }
