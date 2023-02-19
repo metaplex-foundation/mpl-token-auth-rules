@@ -25,16 +25,14 @@
 
 use core::cmp::{Eq, PartialEq};
 
-//use cfg_if::cfg_if;
-
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
-//use crate::ed25519::backend;
 use crate::ed25519::backend::constants;
 
+// md removed all the actual u32/u64/fiat config and just ported non-fiat 64-bit impl.
 pub use crate::ed25519::backend::field::*;
 pub type FieldElement = crate::ed25519::backend::field::FieldElement51;
 
@@ -164,47 +162,6 @@ impl FieldElement {
         let t19 = &t18 * &t13;             // 249..0
 
         (t19, t3)
-    }
-
-    /// Given a slice of public `FieldElements`, replace each with its inverse.
-    ///
-    /// When an input `FieldElement` is zero, its value is unchanged.
-    #[cfg(feature = "alloc")]
-    pub fn batch_invert(inputs: &mut [FieldElement]) {
-        // Montgomery’s Trick and Fast Implementation of Masked AES
-        // Genelle, Prouff and Quisquater
-        // Section 3.2
-
-        let n = inputs.len();
-        let mut scratch = vec![FieldElement::ONE; n];
-
-        // Keep an accumulator of all of the previous products
-        let mut acc = FieldElement::ONE;
-
-        // Pass through the input vector, recording the previous
-        // products in the scratch space
-        for (input, scratch) in inputs.iter().zip(scratch.iter_mut()) {
-            *scratch = acc;
-            // acc <- acc * input, but skipping zeros (constant-time)
-            acc.conditional_assign(&(&acc * input), !input.is_zero());
-        }
-
-        // acc is nonzero because we skipped zeros in inputs
-        assert_eq!(acc.is_zero().unwrap_u8(), 0);
-
-        // Compute the inverse of all products
-        acc = acc.invert();
-
-        // Pass through the vector backwards to compute the inverses
-        // in place
-        for (input, scratch) in inputs.iter_mut().rev().zip(scratch.into_iter().rev()) {
-            let tmp = &acc * input;
-            // input <- acc * scratch, then acc <- tmp
-            // Again, we skip zeros in a constant-time way
-            let nz = !input.is_zero();
-            input.conditional_assign(&(&acc * &scratch), nz);
-            acc.conditional_assign(&tmp, nz);
-        }
     }
 
     /// Given a nonzero field element, compute its inverse.
@@ -383,23 +340,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
-    fn batch_invert_a_matches_nonbatched() {
-        let a = FieldElement::from_bytes(&A_BYTES);
-        let ap58 = FieldElement::from_bytes(&AP58_BYTES);
-        let asq = FieldElement::from_bytes(&ASQ_BYTES);
-        let ainv = FieldElement::from_bytes(&AINV_BYTES);
-        let a0 = &a - &a;
-        let a2 = &a + &a;
-        let a_list = vec![a, ap58, asq, ainv, a0, a2];
-        let mut ainv_list = a_list.clone();
-        FieldElement::batch_invert(&mut ainv_list[..]);
-        for i in 0..6 {
-            assert_eq!(a_list[i].invert(), ainv_list[i]);
-        }
-    }
-
-    #[test]
     fn sqrt_ratio_behavior() {
         let zero = FieldElement::ZERO;
         let one = FieldElement::ONE;
@@ -498,11 +438,5 @@ mod test {
         for byte in &one_bytes[1..] {
             assert_eq!(*byte, 0);
         }
-    }
-
-    #[test]
-    #[cfg(feature = "alloc")]
-    fn batch_invert_empty() {
-        FieldElement::batch_invert(&mut []);
     }
 }
