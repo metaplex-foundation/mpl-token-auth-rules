@@ -21,9 +21,6 @@ use core::ops::{Sub, SubAssign};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-#[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
-
 /// A `FieldElement51` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
@@ -45,13 +42,6 @@ pub struct FieldElement51(pub(crate) [u64; 5]);
 impl Debug for FieldElement51 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "FieldElement51({:?})", &self.0[..])
-    }
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for FieldElement51 {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
     }
 }
 

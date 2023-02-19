@@ -97,7 +97,6 @@ use core::array::TryFromSliceError;
 use core::fmt::Debug;
 
 use subtle::Choice;
-//use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
@@ -146,7 +145,6 @@ impl CompressedEdwardsY {
         let YY = Y.square();
         let u = &YY - &Z;                            // u =  y²-1
         let v = &(&YY * &constants::EDWARDS_D) + &Z; // v = dy²+1
-        //let (is_valid_y_coord, mut X) = FieldElement::sqrt_ratio_i(&u, &v);
         let (is_valid_y_coord, _X) = FieldElement::sqrt_ratio_i(&u, &v);
 
         if is_valid_y_coord.unwrap_u8() != 1u8 { return false; }
