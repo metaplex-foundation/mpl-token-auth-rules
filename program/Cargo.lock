@@ -1842,6 +1842,7 @@ dependencies = [
  "solana-zk-token-sdk",
  "spl-associated-token-account",
  "spl-token",
+ "subtle",
  "thiserror",
 ]
 

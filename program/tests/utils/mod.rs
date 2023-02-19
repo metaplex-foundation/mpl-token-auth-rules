@@ -569,6 +569,35 @@ macro_rules! assert_custom_error {
     };
 }
 
+#[macro_export]
+macro_rules! assert_custom_error_ix {
+    ($ix:expr, $error:expr, $matcher:pat) => {
+        match $error {
+            solana_program_test::BanksClientError::TransactionError(
+                solana_sdk::transaction::TransactionError::InstructionError(
+                    $ix,
+                    solana_program::instruction::InstructionError::Custom(x),
+                ),
+            ) => match num_traits::FromPrimitive::from_i32(x as i32) {
+                Some($matcher) => assert!(true),
+                Some(other) => {
+                    assert!(
+                        false,
+                        "Expected another custom instruction error than '{:#?}'",
+                        other
+                    )
+                }
+                None => assert!(false, "Expected custom instruction error"),
+            },
+            err => assert!(
+                false,
+                "Expected custom instruction error but got '{:#?}'",
+                err
+            ),
+        };
+    };
+}
+
 pub async fn create_mint(
     context: &mut ProgramTestContext,
     mint: &Keypair,

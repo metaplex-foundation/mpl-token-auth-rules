@@ -6,6 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
+    pda::find_buffer_address,
     state::{Rule, RuleSetV1},
 };
 use solana_program_test::tokio;
@@ -41,14 +42,13 @@ async fn is_wallet() {
         create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
 
     // --------------------------------
-    // Validate not implemented
-    // (this will become pass later)
+    // Validate pass using a wallet
     // --------------------------------
-    // Keypair to check.
-    let wallet = Keypair::new();
-
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
+
+    // Keypair to check.
+    let wallet = Keypair::new();
 
     let payload = Payload::from([(
         PayloadKey::Source.to_string(),
@@ -72,9 +72,39 @@ async fn is_wallet() {
         .unwrap()
         .instruction();
 
+    // Validate Transfer operation.
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], Some(400_000)).await;
+
+    // --------------------------------
+    // Validate fail using a PDA
+    // --------------------------------
+    let (not_wallet, _bump) = find_buffer_address(context.payer.pubkey());
+
+    let payload = Payload::from([(
+        PayloadKey::Source.to_string(),
+        PayloadType::Pubkey(not_wallet),
+    )]);
+
+    // Create a `validate` instruction.
+    let validate_ix = ValidateBuilder::new()
+        .rule_set_pda(rule_set_addr)
+        .mint(mint)
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(not_wallet, false)])
+        .build(ValidateArgs::V1 {
+            operation: Operation::Transfer {
+                scenario: utils::TransferScenario::Holder,
+            }
+            .to_string(),
+            payload,
+            update_rule_state: false,
+            rule_set_revision: None,
+        })
+        .unwrap()
+        .instruction();
+
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], Some(400_000)).await;
 
     // Check that error is what we expect.
-    assert_custom_error!(err, RuleSetError::NotImplemented);
+    assert_custom_error_ix!(1, err, RuleSetError::IsWalletCheckFailed);
 }

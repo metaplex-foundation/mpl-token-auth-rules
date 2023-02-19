@@ -14,6 +14,8 @@ pub mod state;
 #[deny(missing_docs)]
 pub mod utils;
 
+mod ed25519;
+
 pub use solana_program;
 
 /// Max name length for any of the names used in this crate.

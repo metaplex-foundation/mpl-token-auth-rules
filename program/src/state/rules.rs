@@ -593,9 +593,12 @@ impl Rule {
                     return (false, RuleSetError::MissingAccount.into());
                 }
 
-                // TODO: Uncomment call to `is_on_curve()` after on-curve sycall available.
-                (false, RuleSetError::NotImplemented.into())
-                //(is_on_curve(key), self.to_error())
+                let boolresult =
+                    crate::ed25519::edwards::CompressedEdwardsY::from_slice(key.as_ref())
+                        .unwrap()
+                        .is_on_curve();
+
+                (boolresult, self.to_error())
             }
             Rule::ProgramOwnedSet { programs, field } => {
                 msg!("Validating ProgramOwnedSet");
