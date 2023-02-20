@@ -22,7 +22,7 @@ use utils::{
     MetadataDelegateRole, Operation, PayloadKey, TokenDelegateRole, TransferScenario,
 };
 
-const ADDITIONAL_COMPUTE: u32 = 400_000;
+const ADDITIONAL_COMPUTE: u32 = 1_000_000;
 const RULE_SET_NAME: &str = "Metaplex Royalty RuleSet Dev";
 
 // --------------------------------
@@ -362,7 +362,7 @@ async fn create_rule_set() {
 }
 
 #[tokio::test]
-async fn wallet_to_wallet_unimplemented() {
+async fn wallet_to_wallet_passes() {
     let mut context = program_test().start_with_context().await;
     let rule_set_addr = create_royalty_rule_set(&mut context).await;
 
@@ -408,19 +408,7 @@ async fn wallet_to_wallet_unimplemented() {
         .instruction();
 
     // Validate fail operation.
-    let err =
-        process_failing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE))
-            .await;
-
-    // Check that error is what we expect.  The `IsWallet` rule currently returns `NotImplemented`.
-    match err {
-        solana_program_test::BanksClientError::TransactionError(
-            TransactionError::InstructionError(_, InstructionError::Custom(error)),
-        ) => {
-            assert_eq!(error, RuleSetError::NotImplemented as u32);
-        }
-        _ => panic!("Unexpected error: {:?}", err),
-    }
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], Some(ADDITIONAL_COMPUTE)).await;
 }
 
 #[tokio::test]
