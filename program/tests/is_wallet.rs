@@ -78,7 +78,7 @@ async fn is_wallet() {
     // --------------------------------
     // Validate fail using a PDA
     // --------------------------------
-    let (not_wallet, _bump) = find_buffer_address(context.payer.pubkey());
+    let (not_wallet, _bump) = find_buffer_address(Keypair::new().pubkey());
 
     let payload = Payload::from([(
         PayloadKey::Source.to_string(),
