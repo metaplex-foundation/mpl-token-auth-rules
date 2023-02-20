@@ -6,11 +6,12 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
-    pda::find_buffer_address,
     state::{Rule, RuleSetV1},
 };
 use solana_program_test::tokio;
-use solana_sdk::{instruction::AccountMeta, signature::Signer, signer::keypair::Keypair};
+use solana_sdk::{
+    instruction::AccountMeta, pubkey::Pubkey, signature::Signer, signer::keypair::Keypair,
+};
 use utils::{program_test, Operation, PayloadKey};
 
 #[tokio::test]
@@ -78,7 +79,10 @@ async fn is_wallet() {
     // --------------------------------
     // Validate fail using a PDA
     // --------------------------------
-    let (not_wallet, _bump) = find_buffer_address(Keypair::new().pubkey());
+    let (not_wallet, _bump) = Pubkey::find_program_address(
+        &[b"Hello", Keypair::new().pubkey().as_ref()],
+        &Keypair::new().pubkey(),
+    );
 
     let payload = Payload::from([(
         PayloadKey::Source.to_string(),
