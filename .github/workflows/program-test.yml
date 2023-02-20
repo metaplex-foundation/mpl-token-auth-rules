@@ -2,14 +2,14 @@ name: Program Test
 
 on:
   push:
-    branches: [main]
+    branches: [save_artifact]
   pull_request:
     branches: [main]
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
-  SOLANA_VERSION: 1.13.5
+  SOLANA_VERSION: 1.14.13
   RUST_TOOLCHAIN: 1.65.0
 
 jobs:
@@ -49,4 +49,13 @@ jobs:
         run: |
           cargo +${{ env.RUST_TOOLCHAIN }} test -- --nocapture --test-threads 1
           cargo +${{ env.RUST_TOOLCHAIN }} test-bpf --version
-          cargo +${{ env.RUST_TOOLCHAIN }} test-bpf --bpf-out-dir ../../target/deploy/ -- --nocapture --test-threads 1
+          cargo +${{ env.RUST_TOOLCHAIN }} test-bpf -- --nocapture --test-threads 1
+  save-artifact:
+    runs-on: ubuntu-latest
+    needs: build-and-test-program
+    if: github.ref == 'refs/heads/save_artifact'
+    steps:
+      - uses: actions/upload-artifact@v3
+        with:
+          name: mpl-token-auth-rules
+          path: ./
