@@ -343,7 +343,25 @@ impl Rule {
 
                 let fields = field.split('|').collect::<Vec<&str>>();
 
-                for field in fields {
+                if fields.len() > 1 {
+                    let new_rule = Rule::Any {
+                        rules: fields
+                            .iter()
+                            .map(|field| Rule::ProgramOwnedList {
+                                programs: pubkeys.clone(),
+                                field: field.to_string(),
+                            })
+                            .collect(),
+                    };
+
+                    return new_rule.low_level_validate(
+                        accounts,
+                        payload,
+                        _update_rule_state,
+                        _rule_set_state_pda,
+                        rule_authority,
+                    );
+                } else {
                     let key = match payload.get_pubkey(&field.to_owned()) {
                         Some(pubkey) => pubkey,
                         _ => return Invalid(RuleSetError::MissingPayloadValue.into()),
@@ -451,7 +469,7 @@ impl Rule {
                         }
 
                         // Account must have nonzero data to count as program-owned.
-                        return Failure(self.to_error());
+                        return Invalid(self.to_error());
                     } else if *account.owner == *program {
                         return Success(self.to_error());
                     }
@@ -466,7 +484,25 @@ impl Rule {
 
                 let fields = field.split('|').collect::<Vec<&str>>();
 
-                for field in fields {
+                if fields.len() > 1 {
+                    let new_rule = Rule::Any {
+                        rules: fields
+                            .iter()
+                            .map(|field| Rule::ProgramOwnedList {
+                                programs: programs.clone(),
+                                field: field.to_string(),
+                            })
+                            .collect(),
+                    };
+
+                    return new_rule.low_level_validate(
+                        accounts,
+                        payload,
+                        _update_rule_state,
+                        _rule_set_state_pda,
+                        rule_authority,
+                    );
+                } else {
                     let key = match payload.get_pubkey(&field.to_string()) {
                         Some(pubkey) => pubkey,
                         _ => return Invalid(RuleSetError::MissingPayloadValue.into()),
@@ -489,12 +525,14 @@ impl Rule {
                         } else {
                             msg!("Account data is zeroed");
                         }
+
                         return Invalid(RuleSetError::DataIsEmpty.into());
-                    } else if programs.iter().any(|program| *account.owner == *program) {
-                        // Account owner must be on the list.
+                    } else if programs.contains(account.owner) {
+                        // Account owner must be in the set.
                         return Success(self.to_error());
                     }
                 }
+
                 Failure(self.to_error())
             }
             Rule::ProgramOwnedTree {
@@ -530,7 +568,7 @@ impl Rule {
                         msg!("Account data is zeroed");
                     }
 
-                    return Failure(self.to_error());
+                    return Invalid(RuleSetError::DataIsEmpty.into());
                 }
 
                 // The account owner is the leaf.
@@ -624,7 +662,25 @@ impl Rule {
 
                 let fields = field.split('|').collect::<Vec<&str>>();
 
-                for field in fields {
+                if fields.len() > 1 {
+                    let new_rule = Rule::Any {
+                        rules: fields
+                            .iter()
+                            .map(|field| Rule::ProgramOwnedSet {
+                                programs: programs.clone(),
+                                field: field.to_string(),
+                            })
+                            .collect(),
+                    };
+
+                    return new_rule.low_level_validate(
+                        accounts,
+                        payload,
+                        _update_rule_state,
+                        _rule_set_state_pda,
+                        rule_authority,
+                    );
+                } else {
                     let key = match payload.get_pubkey(&field.to_string()) {
                         Some(pubkey) => pubkey,
                         _ => return Invalid(RuleSetError::MissingPayloadValue.into()),
@@ -647,6 +703,8 @@ impl Rule {
                         } else {
                             msg!("Account data is zeroed");
                         }
+
+                        return Invalid(RuleSetError::DataIsEmpty.into());
                     } else if programs.contains(account.owner) {
                         // Account owner must be in the set.
                         return Success(self.to_error());

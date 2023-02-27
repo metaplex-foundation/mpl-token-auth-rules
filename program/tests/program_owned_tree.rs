@@ -125,7 +125,7 @@ async fn program_owned_tree() {
     let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
 
     // Check that error is what we expect.
-    assert_custom_error!(err, RuleSetError::ProgramOwnedTreeCheckFailed);
+    assert_custom_error!(err, RuleSetError::DataIsEmpty);
 
     // --------------------------------
     // Validate nonzero data but owned by different program
