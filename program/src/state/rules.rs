@@ -29,6 +29,18 @@ pub enum CompareOp {
     Gt,
 }
 
+/// Enum representation of Rule failure conditions
+pub enum RuleResult {
+    /// The rule succeeded.
+    Success(ProgramError),
+    /// The rule failed.
+    Failure(ProgramError),
+    /// The program failed to execute the rule.
+    Error(ProgramError),
+}
+
+use RuleResult::*;
+
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 /// The struct containing every type of Rule and its associated data.
 pub enum Rule {
@@ -209,7 +221,7 @@ impl Rule {
         rule_set_state_pda: &Option<&AccountInfo>,
         rule_authority: &Option<&AccountInfo>,
     ) -> ProgramResult {
-        let (status, rollup_err) = self.low_level_validate(
+        let result = self.low_level_validate(
             accounts,
             payload,
             update_rule_state,
@@ -217,10 +229,10 @@ impl Rule {
             rule_authority,
         );
 
-        if status {
-            ProgramResult::Ok(())
-        } else {
-            ProgramResult::Err(rollup_err)
+        match result {
+            Success(_) => Ok(()),
+            Failure(err) => Err(err),
+            Error(err) => Err(err),
         }
     }
 
@@ -232,29 +244,10 @@ impl Rule {
         _update_rule_state: bool,
         _rule_set_state_pda: &Option<&AccountInfo>,
         rule_authority: &Option<&AccountInfo>,
-    ) -> (bool, ProgramError) {
+    ) -> RuleResult {
         match self {
             Rule::All { rules } => {
                 msg!("Validating All");
-                for rule in rules {
-                    let result = rule.low_level_validate(
-                        accounts,
-                        payload,
-                        _update_rule_state,
-                        _rule_set_state_pda,
-                        rule_authority,
-                    );
-                    // Return failure on the first failing rule.
-                    if !result.0 {
-                        return result;
-                    }
-                }
-
-                // Return pass if and only if all rules passed.
-                (true, self.to_error())
-            }
-            Rule::Any { rules } => {
-                msg!("Validating Any");
                 let mut last: Option<ProgramError> = None;
                 for rule in rules {
                     let result = rule.low_level_validate(
@@ -264,23 +257,43 @@ impl Rule {
                         _rule_set_state_pda,
                         rule_authority,
                     );
-                    if result.0 {
-                        // Return pass on the first passing rule.
-                        return result;
-                    } else {
-                        // Save the last failure, but don't overwrite an existing last failure with
-                        // `RuleSetError::NotImplemented` as it can lead to a confusing result when
-                        // using `RuleSets` that have unimplemented rules in them.
-                        if last.is_none() || result.1 != RuleSetError::NotImplemented.into() {
-                            last = Some(result.1);
-                        }
+                    // Return failure on the first failing rule.
+                    match result {
+                        Success(err) => last = Some(err),
+                        _ => return result,
+                    }
+                }
+
+                // Return pass if and only if all rules passed.
+                Success(last.unwrap_or_else(|| RuleSetError::UnexpectedRuleSetFailure.into()))
+            }
+            Rule::Any { rules } => {
+                msg!("Validating Any");
+                let mut last_failure: Option<ProgramError> = None;
+                let mut last_error: Option<ProgramError> = None;
+                for rule in rules {
+                    let result = rule.low_level_validate(
+                        accounts,
+                        payload,
+                        _update_rule_state,
+                        _rule_set_state_pda,
+                        rule_authority,
+                    );
+                    match result {
+                        Success(_) => return result,
+                        Failure(err) => last_failure = Some(err),
+                        Error(err) => last_error = Some(err),
                     }
                 }
 
                 // Return failure if and only if all rules failed.  Use the last failure.
-                match last {
-                    Some(last) => (false, last),
-                    None => (false, RuleSetError::UnexpectedRuleSetFailure.into()),
+                if let Some(err) = last_failure {
+                    Failure(err)
+                } else if let Some(err) = last_error {
+                    // Return invalid if and only if all rules were invalid.  Use the last invalid.
+                    Error(err)
+                } else {
+                    Error(RuleSetError::UnexpectedRuleSetFailure.into())
                 }
             }
             Rule::Not { rule } => {
@@ -293,14 +306,22 @@ impl Rule {
                 );
 
                 // Negate the result.
-                (!result.0, result.1)
+                match result {
+                    Success(err) => Failure(err),
+                    Failure(err) => Success(err),
+                    Error(err) => Error(err),
+                }
             }
             Rule::AdditionalSigner { account } => {
                 msg!("Validating AdditionalSigner");
                 if let Some(signer) = accounts.get(account) {
-                    (signer.is_signer, self.to_error())
+                    if signer.is_signer {
+                        Success(self.to_error())
+                    } else {
+                        Failure(self.to_error())
+                    }
                 } else {
-                    (false, RuleSetError::MissingAccount.into())
+                    Error(RuleSetError::MissingAccount.into())
                 }
             }
             Rule::PubkeyMatch { pubkey, field } => {
@@ -308,13 +329,13 @@ impl Rule {
 
                 let key = match payload.get_pubkey(field) {
                     Some(pubkey) => pubkey,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                    _ => return Error(RuleSetError::MissingPayloadValue.into()),
                 };
 
                 if key == pubkey {
-                    (true, self.to_error())
+                    Success(self.to_error())
                 } else {
-                    (false, self.to_error())
+                    Failure(self.to_error())
                 }
             }
             Rule::PubkeyListMatch { pubkeys, field } => {
@@ -322,18 +343,36 @@ impl Rule {
 
                 let fields = field.split('|').collect::<Vec<&str>>();
 
-                for field in fields {
+                if fields.len() > 1 {
+                    let new_rule = Rule::Any {
+                        rules: fields
+                            .iter()
+                            .map(|field| Rule::ProgramOwnedList {
+                                programs: pubkeys.clone(),
+                                field: field.to_string(),
+                            })
+                            .collect(),
+                    };
+
+                    return new_rule.low_level_validate(
+                        accounts,
+                        payload,
+                        _update_rule_state,
+                        _rule_set_state_pda,
+                        rule_authority,
+                    );
+                } else {
                     let key = match payload.get_pubkey(&field.to_owned()) {
                         Some(pubkey) => pubkey,
-                        _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                        _ => return Error(RuleSetError::MissingPayloadValue.into()),
                     };
 
                     if pubkeys.iter().any(|pubkey| pubkey == key) {
-                        return (true, self.to_error());
+                        return Success(self.to_error());
                     }
                 }
 
-                (false, self.to_error())
+                Failure(self.to_error())
             }
             Rule::PubkeyTreeMatch {
                 root,
@@ -345,21 +384,21 @@ impl Rule {
                 // Get the `Pubkey` we are checking from the payload.
                 let leaf = match payload.get_pubkey(pubkey_field) {
                     Some(pubkey) => pubkey,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                    _ => return Error(RuleSetError::MissingPayloadValue.into()),
                 };
 
                 // Get the Merkle proof from the payload.
                 let merkle_proof = match payload.get_merkle_proof(proof_field) {
                     Some(merkle_proof) => merkle_proof,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                    _ => return Error(RuleSetError::MissingPayloadValue.into()),
                 };
 
                 // Check if the computed hash (root) is equal to the root in the rule.
                 let computed_root = compute_merkle_root(leaf, merkle_proof);
                 if computed_root == *root {
-                    (true, self.to_error())
+                    Success(self.to_error())
                 } else {
-                    (false, self.to_error())
+                    Failure(self.to_error())
                 }
             }
             Rule::PDAMatch {
@@ -372,13 +411,13 @@ impl Rule {
                 // Get the PDA from the payload.
                 let account = match payload.get_pubkey(pda_field) {
                     Some(pubkey) => pubkey,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                    _ => return Error(RuleSetError::MissingPayloadValue.into()),
                 };
 
                 // Get the derivation seeds from the payload.
                 let seeds = match payload.get_seeds(seeds_field) {
                     Some(seeds) => seeds,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                    _ => return Error(RuleSetError::MissingPayloadValue.into()),
                 };
 
                 // Get the program ID to use for the PDA derivation from the Rule.
@@ -389,7 +428,7 @@ impl Rule {
                         // If one is not stored, then assume the program ID is the account owner.
                         match accounts.get(account) {
                             Some(account) => account.owner,
-                            _ => return (false, RuleSetError::MissingAccount.into()),
+                            _ => return Error(RuleSetError::MissingAccount.into()),
                         }
                     }
                 };
@@ -402,9 +441,9 @@ impl Rule {
                     .collect::<Vec<&[u8]>>();
 
                 if let Ok(_bump) = assert_derivation(program, account, &vec_of_slices) {
-                    (true, self.to_error())
+                    Success(self.to_error())
                 } else {
-                    (false, self.to_error())
+                    Failure(self.to_error())
                 }
             }
             Rule::ProgramOwned { program, field } => {
@@ -412,13 +451,13 @@ impl Rule {
 
                 let key = match payload.get_pubkey(field) {
                     Some(pubkey) => pubkey,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                    _ => return Error(RuleSetError::MissingPayloadValue.into()),
                 };
 
                 if let Some(account) = accounts.get(key) {
                     let data = match account.data.try_borrow() {
                         Ok(data) => data,
-                        Err(_) => return (false, ProgramError::AccountBorrowFailed),
+                        Err(_) => return Error(ProgramError::AccountBorrowFailed),
                     };
 
                     if is_zeroed(&data) {
@@ -430,35 +469,53 @@ impl Rule {
                         }
 
                         // Account must have nonzero data to count as program-owned.
-                        return (false, self.to_error());
+                        return Error(self.to_error());
                     } else if *account.owner == *program {
-                        return (true, self.to_error());
+                        return Success(self.to_error());
                     }
                 } else {
-                    return (false, RuleSetError::MissingAccount.into());
+                    return Error(RuleSetError::MissingAccount.into());
                 }
 
-                (false, self.to_error())
+                Failure(self.to_error())
             }
             Rule::ProgramOwnedList { programs, field } => {
                 msg!("Validating ProgramOwnedList");
 
                 let fields = field.split('|').collect::<Vec<&str>>();
 
-                for field in fields {
+                if fields.len() > 1 {
+                    let new_rule = Rule::Any {
+                        rules: fields
+                            .iter()
+                            .map(|field| Rule::ProgramOwnedList {
+                                programs: programs.clone(),
+                                field: field.to_string(),
+                            })
+                            .collect(),
+                    };
+
+                    return new_rule.low_level_validate(
+                        accounts,
+                        payload,
+                        _update_rule_state,
+                        _rule_set_state_pda,
+                        rule_authority,
+                    );
+                } else {
                     let key = match payload.get_pubkey(&field.to_string()) {
                         Some(pubkey) => pubkey,
-                        _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                        _ => return Error(RuleSetError::MissingPayloadValue.into()),
                     };
 
                     let account = match accounts.get(key) {
                         Some(account) => account,
-                        _ => return (false, RuleSetError::MissingAccount.into()),
+                        _ => return Error(RuleSetError::MissingAccount.into()),
                     };
 
                     let data = match account.data.try_borrow() {
                         Ok(data) => data,
-                        Err(_) => return (false, ProgramError::AccountBorrowFailed),
+                        Err(_) => return Error(ProgramError::AccountBorrowFailed),
                     };
 
                     if is_zeroed(&data) {
@@ -468,12 +525,15 @@ impl Rule {
                         } else {
                             msg!("Account data is zeroed");
                         }
-                    } else if programs.iter().any(|program| *account.owner == *program) {
-                        // Account owner must be on the list.
-                        return (true, self.to_error());
+
+                        return Error(RuleSetError::DataIsEmpty.into());
+                    } else if programs.contains(account.owner) {
+                        // Account owner must be in the set.
+                        return Success(self.to_error());
                     }
                 }
-                (false, self.to_error())
+
+                Failure(self.to_error())
             }
             Rule::ProgramOwnedTree {
                 root,
@@ -485,18 +545,18 @@ impl Rule {
                 // Get the `Pubkey` we are checking from the payload.
                 let key = match payload.get_pubkey(pubkey_field) {
                     Some(pubkey) => pubkey,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                    _ => return Error(RuleSetError::MissingPayloadValue.into()),
                 };
 
                 // Get the `AccountInfo` struct for the `Pubkey`.
                 let account = match accounts.get(key) {
                     Some(account) => account,
-                    _ => return (false, RuleSetError::MissingAccount.into()),
+                    _ => return Error(RuleSetError::MissingAccount.into()),
                 };
 
                 let data = match account.data.try_borrow() {
                     Ok(data) => data,
-                    Err(_) => return (false, ProgramError::AccountBorrowFailed),
+                    Err(_) => return Error(ProgramError::AccountBorrowFailed),
                 };
 
                 // Account must have nonzero data to count as program-owned.
@@ -508,7 +568,7 @@ impl Rule {
                         msg!("Account data is zeroed");
                     }
 
-                    return (false, self.to_error());
+                    return Error(RuleSetError::DataIsEmpty.into());
                 }
 
                 // The account owner is the leaf.
@@ -517,15 +577,15 @@ impl Rule {
                 // Get the Merkle proof from the payload.
                 let merkle_proof = match payload.get_merkle_proof(proof_field) {
                     Some(merkle_proof) => merkle_proof,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                    _ => return Error(RuleSetError::MissingPayloadValue.into()),
                 };
 
                 // Check if the computed hash (root) is equal to the root in the rule.
                 let computed_root = compute_merkle_root(leaf, merkle_proof);
                 if computed_root == *root {
-                    (true, self.to_error())
+                    Success(self.to_error())
                 } else {
-                    (false, self.to_error())
+                    Failure(self.to_error())
                 }
             }
             Rule::Amount {
@@ -544,12 +604,12 @@ impl Rule {
                     };
 
                     if operator_fn(payload_amount, rule_amount) {
-                        (true, self.to_error())
+                        Success(self.to_error())
                     } else {
-                        (false, self.to_error())
+                        Failure(self.to_error())
                     }
                 } else {
-                    (false, RuleSetError::MissingPayloadValue.into())
+                    Error(RuleSetError::MissingPayloadValue.into())
                 }
             }
             Rule::Frequency { authority } => {
@@ -559,17 +619,17 @@ impl Rule {
                     // TODO: If it's the wrong account (first condition) the `IsNotASigner`
                     // is misleading.  Should be improved, perhaps with a `Mismatch` error.
                     if authority != rule_authority.key || !rule_authority.is_signer {
-                        return (false, RuleSetError::RuleAuthorityIsNotSigner.into());
+                        return Error(RuleSetError::RuleAuthorityIsNotSigner.into());
                     }
                 } else {
-                    return (false, RuleSetError::MissingAccount.into());
+                    return Error(RuleSetError::MissingAccount.into());
                 }
 
-                (false, RuleSetError::NotImplemented.into())
+                Error(RuleSetError::NotImplemented.into())
             }
             Rule::Pass => {
                 msg!("Validating Pass");
-                (true, self.to_error())
+                Success(self.to_error())
             }
             Rule::IsWallet { field } => {
                 msg!("Validating IsWallet");
@@ -577,7 +637,7 @@ impl Rule {
                 // Get the `Pubkey` we are checking from the payload.
                 let key = match payload.get_pubkey(field) {
                     Some(pubkey) => pubkey,
-                    _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                    _ => return Error(RuleSetError::MissingPayloadValue.into()),
                 };
 
                 // Get the `AccountInfo` struct for the `Pubkey` and verify that
@@ -586,15 +646,15 @@ impl Rule {
                     if *account.owner != system_program::ID {
                         // TODO: Change error return to commented line after on-curve syscall
                         // available.
-                        return (false, RuleSetError::NotImplemented.into());
+                        return Error(RuleSetError::NotImplemented.into());
                         //return (false, self.to_error());
                     }
                 } else {
-                    return (false, RuleSetError::MissingAccount.into());
+                    return Error(RuleSetError::MissingAccount.into());
                 }
 
                 // TODO: Uncomment call to `is_on_curve()` after on-curve sycall available.
-                (false, RuleSetError::NotImplemented.into())
+                Error(RuleSetError::NotImplemented.into())
                 //(is_on_curve(key), self.to_error())
             }
             Rule::ProgramOwnedSet { programs, field } => {
@@ -602,20 +662,38 @@ impl Rule {
 
                 let fields = field.split('|').collect::<Vec<&str>>();
 
-                for field in fields {
+                if fields.len() > 1 {
+                    let new_rule = Rule::Any {
+                        rules: fields
+                            .iter()
+                            .map(|field| Rule::ProgramOwnedSet {
+                                programs: programs.clone(),
+                                field: field.to_string(),
+                            })
+                            .collect(),
+                    };
+
+                    return new_rule.low_level_validate(
+                        accounts,
+                        payload,
+                        _update_rule_state,
+                        _rule_set_state_pda,
+                        rule_authority,
+                    );
+                } else {
                     let key = match payload.get_pubkey(&field.to_string()) {
                         Some(pubkey) => pubkey,
-                        _ => return (false, RuleSetError::MissingPayloadValue.into()),
+                        _ => return Error(RuleSetError::MissingPayloadValue.into()),
                     };
 
                     let account = match accounts.get(key) {
                         Some(account) => account,
-                        _ => return (false, RuleSetError::MissingAccount.into()),
+                        _ => return Error(RuleSetError::MissingAccount.into()),
                     };
 
                     let data = match account.data.try_borrow() {
                         Ok(data) => data,
-                        Err(_) => return (false, ProgramError::AccountBorrowFailed),
+                        Err(_) => return Error(ProgramError::AccountBorrowFailed),
                     };
 
                     if is_zeroed(&data) {
@@ -625,17 +703,19 @@ impl Rule {
                         } else {
                             msg!("Account data is zeroed");
                         }
+
+                        return Error(RuleSetError::DataIsEmpty.into());
                     } else if programs.contains(account.owner) {
                         // Account owner must be in the set.
-                        return (true, self.to_error());
+                        return Success(self.to_error());
                     }
                 }
 
-                (false, self.to_error())
+                Failure(self.to_error())
             }
             Rule::Namespace => {
                 msg!("Validating Namespace");
-                (false, self.to_error())
+                Failure(self.to_error())
             }
         }
     }
