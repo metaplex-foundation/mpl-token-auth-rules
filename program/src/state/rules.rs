@@ -321,7 +321,7 @@ impl Rule {
                         Failure(self.to_error())
                     }
                 } else {
-                    Failure(RuleSetError::MissingAccount.into())
+                    Error(RuleSetError::MissingAccount.into())
                 }
             }
             Rule::PubkeyMatch { pubkey, field } => {
