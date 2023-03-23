@@ -15,6 +15,7 @@ pub mod state_v2;
 #[deny(missing_docs)]
 pub mod utils;
 
+use error::RuleSetError;
 pub use solana_program;
 
 /// Max name length for any of the names used in this crate.
@@ -26,12 +27,14 @@ pub enum LibVersion {
     V2,
 }
 
-impl From<u8> for LibVersion {
-    fn from(value: u8) -> Self {
+impl TryFrom<u8> for LibVersion {
+    type Error = RuleSetError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            1 => LibVersion::V1,
-            2 => LibVersion::V2,
-            _ => panic!("Invalid lib_version value: {value}"),
+            1 => Ok(LibVersion::V1),
+            2 => Ok(LibVersion::V2),
+            _ => Err(RuleSetError::UnsupportedRuleSetVersion),
         }
     }
 }

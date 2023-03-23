@@ -11,6 +11,8 @@ use mpl_token_auth_rules::{
     state_v2::{All, Amount, ProgramOwnedList, RuleSetV2},
     LibVersion,
 };
+use rmp_serde::Serializer;
+use serde::Serialize;
 use solana_program::{pubkey, pubkey::Pubkey};
 use solana_program_test::{tokio, ProgramTestContext};
 use solana_sdk::{commitment_config::CommitmentLevel, signature::Signer, signer::keypair::Keypair};
@@ -180,7 +182,7 @@ async fn create_royalty_rule_set_v2(context: &mut ProgramTestContext) -> Pubkey 
     println!("{}", rule_set);
 
     // Put the `RuleSet` on chain.
-    create_big_rule_set_v2_on_chain!(
+    create_big_rule_set_on_chain!(
         context,
         royalty_rule_set,
         RULE_SET_NAME.to_string(),
@@ -322,12 +324,16 @@ fn get_royalty_rule_set_v1(owner: Pubkey) -> RuleSetV1 {
 async fn create_royalty_rule_set_v1(context: &mut ProgramTestContext) -> Pubkey {
     let royalty_rule_set = get_royalty_rule_set_v1(context.payer.pubkey());
 
-    print!("Royalty Rule Set: {:#?}", royalty_rule_set);
+    // Serialize the RuleSet using RMP serde.
+    let mut serialized_rule_set = Vec::new();
+    royalty_rule_set
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
+        .unwrap();
 
     // Put the `RuleSet` on chain.
     create_big_rule_set_on_chain!(
         context,
-        royalty_rule_set.clone(),
+        serialized_rule_set,
         RULE_SET_NAME.to_string(),
         Some(ADDITIONAL_COMPUTE)
     )
@@ -360,9 +366,15 @@ async fn create_rule_set_with_v1_and_v2() {
 
     let royalty_rule_set = get_royalty_rule_set_v1(context.payer.pubkey());
 
+    // Serialize the RuleSet using RMP serde.
+    let mut serialized_rule_set = Vec::new();
+    royalty_rule_set
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
+        .unwrap();
+
     let rule_set_addr = create_big_rule_set_on_chain!(
         &mut context,
-        royalty_rule_set,
+        serialized_rule_set,
         RULE_SET_NAME.to_string(),
         Some(ADDITIONAL_COMPUTE)
     )
@@ -377,6 +389,8 @@ async fn create_rule_set_with_v1_and_v2() {
 
     let account_length_revision_0 = rule_set_account.data.len();
 
+    context.warp_to_slot(3).unwrap();
+
     // --------------------------------
     // Create RuleSetV2 revision 1 and update on chain
     // --------------------------------
@@ -384,7 +398,7 @@ async fn create_rule_set_with_v1_and_v2() {
     let royalty_rule_set = get_royalty_rule_set_v2(context.payer.pubkey());
 
     // Put the `RuleSet` on chain.
-    let _rule_set_addr = create_big_rule_set_v2_on_chain!(
+    let _rule_set_addr = create_big_rule_set_on_chain!(
         &mut context,
         royalty_rule_set,
         RULE_SET_NAME.to_string(),

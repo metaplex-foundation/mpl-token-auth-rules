@@ -16,11 +16,6 @@ pub enum CreateOrUpdateArgs {
         /// RuleSet pre-serialized by caller into the MessagePack format.
         serialized_rule_set: Vec<u8>,
     },
-    /// V2 implementation of the `create` instruction arguments.
-    V2 {
-        /// RuleSet pre-serialized by caller into the MessagePack format.
-        serialized_rule_set: Vec<u8>,
-    },
 }
 
 #[repr(C)]
