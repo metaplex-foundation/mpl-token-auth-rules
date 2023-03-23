@@ -14,7 +14,8 @@ use solana_program::{
     msg,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
-    pubkey::Pubkey,
+    program_memory::sol_memcmp,
+    pubkey::{Pubkey, PUBKEY_BYTES},
     rent::Rent,
     system_instruction,
     sysvar::Sysvar,
@@ -118,6 +119,11 @@ pub fn assert_owned_by(account: &AccountInfo, owner: &Pubkey) -> ProgramResult {
     }
 }
 
+/// Convenience function for comparing two [`Pubkey`]s.
+pub fn cmp_pubkeys(a: &Pubkey, b: &Pubkey) -> bool {
+    sol_memcmp(a.as_ref(), b.as_ref(), PUBKEY_BYTES) == 0
+}
+
 /// Compute the root of a Merkle tree given a leaf and a proof.  Uses a constant value
 /// of 0x01 as an input to the hashing function along with the values to be hashed.
 pub fn compute_merkle_root(leaf: &Pubkey, merkle_proof: &ProofInfo) -> [u8; 32] {
@@ -154,6 +160,8 @@ pub fn get_existing_revision_map(
         return Err(RuleSetError::DataTypeMismatch.into());
     };
 
+    msg!("Location: {}", header.rev_map_version_location);
+
     // Get revision map version location from header and use it check revision map version.
     match data.get(header.rev_map_version_location) {
         Some(&RULE_SET_REV_MAP_VERSION) => {
@@ -165,7 +173,9 @@ pub fn get_existing_revision_map(
 
             // Deserialize revision map.
             if start < data.len() {
-                let revision_map = RuleSetRevisionMapV1::try_from_slice(&data[start..])?;
+                let mut location = &data[start..];
+                let revision_map = RuleSetRevisionMapV1::deserialize(&mut location)?;
+
                 Ok((revision_map, header.rev_map_version_location))
             } else {
                 Err(RuleSetError::DataTypeMismatch.into())

@@ -2,6 +2,7 @@
 use crate::{
     error::RuleSetError,
     state::{Key, Rule},
+    LibVersion,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
@@ -14,7 +15,7 @@ use std::collections::HashMap;
 pub const RULE_SET_REV_MAP_VERSION: u8 = 1;
 
 /// Version of the `RuleSetV1` struct.
-pub const RULE_SET_LIB_VERSION: u8 = 1;
+pub const RULE_SET_LIB_VERSION: u8 = LibVersion::V1 as u8;
 
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 /// Header used to keep track of where RuleSets are stored in the PDA.  This header is meant
