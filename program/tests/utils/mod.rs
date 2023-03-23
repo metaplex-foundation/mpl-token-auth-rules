@@ -228,6 +228,8 @@ pub async fn create_rule_set_on_chain_with_loc(
         .serialize(&mut Serializer::new(&mut serialized_rule_set))
         .unwrap();
 
+    println!("Serialized rule set size: {}", serialized_rule_set.len());
+
     // Create a `create_or_update` instruction.
     let create_ix = CreateOrUpdateBuilder::new()
         .payer(context.payer.pubkey())
@@ -270,6 +272,21 @@ pub async fn create_rule_set_on_chain_with_loc(
 macro_rules! create_big_rule_set_on_chain {
     ($context:expr, $rule_set:expr, $rule_set_name:expr, $compute_budget:expr) => {
         $crate::utils::create_big_rule_set_on_chain_with_loc(
+            $context,
+            $rule_set,
+            $rule_set_name,
+            $compute_budget,
+            file!(),
+            line!(),
+            column!(),
+        )
+    };
+}
+
+#[macro_export]
+macro_rules! create_big_rule_set_v2_on_chain {
+    ($context:expr, $rule_set:expr, $rule_set_name:expr, $compute_budget:expr) => {
+        $crate::utils::create_big_rule_set_v2_on_chain_with_loc(
             $context,
             $rule_set,
             $rule_set_name,
@@ -430,6 +447,136 @@ macro_rules! process_passing_validate_ix {
             column!(),
         )
     };
+}
+
+pub async fn create_big_rule_set_v2_on_chain_with_loc(
+    context: &mut ProgramTestContext,
+    rule_set: Vec<u8>,
+    rule_set_name: String,
+    compute_budget: Option<u32>,
+    file: &str,
+    line: u32,
+    column: u32,
+) -> Pubkey {
+    // Find RuleSet PDA.
+    let (rule_set_addr, _rule_set_bump) = mpl_token_auth_rules::pda::find_rule_set_address(
+        context.payer.pubkey(),
+        rule_set_name.clone(),
+    );
+
+    let (buffer_pda, _buffer_bump) =
+        mpl_token_auth_rules::pda::find_buffer_address(context.payer.pubkey());
+
+    let mut overwrite = true;
+    for serialized_rule_set_chunk in rule_set.chunks(750) {
+        // Create a `write_to_buffer` instruction.
+        let write_to_buffer_ix = WriteToBufferBuilder::new()
+            .payer(context.payer.pubkey())
+            .buffer_pda(buffer_pda)
+            .build(WriteToBufferArgs::V1 {
+                serialized_rule_set: serialized_rule_set_chunk.to_vec(),
+                overwrite,
+            })
+            .unwrap()
+            .instruction();
+
+        // Add it to a transaction.
+        let write_to_buffer_tx = Transaction::new_signed_with_payer(
+            &[write_to_buffer_ix],
+            Some(&context.payer.pubkey()),
+            &[&context.payer],
+            context.last_blockhash,
+        );
+
+        assert!(
+            write_to_buffer_tx.message.serialize().len() <= 1232,
+            "Transaction exceeds packet limit of 1232"
+        );
+
+        // Process the transaction.
+        context
+            .banks_client
+            .process_transaction(write_to_buffer_tx)
+            .await
+            .unwrap_or_else(|err| {
+                panic!(
+                    "Creation error {:?}, create_big_rule_set_on_chain called at {}:{}:{}",
+                    err, file, line, column
+                )
+            });
+
+        if overwrite {
+            overwrite = false;
+        }
+    }
+    let data = context
+        .banks_client
+        .get_account(buffer_pda)
+        .await
+        .unwrap()
+        .unwrap()
+        .data;
+
+    assert!(
+        cmp_slice(&data, &rule_set),
+        "The buffer doesn't match the serialized rule set.",
+    );
+
+    let puff_ix = PuffRuleSetBuilder::new()
+        .payer(context.payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .build(PuffRuleSetArgs::V1 {
+            rule_set_name: rule_set_name.to_string(),
+        })
+        .unwrap()
+        .instruction();
+
+    // Create a `create` instruction.
+    let create_ix = CreateOrUpdateBuilder::new()
+        .payer(context.payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .buffer_pda(buffer_pda)
+        .build(CreateOrUpdateArgs::V2 {
+            serialized_rule_set: vec![],
+        })
+        .unwrap()
+        .instruction();
+
+    // Use user-provided compute budget if one was provided.
+    let instructions = match compute_budget {
+        Some(units) => {
+            let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(units);
+            vec![compute_budget_ix, puff_ix, create_ix]
+        }
+        None => vec![puff_ix, create_ix],
+    };
+
+    // Add it to a transaction.
+    let create_tx = Transaction::new_signed_with_payer(
+        &instructions,
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        context.last_blockhash,
+    );
+
+    assert!(
+        create_tx.message.serialize().len() <= 1232,
+        "Transaction exceeds packet limit of 1232"
+    );
+
+    // Process the transaction.
+    context
+        .banks_client
+        .process_transaction(create_tx)
+        .await
+        .unwrap_or_else(|err| {
+            panic!(
+                "Creation error {:?}, create_rule_set_on_chain called at {}:{}:{}",
+                err, file, line, column
+            )
+        });
+
+    rule_set_addr
 }
 
 pub async fn process_passing_validate_ix_with_loc(

@@ -21,6 +21,7 @@ serde_with = { version = "1.14.0", optional = true }
 rmp-serde = "1.1.1"
 mpl-token-metadata-context-derive = "0.2.1"
 solana-zk-token-sdk = "1.14"
+bytemuck = "1.13.1"
 
 [features]
 no-entrypoint = []
