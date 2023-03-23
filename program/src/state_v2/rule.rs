@@ -2,15 +2,15 @@ use bytemuck::{Pod, Zeroable};
 use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
 use std::{collections::HashMap, fmt::Display};
 
-use super::{All, Amount, Any, AssertType, Assertable, ProgramOwnedList};
-use crate::{error::RuleSetError, payload::Payload, state::RuleResult};
+use super::{All, Amount, Any, Condition, ConditionType, ProgramOwnedList};
+use crate::{error::RuleSetError, payload::Payload, state::RuleResult, types::Assertable};
 
 // Size of the header section.
 pub const HEADER_SECTION: usize = 8;
 
 pub struct RuleV2<'a> {
     pub header: &'a Header,
-    pub data: Box<dyn Assertable<'a> + 'a>,
+    pub data: Box<dyn Condition<'a> + 'a>,
 }
 
 impl<'a> RuleV2<'a> {
@@ -18,30 +18,31 @@ impl<'a> RuleV2<'a> {
         let (header, data) = bytes.split_at(HEADER_SECTION);
         let header = bytemuck::from_bytes::<Header>(header);
 
-        let rule_type = header.assert_type();
+        let condition_type = header.condition_type();
         let length = header.length();
 
-        let data = match rule_type {
-            AssertType::Amount => {
-                Box::new(Amount::from_bytes(&data[..length])?) as Box<dyn Assertable>
+        let data = match condition_type {
+            ConditionType::Amount => {
+                Box::new(Amount::from_bytes(&data[..length])?) as Box<dyn Condition>
             }
-            AssertType::Any => Box::new(Any::from_bytes(&data[..length])?) as Box<dyn Assertable>,
-            AssertType::All => Box::new(All::from_bytes(&data[..length])?) as Box<dyn Assertable>,
-            AssertType::ProgramOwnedList => {
-                Box::new(ProgramOwnedList::from_bytes(&data[..length])?) as Box<dyn Assertable>
+            ConditionType::Any => Box::new(Any::from_bytes(&data[..length])?) as Box<dyn Condition>,
+            ConditionType::All => Box::new(All::from_bytes(&data[..length])?) as Box<dyn Condition>,
+            ConditionType::ProgramOwnedList => {
+                Box::new(ProgramOwnedList::from_bytes(&data[..length])?) as Box<dyn Condition>
             }
+            _ => unimplemented!("condition type not implemented"),
         };
 
         Ok(Self { header, data })
     }
-}
 
-impl<'a> RuleV2<'a> {
     pub fn length(&self) -> usize {
         HEADER_SECTION + self.header.length()
     }
+}
 
-    pub fn validate(
+impl<'a> Assertable<'a> for RuleV2<'a> {
+    fn validate(
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
@@ -65,6 +66,12 @@ impl<'a> RuleV2<'a> {
     }
 }
 
+impl<'a> Condition<'a> for RuleV2<'a> {
+    fn condition_type(&self) -> ConditionType {
+        self.data.condition_type()
+    }
+}
+
 impl<'a> Display for RuleV2<'a> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter.write_fmt(format_args!("{}", self.data))
@@ -78,8 +85,8 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn assert_type(&self) -> AssertType {
-        AssertType::try_from(self.data[0]).unwrap()
+    pub fn condition_type(&self) -> ConditionType {
+        ConditionType::try_from(self.data[0]).unwrap()
     }
 
     pub fn length(&self) -> usize {

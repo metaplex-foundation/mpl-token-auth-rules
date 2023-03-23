@@ -1,11 +1,11 @@
 use std::fmt::Display;
 
 use borsh::BorshSerialize;
-use solana_program::pubkey::Pubkey;
+use solana_program::pubkey::{Pubkey, PUBKEY_BYTES};
 
 use crate::{
     error::RuleSetError,
-    state_v2::{AssertType, Assertable, Str32, HEADER_SECTION, SIZE_PUBKEY},
+    state_v2::{Condition, ConditionType, Str32, HEADER_SECTION},
 };
 
 pub struct ProgramOwnedList<'a> {
@@ -23,12 +23,12 @@ impl<'a> ProgramOwnedList<'a> {
     }
 
     pub fn serialize(field: String, programs: &[Pubkey]) -> std::io::Result<Vec<u8>> {
-        let length = (Str32::SIZE + (programs.len() * SIZE_PUBKEY)) as u32;
+        let length = (Str32::SIZE + (programs.len() * PUBKEY_BYTES)) as u32;
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 
         // Header
         // - rule type
-        let rule_type = AssertType::ProgramOwnedList as u32;
+        let rule_type = ConditionType::ProgramOwnedList as u32;
         BorshSerialize::serialize(&rule_type, &mut data)?;
         // - length
         BorshSerialize::serialize(&length, &mut data)?;
@@ -47,9 +47,9 @@ impl<'a> ProgramOwnedList<'a> {
     }
 }
 
-impl<'a> Assertable<'a> for ProgramOwnedList<'a> {
-    fn assert_type(&self) -> AssertType {
-        AssertType::ProgramOwnedList
+impl<'a> Condition<'a> for ProgramOwnedList<'a> {
+    fn condition_type(&self) -> ConditionType {
+        ConditionType::ProgramOwnedList
     }
 }
 

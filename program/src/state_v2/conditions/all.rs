@@ -3,17 +3,17 @@ use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
-    state_v2::{AssertType, Assertable, RuleV2, HEADER_SECTION, SIZE_U64},
+    state_v2::{Condition, ConditionType, RuleV2, HEADER_SECTION, U64_BYTES},
 };
 
-pub struct Any<'a> {
+pub struct All<'a> {
     pub size: &'a u64,
     pub rules: Vec<RuleV2<'a>>,
 }
 
-impl<'a> Any<'a> {
+impl<'a> All<'a> {
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
-        let (size, data) = bytes.split_at(SIZE_U64);
+        let (size, data) = bytes.split_at(U64_BYTES);
         let size = bytemuck::from_bytes::<u64>(size);
 
         let mut rules = Vec::with_capacity(*size as usize);
@@ -29,7 +29,8 @@ impl<'a> Any<'a> {
     }
 
     pub fn serialize(rules: &[&[u8]]) -> std::io::Result<Vec<u8>> {
-        let length = (SIZE_U64
+        // length of the assert
+        let length = (U64_BYTES
             + rules
                 .iter()
                 .map(|v| v.len())
@@ -41,7 +42,7 @@ impl<'a> Any<'a> {
 
         // Header
         // - rule type
-        let rule_type = AssertType::Any as u32;
+        let rule_type = ConditionType::All as u32;
         BorshSerialize::serialize(&rule_type, &mut data)?;
         // - length
         BorshSerialize::serialize(&length, &mut data)?;
@@ -57,15 +58,15 @@ impl<'a> Any<'a> {
     }
 }
 
-impl<'a> Assertable<'a> for Any<'a> {
-    fn assert_type(&self) -> AssertType {
-        AssertType::Any
+impl<'a> Condition<'a> for All<'a> {
+    fn condition_type(&self) -> ConditionType {
+        ConditionType::All
     }
 }
 
-impl<'a> Display for Any<'a> {
+impl<'a> Display for All<'a> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str("Any {rules: [")?;
+        formatter.write_str("All {rules: [")?;
 
         for i in 0..*self.size {
             if i > 0 {

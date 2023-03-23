@@ -9,7 +9,7 @@ use mpl_token_auth_rules::{
         RULE_SET_SERIALIZED_HEADER_LEN,
     },
     state_v2::{All, Amount, ProgramOwnedList, RuleSetV2},
-    LibVersion,
+    types::LibVersion,
 };
 use rmp_serde::Serializer;
 use serde::Serialize;

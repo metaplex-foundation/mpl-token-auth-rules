@@ -12,15 +12,15 @@ use crate::{
         RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RULE_SET_REV_MAP_VERSION,
         RULE_SET_SERIALIZED_HEADER_LEN,
     },
-    state_v2::{RuleSetV2, SIZE_U64},
+    state_v2::{RuleSetV2, U64_BYTES},
+    types::{LibVersion, MAX_NAME_LENGTH},
     utils::{
         assert_derivation, create_or_allocate_account_raw, get_existing_revision_map, is_zeroed,
         resize_or_reallocate_account_raw,
     },
-    LibVersion, MAX_NAME_LENGTH,
 };
 
-const ALIGNMENT_PADDING: usize = (SIZE_U64 * 2) - RULE_SET_SERIALIZED_HEADER_LEN;
+const ALIGNMENT_PADDING: usize = (U64_BYTES * 2) - RULE_SET_SERIALIZED_HEADER_LEN;
 
 // Function to match on `CreateOrUpdateArgs` version and call correct implementation.
 pub(crate) fn create_or_update<'a>(
@@ -139,10 +139,10 @@ fn create_or_update_v1(
         // alignment required (V2 only)
         let alignment = if matches!(rule_set_version, LibVersion::V2) {
             let delta = existing_rev_map_loc
-                .checked_rem(SIZE_U64)
+                .checked_rem(U64_BYTES)
                 .ok_or(RuleSetError::NumericalOverflow)?;
 
-            SIZE_U64
+            U64_BYTES
                 .checked_sub(delta)
                 .ok_or(RuleSetError::NumericalOverflow)?
         } else {

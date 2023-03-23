@@ -1,4 +1,4 @@
-pub mod asserts;
+pub mod conditions;
 pub mod rule;
 pub mod rule_set;
 
@@ -6,16 +6,14 @@ use bytemuck::{Pod, Zeroable};
 use solana_program::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
 use std::{collections::HashMap, fmt::Display};
 
-pub use asserts::*;
+pub use conditions::*;
 pub use rule::*;
 pub use rule_set::*;
 
-use crate::{error::RuleSetError, payload::Payload, state::RuleResult, MAX_NAME_LENGTH};
+use crate::{error::RuleSetError, payload::Payload, state::RuleResult, types::MAX_NAME_LENGTH};
 
 // Size of a u64 value.
-pub const SIZE_U64: usize = std::mem::size_of::<u64>();
-// Size of a Pubkey value.
-pub const SIZE_PUBKEY: usize = 32;
+pub const U64_BYTES: usize = std::mem::size_of::<u64>();
 
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
@@ -34,7 +32,7 @@ impl Display for Str32 {
     }
 }
 
-pub trait Assertable<'a>: Display {
+pub trait Condition<'a>: Display {
     fn validate(
         &self,
         _accounts: &HashMap<Pubkey, &AccountInfo>,
@@ -43,10 +41,10 @@ pub trait Assertable<'a>: Display {
         _rule_set_state_pda: &Option<&AccountInfo>,
         _rule_authority: &Option<&AccountInfo>,
     ) -> RuleResult {
-        RuleResult::Success(self.assert_type().to_error())
+        RuleResult::Success(self.condition_type().to_error())
     }
 
-    fn assert_type(&self) -> AssertType;
+    fn condition_type(&self) -> ConditionType;
 }
 
 #[repr(u64)]
@@ -86,7 +84,7 @@ impl TryFrom<u64> for CompareOp {
 #[repr(u32)]
 #[derive(Clone, Copy)]
 /// The struct containing every type of Rule and its associated data.
-pub enum AssertType {
+pub enum ConditionType {
     /// Group AND, where every rule contained must pass.
     All,
     /// Group OR, where at least one rule contained must pass.
@@ -98,29 +96,34 @@ pub enum AssertType {
     /// The `field` value in the Rule is used to locate the numerical amount in the payload to
     /// compare to the amount stored in the rule, using the comparison operator stored in the rule.
     Amount,
+    /// A rule that tells the operation finder to use the default namespace rule.
+    Namespace,
 }
 
-impl AssertType {
+impl ConditionType {
     /// Convert the rule to a corresponding error resulting from the rule failure.
     pub fn to_error(&self) -> ProgramError {
         match self {
-            AssertType::All | AssertType::Any => RuleSetError::UnexpectedRuleSetFailure.into(),
-            AssertType::ProgramOwnedList => RuleSetError::ProgramOwnedListCheckFailed.into(),
-            AssertType::Amount => RuleSetError::AmountCheckFailed.into(),
+            ConditionType::All | ConditionType::Any | ConditionType::Namespace => {
+                RuleSetError::UnexpectedRuleSetFailure.into()
+            }
+            ConditionType::ProgramOwnedList => RuleSetError::ProgramOwnedListCheckFailed.into(),
+            ConditionType::Amount => RuleSetError::AmountCheckFailed.into(),
         }
     }
 }
 
-impl TryFrom<u32> for AssertType {
+impl TryFrom<u32> for ConditionType {
     // Type of the error generated.
     type Error = RuleSetError;
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
-            0 => Ok(AssertType::All),
-            1 => Ok(AssertType::Any),
-            2 => Ok(AssertType::ProgramOwnedList),
-            3 => Ok(AssertType::Amount),
+            0 => Ok(ConditionType::All),
+            1 => Ok(ConditionType::Any),
+            2 => Ok(ConditionType::ProgramOwnedList),
+            3 => Ok(ConditionType::Amount),
+            4 => Ok(ConditionType::Namespace),
             value => {
                 panic!("invalid rule type: {}", value)
             }

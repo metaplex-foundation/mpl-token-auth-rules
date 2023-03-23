@@ -1,6 +1,7 @@
 use crate::{
     error::RuleSetError,
     payload::Payload,
+    types::Assertable,
     // TODO: Uncomment this after on-curve sycall available.
     // utils::is_on_curve,
     utils::{assert_derivation, compute_merkle_root, is_zeroed},
@@ -211,9 +212,9 @@ pub enum Rule {
     Namespace,
 }
 
-impl Rule {
+impl<'a> Assertable<'a> for Rule {
     /// The top level validation function which parses an entire rule tree.
-    pub fn validate(
+    fn validate(
         &self,
         accounts: &HashMap<Pubkey, &AccountInfo>,
         payload: &Payload,
@@ -235,7 +236,9 @@ impl Rule {
             Error(err) => Err(err),
         }
     }
+}
 
+impl Rule {
     /// Lower level validation function which iterates through a rule tree and applies boolean logic to rule results.
     pub fn low_level_validate(
         &self,

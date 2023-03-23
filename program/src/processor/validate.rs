@@ -8,9 +8,12 @@ use solana_program::{
 use crate::{
     error::RuleSetError,
     instruction::{Context, Validate, ValidateArgs},
+    payload::Payload,
     pda::{PREFIX, STATE_PDA},
     state::RuleSetV1,
-    utils::{assert_derivation, get_existing_revision_map, get_operation},
+    state_v2::RuleSetV2,
+    types::{Assertable, LibVersion},
+    utils::{assert_derivation, get_existing_revision_map},
 };
 
 // Function to match on `ValidateArgs` version and call correct implementation.
@@ -98,8 +101,13 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         .map_err(|_| ProgramError::AccountBorrowFailed)?;
 
     // Check `RuleSet` lib version.
-    let rule_set = match data.get(start) {
-        Some(&RULE_SET_LIB_VERSION) => {
+    let lib_version = match data.get(start) {
+        Some(lib_version) => LibVersion::try_from(*lib_version)?,
+        None => return Err(RuleSetError::DataTypeMismatch.into()),
+    };
+
+    match lib_version {
+        LibVersion::V1 => {
             // Increment starting location by size of lib version.
             let start = start
                 .checked_add(1)
@@ -107,25 +115,56 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
 
             // Deserialize `RuleSet`.
             if end < ctx.accounts.rule_set_pda_info.data_len() {
-                rmp_serde::from_slice::<RuleSetV1>(&data[start..end])
-                    .map_err(|_| RuleSetError::MessagePackDeserializationError)?
+                let rule_set = rmp_serde::from_slice::<RuleSetV1>(&data[start..end])
+                    .map_err(|_| RuleSetError::MessagePackDeserializationError)?;
+                // Validate the `Rule` and update the `RuleSet` state if requested.
+                validate_rule(
+                    program_id,
+                    &ctx,
+                    rule_set.name().to_string(),
+                    *rule_set.owner(),
+                    rule_set.get_operation(operation)? as &dyn Assertable,
+                    payload,
+                    update_rule_state,
+                )
             } else {
-                return Err(RuleSetError::DataTypeMismatch.into());
+                Err(RuleSetError::DataTypeMismatch.into())
             }
         }
-        Some(_) => return Err(RuleSetError::UnsupportedRuleSetVersion.into()),
-        None => return Err(RuleSetError::DataTypeMismatch.into()),
-    };
+        LibVersion::V2 => {
+            if end < ctx.accounts.rule_set_pda_info.data_len() {
+                let rule_set = RuleSetV2::from_bytes(&data[start..end])?;
+                // Validate the `Rule` and update the `RuleSet` state if requested.
+                validate_rule(
+                    program_id,
+                    &ctx,
+                    rule_set.name(),
+                    *rule_set.owner,
+                    rule_set.get_operation(operation)? as &dyn Assertable,
+                    payload,
+                    update_rule_state,
+                )
+            } else {
+                Err(RuleSetError::DataTypeMismatch.into())
+            }
+        }
+    }
+}
 
+fn validate_rule(
+    program_id: &Pubkey,
+    ctx: &Context<Validate>,
+    rule_set_name: String,
+    owner: Pubkey,
+    rule: &dyn Assertable,
+    payload: Payload,
+    update_rule_state: bool,
+) -> ProgramResult {
     // Check `RuleSet` account info derivation.
     let _bump = assert_derivation(
         program_id,
         ctx.accounts.rule_set_pda_info.key,
-        &[
-            PREFIX.as_bytes(),
-            rule_set.owner().as_ref(),
-            rule_set.name().as_bytes(),
-        ],
+        &[PREFIX.as_bytes(), owner.as_ref(), rule_set_name.as_bytes()],
     )?;
 
     // If `RuleSet` state is to be updated, check account info derivation.
@@ -136,8 +175,8 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
                 rule_set_state_pda_info.key,
                 &[
                     STATE_PDA.as_bytes(),
-                    rule_set.owner().as_ref(),
-                    rule_set.name().as_bytes(),
+                    owner.as_ref(),
+                    rule_set_name.as_bytes(),
                     ctx.accounts.mint_info.key.as_ref(),
                 ],
             )?;
@@ -154,9 +193,6 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         .iter()
         .map(|account| (*account.key, *account))
         .collect::<HashMap<Pubkey, &AccountInfo>>();
-
-    // Get the `Rule` from the `RuleSet` based on the user-specified operation.
-    let rule = get_operation(operation, &rule_set)?;
 
     // Validate the `Rule`.
     if let Err(err) = rule.validate(

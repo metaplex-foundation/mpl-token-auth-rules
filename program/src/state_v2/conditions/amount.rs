@@ -3,7 +3,7 @@ use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
-    state_v2::{AssertType, Assertable, CompareOp, Str32, HEADER_SECTION, SIZE_U64},
+    state_v2::{CompareOp, Condition, ConditionType, Str32, HEADER_SECTION, U64_BYTES},
 };
 
 pub struct Amount<'a> {
@@ -15,12 +15,12 @@ pub struct Amount<'a> {
 impl<'a> Amount<'a> {
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         // amount
-        let amount = bytemuck::from_bytes::<u64>(&bytes[..SIZE_U64]);
-        let mut cursor = SIZE_U64;
+        let amount = bytemuck::from_bytes::<u64>(&bytes[..U64_BYTES]);
+        let mut cursor = U64_BYTES;
 
         // operator
-        let operator = bytemuck::from_bytes::<u64>(&bytes[cursor..cursor + SIZE_U64]);
-        cursor += SIZE_U64;
+        let operator = bytemuck::from_bytes::<u64>(&bytes[cursor..cursor + U64_BYTES]);
+        cursor += U64_BYTES;
 
         // field
         let field = bytemuck::cast_slice(&bytes[cursor..]);
@@ -34,12 +34,12 @@ impl<'a> Amount<'a> {
 
     pub fn serialize(amount: u64, operator: CompareOp, field: String) -> std::io::Result<Vec<u8>> {
         // length of the assert
-        let length = (SIZE_U64 + SIZE_U64 + Str32::SIZE) as u32;
+        let length = (U64_BYTES + U64_BYTES + Str32::SIZE) as u32;
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 
         // Header
         // - rule type
-        let rule_type = AssertType::Amount as u32;
+        let rule_type = ConditionType::Amount as u32;
         BorshSerialize::serialize(&rule_type, &mut data)?;
         // - length
         BorshSerialize::serialize(&length, &mut data)?;
@@ -59,9 +59,9 @@ impl<'a> Amount<'a> {
     }
 }
 
-impl<'a> Assertable<'a> for Amount<'a> {
-    fn assert_type(&self) -> AssertType {
-        AssertType::Amount
+impl<'a> Condition<'a> for Amount<'a> {
+    fn condition_type(&self) -> ConditionType {
+        ConditionType::Amount
     }
 }
 

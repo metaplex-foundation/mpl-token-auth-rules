@@ -3,7 +3,7 @@ use crate::{
     error::RuleSetError,
     payload::ProofInfo,
     state::{
-        Rule, RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RULE_SET_REV_MAP_VERSION,
+        RuleSetHeader, RuleSetRevisionMapV1, RULE_SET_REV_MAP_VERSION,
         RULE_SET_SERIALIZED_HEADER_LEN,
     },
 };
@@ -230,26 +230,5 @@ pub fn is_zeroed(buf: &[u8]) -> bool {
     {
         chunks.all(|chunk| chunk == &ZEROS[..])
             && chunks.remainder() == &ZEROS[..chunks.remainder().len()]
-    }
-}
-
-/// This function returns the rule for an operation by recursively searching through fallbacks
-pub fn get_operation(operation: String, rule_set: &RuleSetV1) -> Result<&Rule, ProgramError> {
-    let rule = rule_set.get(operation.to_string());
-
-    match rule {
-        Some(Rule::Namespace) => {
-            // Check for a ':' namespace separator. If it exists try to operation namespace to see if
-            // a fallback exists. E.g. 'transfer:owner' will check for a fallback for 'transfer'.
-            // If it doesn't exist then fail.
-            let split = operation.split(':').collect::<Vec<&str>>();
-            if split.len() > 1 {
-                get_operation(split[0].to_owned(), rule_set)
-            } else {
-                Err(RuleSetError::OperationNotFound.into())
-            }
-        }
-        Some(r) => Ok(r),
-        None => Err(RuleSetError::OperationNotFound.into()),
     }
 }

@@ -1,10 +1,17 @@
 use std::fmt::Display;
 
 use borsh::BorshSerialize;
-use solana_program::pubkey::Pubkey;
+use solana_program::{
+    program_error::ProgramError,
+    program_memory::sol_memcmp,
+    pubkey::{Pubkey, PUBKEY_BYTES},
+};
 
-use super::{RuleV2, Str32, SIZE_PUBKEY, SIZE_U64};
-use crate::{error::RuleSetError, LibVersion, MAX_NAME_LENGTH};
+use super::{Condition, ConditionType, RuleV2, Str32, U64_BYTES};
+use crate::{
+    error::RuleSetError,
+    types::{LibVersion, MAX_NAME_LENGTH},
+};
 
 /// The struct containing all Rule Set data, most importantly the map of operations to `Rules`.
 ///  See top-level module for description of PDA memory layout.
@@ -48,12 +55,12 @@ impl<'a> RuleSetV2<'a> {
 
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         // header
-        let header = bytemuck::from_bytes::<[u32; 2]>(&bytes[..SIZE_U64]);
-        let mut cursor = SIZE_U64;
+        let header = bytemuck::from_bytes::<[u32; 2]>(&bytes[..U64_BYTES]);
+        let mut cursor = U64_BYTES;
 
         // owner
-        let owner = bytemuck::from_bytes::<Pubkey>(&bytes[cursor..cursor + SIZE_PUBKEY]);
-        cursor += SIZE_PUBKEY;
+        let owner = bytemuck::from_bytes::<Pubkey>(&bytes[cursor..cursor + PUBKEY_BYTES]);
+        cursor += PUBKEY_BYTES;
 
         // name
         let rule_set_name = bytemuck::from_bytes::<Str32>(&bytes[cursor..cursor + Str32::SIZE]);
@@ -95,8 +102,8 @@ impl<'a> RuleSetV2<'a> {
         rules: &[Vec<u8>],
     ) -> std::io::Result<Vec<u8>> {
         // length of the rule set
-        let length = SIZE_U64
-            + SIZE_PUBKEY
+        let length = U64_BYTES
+            + PUBKEY_BYTES
             + Str32::SIZE
             + (operations.len() * Str32::SIZE)
             + rules
@@ -136,6 +143,44 @@ impl<'a> RuleSetV2<'a> {
 
         Ok(data)
     }
+
+    /// Retrieve the `Rule` tree for a given `Operation`.
+    pub fn get(&self, operation: String) -> Option<&RuleV2<'a>> {
+        let bytes = operation.as_bytes();
+
+        for (i, operation) in self.operations.iter().enumerate() {
+            if sol_memcmp(&operation.value, bytes, bytes.len()) == 0 {
+                return Some(&self.rules[i]);
+            }
+        }
+
+        None
+    }
+
+    /// This function returns the rule for an operation by recursively searching through fallbacks
+    pub fn get_operation(&self, operation: String) -> Result<&RuleV2<'a>, ProgramError> {
+        let rule = self.get(operation.to_string());
+
+        match rule {
+            Some(rule) => {
+                match rule.condition_type() {
+                    ConditionType::Namespace => {
+                        // Check for a ':' namespace separator. If it exists try to operation namespace to see if
+                        // a fallback exists. E.g. 'transfer:owner' will check for a fallback for 'transfer'.
+                        // If it doesn't exist then fail.
+                        let split = operation.split(':').collect::<Vec<&str>>();
+                        if split.len() > 1 {
+                            self.get_operation(split[0].to_owned())
+                        } else {
+                            Err(RuleSetError::OperationNotFound.into())
+                        }
+                    }
+                    _ => Ok(rule),
+                }
+            }
+            None => Err(RuleSetError::OperationNotFound.into()),
+        }
+    }
 }
 
 impl<'a> Display for RuleSetV2<'a> {
@@ -161,7 +206,7 @@ impl<'a> Display for RuleSetV2<'a> {
 mod tests {
     use crate::{
         state_v2::{Amount, CompareOp, ProgramOwnedList, RuleSetV2},
-        LibVersion,
+        types::LibVersion,
     };
     use solana_program::pubkey::Pubkey;
 
