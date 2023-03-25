@@ -8,10 +8,7 @@ use solana_program::{
 };
 
 use super::{Condition, ConditionType, RuleV2, Str32, U64_BYTES};
-use crate::{
-    error::RuleSetError,
-    types::{LibVersion, MAX_NAME_LENGTH},
-};
+use crate::{error::RuleSetError, types::LibVersion};
 
 /// The struct containing all Rule Set data, most importantly the map of operations to `Rules`.
 ///  See top-level module for description of PDA memory layout.
@@ -39,14 +36,7 @@ impl<'a> RuleSetV2<'a> {
     }
 
     pub fn name(&self) -> String {
-        let end_index = self
-            .rule_set_name
-            .value
-            .iter()
-            .position(|&x| x == b'\0')
-            .unwrap_or(MAX_NAME_LENGTH);
-        // return a copy of the name without any padding bytes
-        String::from_utf8_lossy(&self.rule_set_name.value[..end_index]).to_string()
+        self.rule_set_name.to_string()
     }
 
     pub fn size(&self) -> u32 {

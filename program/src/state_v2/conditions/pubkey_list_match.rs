@@ -3,7 +3,6 @@ use std::fmt::Display;
 use borsh::BorshSerialize;
 use solana_program::{
     msg,
-    program_error::ProgramError,
     pubkey::{Pubkey, PUBKEY_BYTES},
 };
 
@@ -11,30 +10,29 @@ use crate::{
     error::RuleSetError,
     state::RuleResult,
     state_v2::{Condition, ConditionType, Str32, HEADER_SECTION},
-    utils::is_zeroed,
 };
 
-pub struct ProgramOwnedList<'a> {
+pub struct PubkeyListMatch<'a> {
     pub field: &'a Str32,
-    pub programs: &'a [Pubkey],
+    pub pubkeys: &'a [Pubkey],
 }
 
-impl<'a> ProgramOwnedList<'a> {
+impl<'a> PubkeyListMatch<'a> {
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
-        let (field, programs) = bytes.split_at(Str32::SIZE);
+        let (field, pubkeys) = bytes.split_at(Str32::SIZE);
         let field = bytemuck::from_bytes::<Str32>(field);
-        let programs = bytemuck::cast_slice(programs);
+        let pubkeys = bytemuck::cast_slice(pubkeys);
 
-        Ok(Self { field, programs })
+        Ok(Self { field, pubkeys })
     }
 
-    pub fn serialize(field: String, programs: &[Pubkey]) -> std::io::Result<Vec<u8>> {
-        let length = (Str32::SIZE + (programs.len() * PUBKEY_BYTES)) as u32;
+    pub fn serialize(field: String, pubkeys: &[Pubkey]) -> std::io::Result<Vec<u8>> {
+        let length = (Str32::SIZE + (pubkeys.len() * PUBKEY_BYTES)) as u32;
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 
         // Header
         // - rule type
-        let rule_type = ConditionType::ProgramOwnedList as u32;
+        let rule_type = ConditionType::PubkeyListMatch as u32;
         BorshSerialize::serialize(&rule_type, &mut data)?;
         // - length
         BorshSerialize::serialize(&length, &mut data)?;
@@ -45,7 +43,7 @@ impl<'a> ProgramOwnedList<'a> {
         field_bytes[..field.len()].copy_from_slice(field.as_bytes());
         BorshSerialize::serialize(&field_bytes, &mut data)?;
         // - programs
-        programs.iter().for_each(|x| {
+        pubkeys.iter().for_each(|x| {
             BorshSerialize::serialize(x, &mut data).unwrap();
         });
 
@@ -53,14 +51,14 @@ impl<'a> ProgramOwnedList<'a> {
     }
 }
 
-impl<'a> Condition<'a> for ProgramOwnedList<'a> {
+impl<'a> Condition<'a> for PubkeyListMatch<'a> {
     fn condition_type(&self) -> ConditionType {
-        ConditionType::ProgramOwnedList
+        ConditionType::PubkeyListMatch
     }
 
     fn validate(
         &self,
-        accounts: &std::collections::HashMap<
+        _accounts: &std::collections::HashMap<
             solana_program::pubkey::Pubkey,
             &solana_program::account_info::AccountInfo,
         >,
@@ -69,7 +67,7 @@ impl<'a> Condition<'a> for ProgramOwnedList<'a> {
         _rule_set_state_pda: &Option<&solana_program::account_info::AccountInfo>,
         _rule_authority: &Option<&solana_program::account_info::AccountInfo>,
     ) -> RuleResult {
-        msg!("Validating ProgramOwnedList");
+        msg!("Validating PubkeyListMatch");
 
         let field = self.field.to_string();
 
@@ -79,26 +77,7 @@ impl<'a> Condition<'a> for ProgramOwnedList<'a> {
                 _ => return RuleResult::Error(RuleSetError::MissingPayloadValue.into()),
             };
 
-            let account = match accounts.get(key) {
-                Some(account) => account,
-                _ => return RuleResult::Error(RuleSetError::MissingAccount.into()),
-            };
-
-            let data = match account.data.try_borrow() {
-                Ok(data) => data,
-                Err(_) => return RuleResult::Error(ProgramError::AccountBorrowFailed),
-            };
-
-            if is_zeroed(&data) {
-                // Print helpful errors.
-                msg!(if data.len() == 0 {
-                    "Account data is empty"
-                } else {
-                    "Account data is zeroed"
-                });
-
-                return RuleResult::Error(RuleSetError::DataIsEmpty.into());
-            } else if self.programs.contains(account.owner) {
+            if self.pubkeys.contains(key) {
                 // Account owner must be in the set.
                 return RuleResult::Success(self.condition_type().to_error());
             }
@@ -108,10 +87,10 @@ impl<'a> Condition<'a> for ProgramOwnedList<'a> {
     }
 }
 
-impl<'a> Display for ProgramOwnedList<'a> {
+impl<'a> Display for PubkeyListMatch<'a> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter.write_str("ProgramOwnedList {")?;
-        formatter.write_str(&format!("programs: [{} pubkeys], ", self.programs.len()))?;
+        formatter.write_str(&format!("pubkeys: [{} pubkeys], ", self.pubkeys.len()))?;
         formatter.write_str(&format!("field: \"{}\"", self.field))?;
         formatter.write_str("}")
     }

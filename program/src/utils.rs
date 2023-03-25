@@ -160,8 +160,6 @@ pub fn get_existing_revision_map(
         return Err(RuleSetError::DataTypeMismatch.into());
     };
 
-    msg!("Location: {}", header.rev_map_version_location);
-
     // Get revision map version location from header and use it check revision map version.
     match data.get(header.rev_map_version_location) {
         Some(&RULE_SET_REV_MAP_VERSION) => {

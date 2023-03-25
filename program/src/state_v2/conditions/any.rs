@@ -1,8 +1,10 @@
 use borsh::BorshSerialize;
+use solana_program::{msg, program_error::ProgramError};
 use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
+    state::RuleResult,
     state_v2::{Condition, ConditionType, RuleV2, HEADER_SECTION, U64_BYTES},
 };
 
@@ -60,6 +62,49 @@ impl<'a> Any<'a> {
 impl<'a> Condition<'a> for Any<'a> {
     fn condition_type(&self) -> ConditionType {
         ConditionType::Any
+    }
+
+    fn validate(
+        &self,
+        accounts: &std::collections::HashMap<
+            solana_program::pubkey::Pubkey,
+            &solana_program::account_info::AccountInfo,
+        >,
+        payload: &crate::payload::Payload,
+        update_rule_state: bool,
+        rule_set_state_pda: &Option<&solana_program::account_info::AccountInfo>,
+        rule_authority: &Option<&solana_program::account_info::AccountInfo>,
+    ) -> RuleResult {
+        msg!("Validating Any");
+
+        let mut last_failure: Option<ProgramError> = None;
+        let mut last_error: Option<ProgramError> = None;
+
+        for rule in &self.rules {
+            let result = rule.validate(
+                accounts,
+                payload,
+                update_rule_state,
+                rule_set_state_pda,
+                rule_authority,
+            );
+
+            match result {
+                RuleResult::Success(_) => return result,
+                RuleResult::Failure(err) => last_failure = Some(err),
+                RuleResult::Error(err) => last_error = Some(err),
+            }
+        }
+
+        // Return failure if and only if all rules failed.  Use the last failure.
+        if let Some(err) = last_failure {
+            RuleResult::Failure(err)
+        } else if let Some(err) = last_error {
+            // Return invalid if and only if all rules were invalid.  Use the last invalid.
+            RuleResult::Error(err)
+        } else {
+            RuleResult::Error(RuleSetError::UnexpectedRuleSetFailure.into())
+        }
     }
 }
 

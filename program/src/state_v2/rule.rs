@@ -70,6 +70,26 @@ impl<'a> Condition<'a> for RuleV2<'a> {
     fn condition_type(&self) -> ConditionType {
         self.data.condition_type()
     }
+
+    fn validate(
+        &self,
+        accounts: &std::collections::HashMap<
+            solana_program::pubkey::Pubkey,
+            &solana_program::account_info::AccountInfo,
+        >,
+        payload: &crate::payload::Payload,
+        update_rule_state: bool,
+        rule_set_state_pda: &Option<&solana_program::account_info::AccountInfo>,
+        rule_authority: &Option<&solana_program::account_info::AccountInfo>,
+    ) -> RuleResult {
+        self.data.validate(
+            accounts,
+            payload,
+            update_rule_state,
+            rule_set_state_pda,
+            rule_authority,
+        )
+    }
 }
 
 impl<'a> Display for RuleV2<'a> {

@@ -16,6 +16,8 @@ use solana_sdk::{
 };
 use std::fmt::Display;
 
+pub const ADDITIONAL_COMPUTE: u32 = 400_000;
+
 // --------------------------------
 // RuleSet operations and scenarios
 // from token-metadata
@@ -229,6 +231,70 @@ pub async fn create_rule_set_on_chain_with_loc(
         .unwrap();
 
     println!("Serialized rule set size: {}", serialized_rule_set.len());
+
+    // Create a `create_or_update` instruction.
+    let create_ix = CreateOrUpdateBuilder::new()
+        .payer(context.payer.pubkey())
+        .rule_set_pda(rule_set_addr)
+        .build(CreateOrUpdateArgs::V1 {
+            serialized_rule_set,
+        })
+        .unwrap()
+        .instruction();
+
+    // Add it to a transaction.
+    let create_tx = Transaction::new_signed_with_payer(
+        &[create_ix],
+        Some(&context.payer.pubkey()),
+        &[&context.payer],
+        context.last_blockhash,
+    );
+
+    assert!(
+        create_tx.message.serialize().len() <= 1232,
+        "Transaction exceeds packet limit of 1232"
+    );
+
+    // Process the transaction.
+    context
+        .banks_client
+        .process_transaction(create_tx)
+        .await
+        .unwrap_or_else(|err| {
+            panic!(
+                "Creation error {:?}, create_rule_set_on_chain called at {}:{}:{}",
+                err, file, line, column
+            )
+        });
+
+    rule_set_addr
+}
+
+#[macro_export]
+macro_rules! create_rule_set_on_chain_serialized {
+    ($context:expr, $rule_set:expr, $rule_set_name:expr) => {
+        $crate::utils::create_rule_set_on_chain_serialized(
+            $context,
+            $rule_set,
+            $rule_set_name,
+            file!(),
+            line!(),
+            column!(),
+        )
+    };
+}
+
+pub async fn create_rule_set_on_chain_serialized(
+    context: &mut ProgramTestContext,
+    serialized_rule_set: Vec<u8>,
+    rule_set_name: String,
+    file: &str,
+    line: u32,
+    column: u32,
+) -> Pubkey {
+    // Find RuleSet PDA.
+    let (rule_set_addr, _rule_set_bump) =
+        mpl_token_auth_rules::pda::find_rule_set_address(context.payer.pubkey(), rule_set_name);
 
     // Create a `create_or_update` instruction.
     let create_ix = CreateOrUpdateBuilder::new()

@@ -1,8 +1,10 @@
 use borsh::BorshSerialize;
+use solana_program::{msg, program_error::ProgramError};
 use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
+    state::RuleResult,
     state_v2::{Condition, ConditionType, RuleV2, HEADER_SECTION, U64_BYTES},
 };
 
@@ -61,6 +63,40 @@ impl<'a> All<'a> {
 impl<'a> Condition<'a> for All<'a> {
     fn condition_type(&self) -> ConditionType {
         ConditionType::All
+    }
+
+    fn validate(
+        &self,
+        accounts: &std::collections::HashMap<
+            solana_program::pubkey::Pubkey,
+            &solana_program::account_info::AccountInfo,
+        >,
+        payload: &crate::payload::Payload,
+        update_rule_state: bool,
+        rule_set_state_pda: &Option<&solana_program::account_info::AccountInfo>,
+        rule_authority: &Option<&solana_program::account_info::AccountInfo>,
+    ) -> RuleResult {
+        msg!("Validating All");
+
+        let mut last: Option<ProgramError> = None;
+
+        for rule in &self.rules {
+            let result = rule.validate(
+                accounts,
+                payload,
+                update_rule_state,
+                rule_set_state_pda,
+                rule_authority,
+            );
+            // Return failure on the first failing rule.
+            match result {
+                RuleResult::Success(err) => last = Some(err),
+                _ => return result,
+            }
+        }
+
+        // Return pass if and only if all rules passed.
+        RuleResult::Success(last.unwrap_or_else(|| RuleSetError::UnexpectedRuleSetFailure.into()))
     }
 }
 

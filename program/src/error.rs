@@ -153,6 +153,10 @@ pub enum RuleSetError {
     /// 35 - Program Owned Set check failed
     #[error("Program Owned Set check failed")]
     ProgramOwnedSetCheckFailed,
+
+    /// 36 - Invalid compare operator
+    #[error("Invalid compare operator")]
+    InvalidCompareOp,
 }
 
 impl PrintProgramError for RuleSetError {
