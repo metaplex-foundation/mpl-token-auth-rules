@@ -1,6 +1,5 @@
 use borsh::BorshSerialize;
 use solana_program::{msg, program_error::ProgramError};
-use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
@@ -110,30 +109,5 @@ impl<'a> Constraint<'a> for Any<'a> {
         } else {
             RuleResult::Error(RuleSetError::UnexpectedRuleSetFailure.into())
         }
-    }
-
-    /// Return a string representation of the constraint.
-    fn to_text(&self, indent: usize) -> String {
-        let mut output = String::new();
-        output.push_str(&format!("{:1$}!", "Any {\n", indent));
-        output.push_str(&format!("{:1$}!", "rules: [", indent * 2));
-
-        for i in 0..*self.size {
-            output.push_str(&format!(
-                "{}{}",
-                self.rules[i as usize].to_text(indent * 3),
-                if i > 0 { ", " } else { "" },
-            ));
-        }
-
-        output.push_str(&format!("{:1$}!", "]", indent * 2));
-        output.push_str(&format!("{:1$}!", "}", indent));
-        output
-    }
-}
-
-impl<'a> Display for Any<'a> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.to_text(0))
     }
 }

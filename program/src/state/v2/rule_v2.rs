@@ -1,6 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
-use std::{collections::HashMap, fmt::Display};
+use std::collections::HashMap;
 
 use super::{All, Amount, Any, Constraint, ConstraintType, ProgramOwnedList, U64_BYTES};
 use crate::{error::RuleSetError, payload::Payload, state::RuleResult, types::Assertable};
@@ -101,17 +101,6 @@ impl<'a> Constraint<'a> for RuleV2<'a> {
             rule_authority,
         )
     }
-
-    /// Return a string representation of the constraint.
-    fn to_text(&self, indent: usize) -> String {
-        self.data.to_text(indent)
-    }
-}
-
-impl<'a> Display for RuleV2<'a> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.to_text(0))
-    }
 }
 
 /// Header for the rule.
@@ -161,7 +150,6 @@ mod tests {
         // loads the data using bytemuck
 
         let rule = RuleV2::from_bytes(&program_owned).unwrap();
-        println!("{}", rule);
 
         assert_eq!(rule.header.length(), 96);
     }
@@ -201,8 +189,6 @@ mod tests {
 
         // loads the data using bytemuck
         let rule = RuleV2::from_bytes(&any).unwrap();
-
-        println!("{}", rule);
 
         assert_eq!(
             rule.header.length(),

@@ -178,8 +178,8 @@ async fn create_royalty_rule_set_v2(context: &mut ProgramTestContext) -> Pubkey 
     let royalty_rule_set = get_royalty_rule_set_v2(context.payer.pubkey());
 
     let clone = royalty_rule_set.clone();
-    let rule_set = RuleSetV2::from_bytes(&clone).unwrap();
-    println!("{}", rule_set);
+    // check we can deserialize the rule set
+    let _rule_set = RuleSetV2::from_bytes(&clone).unwrap();
 
     // Put the `RuleSet` on chain.
     create_big_rule_set_on_chain!(

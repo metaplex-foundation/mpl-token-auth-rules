@@ -14,15 +14,6 @@ use crate::{error::RuleSetError, payload::Payload, state::RuleResult, types::MAX
 
 /// Size (in bytes) of a u64 value.
 pub const U64_BYTES: usize = std::mem::size_of::<u64>();
-/// Default indent for text output.
-const DEFAULT_INDENT: usize = 4;
-/// Space character.
-const SPACE: &str = " ";
-
-/// Formats a string with the given indentation.
-pub fn format_with_indentation(text: &str, indent: usize) -> String {
-    format!("{:>2$}{}", SPACE, text, indent * DEFAULT_INDENT)
-}
 
 /// Struct representing a 32 byte string.
 #[repr(C)]
@@ -51,7 +42,7 @@ impl Display for Str32 {
 }
 
 /// Struct representing a test performed by a rule.
-pub trait Constraint<'a>: Display {
+pub trait Constraint<'a> {
     /// Validates the constraint condition.
     fn validate(
         &self,
@@ -64,9 +55,6 @@ pub trait Constraint<'a>: Display {
 
     /// Returns the type of the constraint.
     fn constraint_type(&self) -> ConstraintType;
-
-    /// Returns the constraint as a string.
-    fn to_text(&self, indent: usize) -> String;
 }
 
 #[repr(u32)]

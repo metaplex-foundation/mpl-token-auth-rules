@@ -1,6 +1,5 @@
 use borsh::BorshSerialize;
 use solana_program::{msg, system_program};
-use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
@@ -91,24 +90,5 @@ impl<'a> Constraint<'a> for IsWallet<'a> {
         // TODO: Uncomment call to `is_on_curve()` after on-curve sycall available.
         RuleResult::Error(RuleSetError::NotImplemented.into())
         //(is_on_curve(key), self.to_error())
-    }
-
-    /// Return a string representation of the constraint.
-    fn to_text(&self, indent: usize) -> String {
-        let mut output = String::new();
-        output.push_str(&format!("{:1$}!", "IsWallet {\n", indent));
-        output.push_str(&format!(
-            "{:1$}!",
-            &format!("field: \"{}\"\n", self.field),
-            indent * 2
-        ));
-        output.push_str(&format!("{:1$}!", "}", indent));
-        output
-    }
-}
-
-impl<'a> Display for IsWallet<'a> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.to_text(0))
     }
 }

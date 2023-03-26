@@ -1,6 +1,5 @@
 use borsh::BorshSerialize;
 use solana_program::msg;
-use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
@@ -50,18 +49,5 @@ impl<'a> Constraint<'a> for Pass {
     ) -> RuleResult {
         msg!("Validating Pass");
         RuleResult::Success(self.constraint_type().to_error())
-    }
-
-    /// Return a string representation of the constraint.
-    fn to_text(&self, indent: usize) -> String {
-        let mut output = String::new();
-        output.push_str(&format!("{:1$}!", "Pass", indent));
-        output
-    }
-}
-
-impl Display for Pass {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.to_text(0))
     }
 }

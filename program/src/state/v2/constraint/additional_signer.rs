@@ -3,7 +3,6 @@ use solana_program::{
     msg,
     pubkey::{Pubkey, PUBKEY_BYTES},
 };
-use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
@@ -25,7 +24,6 @@ impl<'a> AdditionalSigner<'a> {
     /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         let account = bytemuck::from_bytes::<Pubkey>(bytes);
-
         Ok(Self { account })
     }
 
@@ -76,24 +74,5 @@ impl<'a> Constraint<'a> for AdditionalSigner<'a> {
         } else {
             RuleResult::Error(RuleSetError::MissingAccount.into())
         }
-    }
-
-    /// Return a string representation of the constraint.
-    fn to_text(&self, indent: usize) -> String {
-        let mut output = String::new();
-        output.push_str(&format!("{:1$}!", "AdditionalSigner {\n", indent));
-        output.push_str(&format!(
-            "{:1$}!",
-            &format!("account: \"{}\"\n", self.account),
-            indent * 2
-        ));
-        output.push_str(&format!("{:1$}!", "}", indent));
-        output
-    }
-}
-
-impl<'a> Display for AdditionalSigner<'a> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.to_text(0))
     }
 }

@@ -3,7 +3,6 @@ use solana_program::{
     msg,
     pubkey::{Pubkey, PUBKEY_BYTES},
 };
-use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
@@ -135,34 +134,5 @@ impl<'a> Constraint<'a> for PDAMatch<'a> {
         } else {
             RuleResult::Failure(self.constraint_type().to_error())
         }
-    }
-
-    /// Return a string representation of the constraint.
-    fn to_text(&self, indent: usize) -> String {
-        let mut output = String::new();
-        output.push_str(&format!("{:1$}!", "PDAMatch {\n", indent));
-        output.push_str(&format!(
-            "{:1$}!",
-            &format!("program: \"{}\",\n", self.program),
-            indent * 2
-        ));
-        output.push_str(&format!(
-            "{:1$}!",
-            &format!("pda_field: \"{}\",\n", self.pda_field),
-            indent * 2
-        ));
-        output.push_str(&format!(
-            "{:1$}!",
-            &format!("seeds_field: \"{}\"\n", self.seeds_field),
-            indent * 2
-        ));
-        output.push_str(&format!("{:1$}!", "}", indent));
-        output
-    }
-}
-
-impl<'a> Display for PDAMatch<'a> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.to_text(0))
     }
 }

@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use borsh::BorshSerialize;
 use solana_program::{msg, program_error::ProgramError, pubkey::PUBKEY_BYTES};
 
@@ -141,34 +139,5 @@ impl<'a> Constraint<'a> for ProgramOwnedTree<'a> {
         } else {
             RuleResult::Failure(self.constraint_type().to_error())
         }
-    }
-
-    /// Return a string representation of the constraint.
-    fn to_text(&self, indent: usize) -> String {
-        let mut output = String::new();
-        output.push_str(&format!("{:1$}!", "ProgramOwnedTree {\n", indent));
-        output.push_str(&format!(
-            "{:1$}!",
-            &format!("pubkey_field: \"{}\",\n", self.pubkey_field),
-            indent * 2
-        ));
-        output.push_str(&format!(
-            "{:1$}!",
-            &format!("proof_field: \"{}\",\n", self.proof_field),
-            indent * 2
-        ));
-        output.push_str(&format!(
-            "{:1$}!",
-            &format!("root: \"{:?}\"\n", self.root),
-            indent * 2
-        ));
-        output.push_str(&format!("{:1$}!", "}", indent));
-        output
-    }
-}
-
-impl<'a> Display for ProgramOwnedTree<'a> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.to_text(0))
     }
 }

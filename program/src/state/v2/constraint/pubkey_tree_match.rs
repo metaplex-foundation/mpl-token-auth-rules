@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use borsh::BorshSerialize;
 use solana_program::{msg, pubkey::PUBKEY_BYTES};
 
@@ -112,38 +110,5 @@ impl<'a> Constraint<'a> for PubkeyTreeMatch<'a> {
         } else {
             RuleResult::Failure(self.constraint_type().to_error())
         }
-    }
-
-    /// Return a string representation of the constraint.
-    fn to_text(&self, indent: usize) -> String {
-        let mut output = String::new();
-        output.push_str(&format!("{:1$}!", "PubkeyTreeMatch {\n", indent));
-        output.push_str(&format!(
-            "{:1$}!",
-            &format!("pubkey_field: \"{}\",\n", self.pubkey_field),
-            indent * 2
-        ));
-        output.push_str(&format!(
-            "{:1$}!",
-            &format!("proof_field: \"{}\",\n", self.proof_field),
-            indent * 2
-        ));
-        output.push_str(&format!(
-            "{:1$}!",
-            &format!("root: \"{:?}\"\n", self.root),
-            indent * 2
-        ));
-        output.push_str(&format!("{:1$}!", "}", indent));
-        output
-    }
-}
-
-impl<'a> Display for PubkeyTreeMatch<'a> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str("PubkeyTreeMatch {")?;
-        formatter.write_str(&format!("pubkey_field: \"{}\",", self.pubkey_field))?;
-        formatter.write_str(&format!("proof_field: \"{}\",", self.proof_field))?;
-        formatter.write_str(&format!("root: {:?}", self.root))?;
-        formatter.write_str("}")
     }
 }

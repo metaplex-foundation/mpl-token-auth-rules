@@ -1,11 +1,10 @@
 use borsh::BorshSerialize;
 use solana_program::msg;
-use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
     state::v2::{Constraint, ConstraintType, Operator, Str32, HEADER_SECTION, U64_BYTES},
-    state::{format_with_indentation, RuleResult},
+    state::RuleResult,
 };
 
 /// Constraint representing a comparison against the amount of tokens being transferred.
@@ -109,31 +108,5 @@ impl<'a> Constraint<'a> for Amount<'a> {
         } else {
             RuleResult::Error(RuleSetError::MissingPayloadValue.into())
         }
-    }
-
-    /// Return a string representation of the constraint.
-    fn to_text(&self, indent: usize) -> String {
-        let mut output = String::new();
-        output.push_str(&format_with_indentation("Amount {\n", indent));
-        output.push_str(&format_with_indentation(
-            &format!("amount: {},\n", self.amount),
-            indent + 1,
-        ));
-        output.push_str(&format_with_indentation(
-            &format!("operator: {},\n", self.operator),
-            indent + 1,
-        ));
-        output.push_str(&format_with_indentation(
-            &format!("field: \"{}\"\n", self.field),
-            indent + 1,
-        ));
-        output.push_str(&format_with_indentation("}", indent));
-        output
-    }
-}
-
-impl<'a> Display for Amount<'a> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.to_text(0))
     }
 }

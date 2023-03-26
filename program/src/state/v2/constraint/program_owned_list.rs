@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use borsh::BorshSerialize;
 use solana_program::{
     msg,
@@ -9,11 +7,8 @@ use solana_program::{
 
 use crate::{
     error::RuleSetError,
+    state::v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
     state::RuleResult,
-    state::{
-        format_with_indentation,
-        v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
-    },
     utils::is_zeroed,
 };
 
@@ -119,41 +114,5 @@ impl<'a> Constraint<'a> for ProgramOwnedList<'a> {
         }
 
         RuleResult::Failure(self.constraint_type().to_error())
-    }
-
-    /// Return a string representation of the constraint.
-    fn to_text(&self, indent: usize) -> String {
-        let mut output = String::new();
-        output.push_str(&format_with_indentation("ProgramOwnedList {\n", indent));
-        output.push_str(&format_with_indentation("programs: [\n", indent + 1));
-
-        for (i, p) in self.programs.iter().enumerate() {
-            output.push_str(&format_with_indentation(
-                &format!(
-                    "\"{}\"{}\n",
-                    p,
-                    if i + 1 == self.programs.len() {
-                        ""
-                    } else {
-                        ","
-                    }
-                ),
-                indent + 2,
-            ));
-        }
-
-        output.push_str(&format_with_indentation("],\n", indent + 1));
-        output.push_str(&format_with_indentation(
-            &format!("field: \"{}\"\n", self.field),
-            indent + 1,
-        ));
-        output.push_str(&format_with_indentation("}", indent));
-        output
-    }
-}
-
-impl<'a> Display for ProgramOwnedList<'a> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.to_text(0))
     }
 }

@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use borsh::BorshSerialize;
 use solana_program::{
     program_error::ProgramError,
@@ -7,7 +5,7 @@ use solana_program::{
     pubkey::{Pubkey, PUBKEY_BYTES},
 };
 
-use super::{format_with_indentation, Constraint, ConstraintType, RuleV2, Str32, U64_BYTES};
+use super::{Constraint, ConstraintType, RuleV2, Str32, U64_BYTES};
 use crate::{error::RuleSetError, types::LibVersion};
 
 /// The struct containing all Rule Set data, most importantly the map of operations to `Rules`.
@@ -177,47 +175,6 @@ impl<'a> RuleSetV2<'a> {
             None => Err(RuleSetError::OperationNotFound.into()),
         }
     }
-
-    /// Return a string representation of the constraint.
-    pub fn to_text(&self, indent: usize) -> String {
-        let mut output = String::new();
-        output.push_str(&format!("{:>1$}", "RuleSet {\n", indent));
-        output.push_str(&format_with_indentation(
-            &format!("name: \"{}\",\n", self.name()),
-            indent + 1,
-        ));
-        output.push_str(&format_with_indentation(
-            &format!("owner: \"{}\",\n", self.owner),
-            indent + 1,
-        ));
-        output.push_str(&format_with_indentation(
-            &format!("lib_version: {},\n", self.lib_version()),
-            indent + 1,
-        ));
-        output.push_str(&format_with_indentation("operations: [\n", indent + 1));
-
-        for i in 0..self.size() {
-            output.push_str(&format_with_indentation(
-                &format!("\"{}\": {{\n", self.operations[i as usize]),
-                indent + 2,
-            ));
-            output.push_str(&format!("{}\n", self.rules[i as usize].to_text(indent + 3)));
-            output.push_str(&format_with_indentation(
-                &format!("}}{}\n", if i + 1 == self.size() { "" } else { "," }),
-                indent + 2,
-            ));
-        }
-
-        output.push_str(&format_with_indentation("]\n", indent + 1));
-        output.push_str(&format_with_indentation("}", indent));
-        output
-    }
-}
-
-impl<'a> Display for RuleSetV2<'a> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.to_text(0))
-    }
 }
 
 #[cfg(test)]
@@ -252,7 +209,6 @@ mod tests {
         // loads a rule set object
 
         let rule_set = RuleSetV2::from_bytes(&serialized).unwrap();
-        println!("{}", rule_set);
 
         assert_eq!(rule_set.operations.len(), 2);
         assert_eq!(rule_set.rules.len(), 2);
