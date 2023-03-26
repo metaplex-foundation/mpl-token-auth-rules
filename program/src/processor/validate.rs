@@ -10,8 +10,7 @@ use crate::{
     instruction::{Context, Validate, ValidateArgs},
     payload::Payload,
     pda::{PREFIX, STATE_PDA},
-    state::RuleSetV1,
-    state_v2::RuleSetV2,
+    state::{RuleSetV1, RuleSetV2},
     types::{Assertable, LibVersion},
     utils::{assert_derivation, get_existing_revision_map},
 };

@@ -33,10 +33,12 @@ use solana_program::{
 mod frequency;
 mod rule_set;
 mod rules;
+mod v2;
 
 pub use frequency::*;
 pub use rule_set::*;
 pub use rules::*;
+pub use v2::*;
 
 use crate::{error::RuleSetError, utils::assert_owned_by};
 

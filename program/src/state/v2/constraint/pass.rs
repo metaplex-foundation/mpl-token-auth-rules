@@ -4,23 +4,26 @@ use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
+    state::v2::{Constraint, ConstraintType, HEADER_SECTION},
     state::RuleResult,
-    state_v2::{Condition, ConditionType, HEADER_SECTION},
 };
 
-pub struct Namespace {}
+/// Constraint representing an operation that always succeeds.
+pub struct Pass;
 
-impl<'a> Namespace {
+impl<'a> Pass {
+    /// Deserialize a constraint from a byte array.
     pub fn from_bytes(_bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         Ok(Self {})
     }
 
+    /// Serialize a constraint into a byte array.
     pub fn serialize() -> std::io::Result<Vec<u8>> {
         let mut data = Vec::with_capacity(HEADER_SECTION);
 
         // Header
         // - rule type
-        let rule_type = ConditionType::Any as u32;
+        let rule_type = ConstraintType::Pass as u32;
         BorshSerialize::serialize(&rule_type, &mut data)?;
         // - length
         BorshSerialize::serialize(&0u32, &mut data)?;
@@ -29,9 +32,9 @@ impl<'a> Namespace {
     }
 }
 
-impl<'a> Condition<'a> for Namespace {
-    fn condition_type(&self) -> ConditionType {
-        ConditionType::Namespace
+impl<'a> Constraint<'a> for Pass {
+    fn constraint_type(&self) -> ConstraintType {
+        ConstraintType::Pass
     }
 
     fn validate(
@@ -45,14 +48,20 @@ impl<'a> Condition<'a> for Namespace {
         _rule_set_state_pda: &Option<&solana_program::account_info::AccountInfo>,
         _rule_authority: &Option<&solana_program::account_info::AccountInfo>,
     ) -> RuleResult {
-        msg!("Validating Namespace");
-        // should never be called directly
-        RuleResult::Failure(self.condition_type().to_error())
+        msg!("Validating Pass");
+        RuleResult::Success(self.constraint_type().to_error())
+    }
+
+    /// Return a string representation of the constraint.
+    fn to_text(&self, indent: usize) -> String {
+        let mut output = String::new();
+        output.push_str(&format!("{:1$}!", "Pass", indent));
+        output
     }
 }
 
-impl Display for Namespace {
+impl Display for Pass {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str("Namespace")
+        formatter.write_str(&self.to_text(0))
     }
 }

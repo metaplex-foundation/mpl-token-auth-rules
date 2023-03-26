@@ -4,33 +4,37 @@ use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
+    state::v2::{Constraint, ConstraintType, RuleV2, HEADER_SECTION},
     state::RuleResult,
-    state_v2::{Condition, ConditionType, RuleV2, HEADER_SECTION},
 };
 
+/// Constraint representing a negation, where the contained rule must fail.
 pub struct Not<'a> {
+    /// The Rule contained under Not.
     pub rule: RuleV2<'a>,
 }
 
 impl<'a> Not<'a> {
+    /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         let rule = RuleV2::from_bytes(bytes)?;
 
         Ok(Self { rule })
     }
 
+    /// Serialize a constraint into a byte array.
     pub fn serialize(rule: &[u8]) -> std::io::Result<Vec<u8>> {
         let mut data = Vec::with_capacity(HEADER_SECTION + rule.len());
 
         // Header
         // - rule type
-        let rule_type = ConditionType::Not as u32;
+        let rule_type = ConstraintType::Not as u32;
         BorshSerialize::serialize(&rule_type, &mut data)?;
         // - length
         let length = rule.len() as u32;
         BorshSerialize::serialize(&length, &mut data)?;
 
-        // Assert
+        // Constraint
         // - rule
         data.extend(rule);
 
@@ -38,9 +42,9 @@ impl<'a> Not<'a> {
     }
 }
 
-impl<'a> Condition<'a> for Not<'a> {
-    fn condition_type(&self) -> ConditionType {
-        ConditionType::Not
+impl<'a> Constraint<'a> for Not<'a> {
+    fn constraint_type(&self) -> ConstraintType {
+        ConstraintType::Not
     }
 
     fn validate(
@@ -71,12 +75,21 @@ impl<'a> Condition<'a> for Not<'a> {
             RuleResult::Error(err) => RuleResult::Error(err),
         }
     }
+
+    /// Return a string representation of the constraint.
+    fn to_text(&self, indent: usize) -> String {
+        let mut output = String::new();
+        output.push_str(&format!("{:1$}!", "Any {\n", indent));
+        output.push_str(&format!("{:1$}!", "rules: [", indent * 2));
+        output.push_str(&self.rule.to_text(indent * 3));
+        output.push_str(&format!("{:1$}!", "]", indent * 2));
+        output.push_str(&format!("{:1$}!", "}", indent));
+        output
+    }
 }
 
 impl<'a> Display for Not<'a> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str("Not {rule: [")?;
-        formatter.write_str(&format!("{}", self.rule))?;
-        formatter.write_str("]}")
+        formatter.write_str(&self.to_text(0))
     }
 }

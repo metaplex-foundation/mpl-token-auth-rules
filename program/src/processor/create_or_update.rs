@@ -9,10 +9,9 @@ use crate::{
     instruction::{Context, CreateOrUpdate, CreateOrUpdateArgs},
     pda::PREFIX,
     state::{
-        RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RULE_SET_REV_MAP_VERSION,
-        RULE_SET_SERIALIZED_HEADER_LEN,
+        RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RuleSetV2, RULE_SET_REV_MAP_VERSION,
+        RULE_SET_SERIALIZED_HEADER_LEN, U64_BYTES,
     },
-    state_v2::{RuleSetV2, U64_BYTES},
     types::{LibVersion, MAX_NAME_LENGTH},
     utils::{
         assert_derivation, create_or_allocate_account_raw, get_existing_revision_map, is_zeroed,

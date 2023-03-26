@@ -10,16 +10,29 @@ use solana_program::{
 use crate::{
     error::RuleSetError,
     state::RuleResult,
-    state_v2::{Condition, ConditionType, Str32, HEADER_SECTION},
+    state::{
+        format_with_indentation,
+        v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
+    },
     utils::is_zeroed,
 };
 
+/// Constraint representing a test where the `Pubkey` must be owned by a program in the list of `Pubkey`s.
+///
+/// This constraint requires a `PayloadType` value of `PayloadType::Pubkey`. The `field` value in the
+/// rule is used to locate the `Pubkey` in the payload for which the owner must be a program in the list
+/// in the rule.  Note this same `Pubkey` account must also be provided to `Validate` via the
+/// `additional_rule_accounts` argument.  This is so that the `Pubkey`'s owner can be found from its
+/// `AccountInfo` struct.
 pub struct ProgramOwnedList<'a> {
+    /// The field in the `Payload` to be compared.
     pub field: &'a Str32,
+    /// The program that must own the `Pubkey`.
     pub programs: &'a [Pubkey],
 }
 
 impl<'a> ProgramOwnedList<'a> {
+    /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         let (field, programs) = bytes.split_at(Str32::SIZE);
         let field = bytemuck::from_bytes::<Str32>(field);
@@ -28,18 +41,19 @@ impl<'a> ProgramOwnedList<'a> {
         Ok(Self { field, programs })
     }
 
+    /// Serialize a constraint into a byte array.
     pub fn serialize(field: String, programs: &[Pubkey]) -> std::io::Result<Vec<u8>> {
         let length = (Str32::SIZE + (programs.len() * PUBKEY_BYTES)) as u32;
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 
         // Header
         // - rule type
-        let rule_type = ConditionType::ProgramOwnedList as u32;
+        let rule_type = ConstraintType::ProgramOwnedList as u32;
         BorshSerialize::serialize(&rule_type, &mut data)?;
         // - length
         BorshSerialize::serialize(&length, &mut data)?;
 
-        // Assert
+        // Constraint
         // - field
         let mut field_bytes = [0u8; Str32::SIZE];
         field_bytes[..field.len()].copy_from_slice(field.as_bytes());
@@ -53,9 +67,9 @@ impl<'a> ProgramOwnedList<'a> {
     }
 }
 
-impl<'a> Condition<'a> for ProgramOwnedList<'a> {
-    fn condition_type(&self) -> ConditionType {
-        ConditionType::ProgramOwnedList
+impl<'a> Constraint<'a> for ProgramOwnedList<'a> {
+    fn constraint_type(&self) -> ConstraintType {
+        ConstraintType::ProgramOwnedList
     }
 
     fn validate(
@@ -100,19 +114,46 @@ impl<'a> Condition<'a> for ProgramOwnedList<'a> {
                 return RuleResult::Error(RuleSetError::DataIsEmpty.into());
             } else if self.programs.contains(account.owner) {
                 // Account owner must be in the set.
-                return RuleResult::Success(self.condition_type().to_error());
+                return RuleResult::Success(self.constraint_type().to_error());
             }
         }
 
-        RuleResult::Failure(self.condition_type().to_error())
+        RuleResult::Failure(self.constraint_type().to_error())
+    }
+
+    /// Return a string representation of the constraint.
+    fn to_text(&self, indent: usize) -> String {
+        let mut output = String::new();
+        output.push_str(&format_with_indentation("ProgramOwnedList {\n", indent));
+        output.push_str(&format_with_indentation("programs: [\n", indent + 1));
+
+        for (i, p) in self.programs.iter().enumerate() {
+            output.push_str(&format_with_indentation(
+                &format!(
+                    "\"{}\"{}\n",
+                    p,
+                    if i + 1 == self.programs.len() {
+                        ""
+                    } else {
+                        ","
+                    }
+                ),
+                indent + 2,
+            ));
+        }
+
+        output.push_str(&format_with_indentation("],\n", indent + 1));
+        output.push_str(&format_with_indentation(
+            &format!("field: \"{}\"\n", self.field),
+            indent + 1,
+        ));
+        output.push_str(&format_with_indentation("}", indent));
+        output
     }
 }
 
 impl<'a> Display for ProgramOwnedList<'a> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str("ProgramOwnedList {")?;
-        formatter.write_str(&format!("programs: [{} pubkeys], ", self.programs.len()))?;
-        formatter.write_str(&format!("field: \"{}\"", self.field))?;
-        formatter.write_str("}")
+        formatter.write_str(&self.to_text(0))
     }
 }

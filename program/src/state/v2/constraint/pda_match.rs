@@ -7,20 +7,31 @@ use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
+    state::v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
     state::RuleResult,
-    state_v2::{Condition, ConditionType, Str32, HEADER_SECTION},
     utils::assert_derivation,
 };
 
 const DEFAULT_PUBKEY: Pubkey = Pubkey::new_from_array([0u8; 32]);
 
+/// Constraint representing a test where a resulting PDA derivation of seeds must prove the
+/// account is a PDA.
+///
+/// This constraint requires `PayloadType` values of `PayloadType::Seeds`. The `field` values
+/// in the Rule are used to locate them in the `Payload`.  The seeds in the `Payload` and the
+/// program ID stored in the Rule are used to derive the PDA from the `Payload`.
 pub struct PDAMatch<'a> {
+    /// The program used for the PDA derivation. If a zeroed (default) pubkey is used then
+    /// the account owner is used.
     pub program: &'a Pubkey,
+    /// The field in the `Payload` to be compared when looking for the PDA.
     pub pda_field: &'a Str32,
+    /// The field in the `Payload` to be compared when looking for the seeds.
     pub seeds_field: &'a Str32,
 }
 
 impl<'a> PDAMatch<'a> {
+    /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         let program = bytemuck::from_bytes::<Pubkey>(&bytes[..PUBKEY_BYTES]);
         let mut cursor = PUBKEY_BYTES;
@@ -37,6 +48,7 @@ impl<'a> PDAMatch<'a> {
         })
     }
 
+    /// Serialize a constraint into a byte array.
     pub fn serialize(
         program: Pubkey,
         pda_field: String,
@@ -47,12 +59,12 @@ impl<'a> PDAMatch<'a> {
 
         // Header
         // - rule type
-        let rule_type = ConditionType::PDAMatch as u32;
+        let rule_type = ConstraintType::PDAMatch as u32;
         BorshSerialize::serialize(&rule_type, &mut data)?;
         // - length
         BorshSerialize::serialize(&length, &mut data)?;
 
-        // Assert
+        // Constraint
         // - program
         BorshSerialize::serialize(&program, &mut data)?;
         // - pda_field
@@ -68,9 +80,9 @@ impl<'a> PDAMatch<'a> {
     }
 }
 
-impl<'a> Condition<'a> for PDAMatch<'a> {
-    fn condition_type(&self) -> ConditionType {
-        ConditionType::PDAMatch
+impl<'a> Constraint<'a> for PDAMatch<'a> {
+    fn constraint_type(&self) -> ConstraintType {
+        ConstraintType::PDAMatch
     }
 
     fn validate(
@@ -119,19 +131,38 @@ impl<'a> Condition<'a> for PDAMatch<'a> {
             .collect::<Vec<&[u8]>>();
 
         if let Ok(_bump) = assert_derivation(program, account, &vec_of_slices) {
-            RuleResult::Success(self.condition_type().to_error())
+            RuleResult::Success(self.constraint_type().to_error())
         } else {
-            RuleResult::Failure(self.condition_type().to_error())
+            RuleResult::Failure(self.constraint_type().to_error())
         }
+    }
+
+    /// Return a string representation of the constraint.
+    fn to_text(&self, indent: usize) -> String {
+        let mut output = String::new();
+        output.push_str(&format!("{:1$}!", "PDAMatch {\n", indent));
+        output.push_str(&format!(
+            "{:1$}!",
+            &format!("program: \"{}\",\n", self.program),
+            indent * 2
+        ));
+        output.push_str(&format!(
+            "{:1$}!",
+            &format!("pda_field: \"{}\",\n", self.pda_field),
+            indent * 2
+        ));
+        output.push_str(&format!(
+            "{:1$}!",
+            &format!("seeds_field: \"{}\"\n", self.seeds_field),
+            indent * 2
+        ));
+        output.push_str(&format!("{:1$}!", "}", indent));
+        output
     }
 }
 
 impl<'a> Display for PDAMatch<'a> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str("PDAMatch {program: ")?;
-        formatter.write_str(&format!("\"{}\",", self.program))?;
-        formatter.write_str(&format!(" pda_field: \"{}\",", self.pda_field))?;
-        formatter.write_str(&format!(" seeds_field: \"{}\"", self.seeds_field))?;
-        formatter.write_str(" }")
+        formatter.write_str(&self.to_text(0))
     }
 }

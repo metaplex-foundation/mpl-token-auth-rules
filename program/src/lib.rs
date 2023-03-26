@@ -11,7 +11,6 @@ pub mod pda;
 pub mod processor;
 #[deny(missing_docs)]
 pub mod state;
-pub mod state_v2;
 pub mod types;
 #[deny(missing_docs)]
 pub mod utils;

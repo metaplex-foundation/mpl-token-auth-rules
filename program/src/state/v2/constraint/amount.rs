@@ -4,17 +4,26 @@ use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
-    state::RuleResult,
-    state_v2::{CompareOp, Condition, ConditionType, Str32, HEADER_SECTION, U64_BYTES},
+    state::v2::{Constraint, ConstraintType, Operator, Str32, HEADER_SECTION, U64_BYTES},
+    state::{format_with_indentation, RuleResult},
 };
 
+/// Constraint representing a comparison against the amount of tokens being transferred.
+///
+/// This constraint requires a `PayloadType` value of `PayloadType::Amount`. The `field`
+/// value in the Rule is used to locate the numerical amount in the payload to compare to
+/// the amount stored in the rule, using the comparison operator stored in the rule.
 pub struct Amount<'a> {
+    /// The amount to be compared against.
     pub amount: &'a u64,
+    /// The operator to be used in the comparison.
     pub operator: &'a u64,
+    /// The field the amount is stored in.
     pub field: &'a Str32,
 }
 
 impl<'a> Amount<'a> {
+    /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         // amount
         let amount = bytemuck::from_bytes::<u64>(&bytes[..U64_BYTES]);
@@ -34,19 +43,20 @@ impl<'a> Amount<'a> {
         })
     }
 
-    pub fn serialize(amount: u64, operator: CompareOp, field: String) -> std::io::Result<Vec<u8>> {
+    /// Serialize a constraint into a byte array.
+    pub fn serialize(amount: u64, operator: Operator, field: String) -> std::io::Result<Vec<u8>> {
         // length of the assert
         let length = (U64_BYTES + U64_BYTES + Str32::SIZE) as u32;
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 
         // Header
         // - rule type
-        let rule_type = ConditionType::Amount as u32;
+        let rule_type = ConstraintType::Amount as u32;
         BorshSerialize::serialize(&rule_type, &mut data)?;
         // - length
         BorshSerialize::serialize(&length, &mut data)?;
 
-        // Assert
+        // Constraint
         // - amount
         BorshSerialize::serialize(&amount, &mut data)?;
         // - operator
@@ -61,9 +71,9 @@ impl<'a> Amount<'a> {
     }
 }
 
-impl<'a> Condition<'a> for Amount<'a> {
-    fn condition_type(&self) -> ConditionType {
-        ConditionType::Amount
+impl<'a> Constraint<'a> for Amount<'a> {
+    fn constraint_type(&self) -> ConstraintType {
+        ConstraintType::Amount
     }
 
     fn validate(
@@ -78,15 +88,15 @@ impl<'a> Condition<'a> for Amount<'a> {
         _rule_authority: &Option<&solana_program::account_info::AccountInfo>,
     ) -> RuleResult {
         msg!("Validating Amount");
-        let condition_type = self.condition_type();
+        let condition_type = self.constraint_type();
 
         if let Some(payload_amount) = &payload.get_amount(&self.field.to_string()) {
-            let operator_fn = match CompareOp::try_from(*self.operator) {
-                Ok(CompareOp::Lt) => PartialOrd::lt,
-                Ok(CompareOp::LtEq) => PartialOrd::le,
-                Ok(CompareOp::Eq) => PartialEq::eq,
-                Ok(CompareOp::Gt) => PartialOrd::gt,
-                Ok(CompareOp::GtEq) => PartialOrd::ge,
+            let operator_fn = match Operator::try_from(*self.operator) {
+                Ok(Operator::Lt) => PartialOrd::lt,
+                Ok(Operator::LtEq) => PartialOrd::le,
+                Ok(Operator::Eq) => PartialEq::eq,
+                Ok(Operator::Gt) => PartialOrd::gt,
+                Ok(Operator::GtEq) => PartialOrd::ge,
                 // sanity check: the value is checked at creation
                 Err(_) => return RuleResult::Failure(condition_type.to_error()),
             };
@@ -100,14 +110,30 @@ impl<'a> Condition<'a> for Amount<'a> {
             RuleResult::Error(RuleSetError::MissingPayloadValue.into())
         }
     }
+
+    /// Return a string representation of the constraint.
+    fn to_text(&self, indent: usize) -> String {
+        let mut output = String::new();
+        output.push_str(&format_with_indentation("Amount {\n", indent));
+        output.push_str(&format_with_indentation(
+            &format!("amount: {},\n", self.amount),
+            indent + 1,
+        ));
+        output.push_str(&format_with_indentation(
+            &format!("operator: {},\n", self.operator),
+            indent + 1,
+        ));
+        output.push_str(&format_with_indentation(
+            &format!("field: \"{}\"\n", self.field),
+            indent + 1,
+        ));
+        output.push_str(&format_with_indentation("}", indent));
+        output
+    }
 }
 
 impl<'a> Display for Amount<'a> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str("Amount {")?;
-        formatter.write_str(&format!("amount: {}, ", self.amount))?;
-        formatter.write_str(&format!("operator: {}, ", self.operator))?;
-        formatter.write_str(&format!("field: \"{}\"", self.field))?;
-        formatter.write_str("}")
+        formatter.write_str(&self.to_text(0))
     }
 }

@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
-    state_v2::{ProgramOwnedList, RuleSetV2},
+    state::{ProgramOwnedList, RuleSetV2},
 };
 use solana_program_test::tokio;
 use solana_sdk::{

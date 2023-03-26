@@ -4,33 +4,44 @@ use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
+    state::v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
     state::RuleResult,
-    state_v2::{Condition, ConditionType, Str32, HEADER_SECTION},
 };
 
+/// Constraint that represents a test on whether a pubkey can be signed from a client and therefore
+/// is a true wallet account or not.
+///
+/// The details of this constraint are as follows: a wallet is defined as being both owned by the
+/// System Program and the address is on-curve.  The `field` value in the rule is used to
+/// locate the `Pubkey` in the payload that must be on-curve and for which the owner must be
+/// the System Program.  Note this same `Pubkey` account must also be provided to `Validate`
+/// via the `additional_rule_accounts` argument.  This is so that the `Pubkey`'s owner can be
+/// found from its `AccountInfo` struct.
 pub struct IsWallet<'a> {
+    /// The field in the `Payload` to be checked.
     pub field: &'a Str32,
 }
 
 impl<'a> IsWallet<'a> {
+    /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         let field = bytemuck::from_bytes::<Str32>(bytes);
-
         Ok(Self { field })
     }
 
+    /// Serialize a constraint into a byte array.
     pub fn serialize(field: String) -> std::io::Result<Vec<u8>> {
         let mut data = Vec::with_capacity(HEADER_SECTION + Str32::SIZE);
 
         // Header
         // - rule type
-        let rule_type = ConditionType::PubkeyMatch as u32;
+        let rule_type = ConstraintType::IsWallet as u32;
         BorshSerialize::serialize(&rule_type, &mut data)?;
         // - length
         let length = Str32::SIZE as u32;
         BorshSerialize::serialize(&length, &mut data)?;
 
-        // Assert
+        // Constraint
         // - field
         let mut field_bytes = [0u8; Str32::SIZE];
         field_bytes[..field.len()].copy_from_slice(field.as_bytes());
@@ -40,9 +51,9 @@ impl<'a> IsWallet<'a> {
     }
 }
 
-impl<'a> Condition<'a> for IsWallet<'a> {
-    fn condition_type(&self) -> ConditionType {
-        ConditionType::IsWallet
+impl<'a> Constraint<'a> for IsWallet<'a> {
+    fn constraint_type(&self) -> ConstraintType {
+        ConstraintType::IsWallet
     }
 
     fn validate(
@@ -81,12 +92,23 @@ impl<'a> Condition<'a> for IsWallet<'a> {
         RuleResult::Error(RuleSetError::NotImplemented.into())
         //(is_on_curve(key), self.to_error())
     }
+
+    /// Return a string representation of the constraint.
+    fn to_text(&self, indent: usize) -> String {
+        let mut output = String::new();
+        output.push_str(&format!("{:1$}!", "IsWallet {\n", indent));
+        output.push_str(&format!(
+            "{:1$}!",
+            &format!("field: \"{}\"\n", self.field),
+            indent * 2
+        ));
+        output.push_str(&format!("{:1$}!", "}", indent));
+        output
+    }
 }
 
 impl<'a> Display for IsWallet<'a> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str("IsWallet {")?;
-        formatter.write_str(&format!("field: \"{}\"", self.field))?;
-        formatter.write_str("}")
+        formatter.write_str(&self.to_text(0))
     }
 }

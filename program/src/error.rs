@@ -157,6 +157,10 @@ pub enum RuleSetError {
     /// 36 - Invalid compare operator
     #[error("Invalid compare operator")]
     InvalidCompareOp,
+
+    /// 37 - Invalid constraint type value
+    #[error("Invalid constraint type value")]
+    InvalidConstraintType,
 }
 
 impl PrintProgramError for RuleSetError {

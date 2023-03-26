@@ -4,11 +4,11 @@ pub mod utils;
 
 use borsh::BorshDeserialize;
 use mpl_token_auth_rules::{
+    state::{All, Amount, ProgramOwnedList, RuleSetV2},
     state::{
         CompareOp, Rule, RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1,
         RULE_SET_SERIALIZED_HEADER_LEN,
     },
-    state_v2::{All, Amount, ProgramOwnedList, RuleSetV2},
     types::LibVersion,
 };
 use rmp_serde::Serializer;
@@ -67,7 +67,7 @@ fn get_composed_rules_v2() -> ComposedRulesV2 {
 
     let nft_amount = Amount::serialize(
         1,
-        mpl_token_auth_rules::state_v2::CompareOp::Eq,
+        mpl_token_auth_rules::state::Operator::Eq,
         PayloadKey::Amount.to_string(),
     )
     .unwrap();

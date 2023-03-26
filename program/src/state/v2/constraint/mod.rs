@@ -1,3 +1,8 @@
+//! Collection of rule constraints.
+//!
+//! A constraint is a test that must be met in order for a rule to be valid. These are
+//! intended to be used in conjunction with the [`RuleV2`](super::RuleV2) type.
+
 mod additional_signer;
 mod all;
 mod amount;

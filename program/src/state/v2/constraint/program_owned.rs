@@ -8,17 +8,27 @@ use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
+    state::v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
     state::RuleResult,
-    state_v2::{Condition, ConditionType, Str32, HEADER_SECTION},
     utils::is_zeroed,
 };
 
+/// Constraint representing a test where a `Pubkey` must be owned by a given program.
+///
+/// This constraint requires a `PayloadType` value of `PayloadType::Pubkey`.  The `field` value in
+/// the rule is used to locate the `Pubkey` in the payload for which the owner must be the
+/// program in the rule.  Note this same `Pubkey` account must also be provided to `Validate`
+/// via the `additional_rule_accounts` argument.  This is so that the `Pubkey`'s owner can be
+/// found from its `AccountInfo` struct.
 pub struct ProgramOwned<'a> {
+    /// The program that must own the `Pubkey`.
     pub program: &'a Pubkey,
+    /// The field in the `Payload` to be compared.
     pub field: &'a Str32,
 }
 
 impl<'a> ProgramOwned<'a> {
+    /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         let (program, field) = bytes.split_at(PUBKEY_BYTES);
         let program = bytemuck::from_bytes::<Pubkey>(program);
@@ -27,18 +37,19 @@ impl<'a> ProgramOwned<'a> {
         Ok(Self { program, field })
     }
 
+    /// Serialize a constraint into a byte array.
     pub fn serialize(program: Pubkey, field: String) -> std::io::Result<Vec<u8>> {
         let length = (PUBKEY_BYTES + Str32::SIZE) as u32;
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 
         // Header
         // - rule type
-        let rule_type = ConditionType::PubkeyMatch as u32;
+        let rule_type = ConstraintType::ProgramOwned as u32;
         BorshSerialize::serialize(&rule_type, &mut data)?;
         // - length
         BorshSerialize::serialize(&length, &mut data)?;
 
-        // Assert
+        // Constraint
         // - program
         BorshSerialize::serialize(&program, &mut data)?;
         // - field
@@ -50,9 +61,9 @@ impl<'a> ProgramOwned<'a> {
     }
 }
 
-impl<'a> Condition<'a> for ProgramOwned<'a> {
-    fn condition_type(&self) -> ConditionType {
-        ConditionType::ProgramOwned
+impl<'a> Constraint<'a> for ProgramOwned<'a> {
+    fn constraint_type(&self) -> ConstraintType {
+        ConstraintType::ProgramOwned
     }
 
     fn validate(
@@ -88,23 +99,38 @@ impl<'a> Condition<'a> for ProgramOwned<'a> {
                 }
 
                 // Account must have nonzero data to count as program-owned.
-                return RuleResult::Error(self.condition_type().to_error());
+                return RuleResult::Error(self.constraint_type().to_error());
             } else if *account.owner == *self.program {
-                return RuleResult::Success(self.condition_type().to_error());
+                return RuleResult::Success(self.constraint_type().to_error());
             }
         } else {
             return RuleResult::Error(RuleSetError::MissingAccount.into());
         }
 
-        RuleResult::Failure(self.condition_type().to_error())
+        RuleResult::Failure(self.constraint_type().to_error())
+    }
+
+    /// Return a string representation of the constraint.
+    fn to_text(&self, indent: usize) -> String {
+        let mut output = String::new();
+        output.push_str(&format!("{:1$}!", "ProgramOwned {\n", indent));
+        output.push_str(&format!(
+            "{:1$}!",
+            &format!("program: \"{}\",\n", self.program),
+            indent * 2
+        ));
+        output.push_str(&format!(
+            "{:1$}!",
+            &format!("field: {},\n", self.field),
+            indent * 2
+        ));
+        output.push_str(&format!("{:1$}!", "}", indent));
+        output
     }
 }
 
 impl<'a> Display for ProgramOwned<'a> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str("ProgramOwned {program: \"")?;
-        formatter.write_str(&format!("{}\",", self.program))?;
-        formatter.write_str(&format!("field: \"{}\"", self.field))?;
-        formatter.write_str("}")
+        formatter.write_str(&self.to_text(0))
     }
 }

@@ -7,33 +7,41 @@ use std::fmt::Display;
 
 use crate::{
     error::RuleSetError,
+    state::v2::{Constraint, ConstraintType, HEADER_SECTION},
     state::RuleResult,
-    state_v2::{Condition, ConditionType, HEADER_SECTION},
 };
 
+/// Constraint representing the requirement that An additional signer must be present.
+///
+/// This constraint does not require any `Payload` values, but the additional signer account
+/// must be provided to `Validate` via the `additional_rule_accounts` argument so that whether
+/// it is a signer can be retrieved from its `AccountInfo` struct.
 pub struct AdditionalSigner<'a> {
+    /// The public key that must have also signed the transaction.
     pub account: &'a Pubkey,
 }
 
 impl<'a> AdditionalSigner<'a> {
+    /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         let account = bytemuck::from_bytes::<Pubkey>(bytes);
 
         Ok(Self { account })
     }
 
+    /// Serialize a constraint into a byte array.
     pub fn serialize(account: Pubkey) -> std::io::Result<Vec<u8>> {
         let mut data = Vec::with_capacity(HEADER_SECTION + PUBKEY_BYTES);
 
         // Header
         // - rule type
-        let rule_type = ConditionType::AdditionalSigner as u32;
+        let rule_type = ConstraintType::AdditionalSigner as u32;
         BorshSerialize::serialize(&rule_type, &mut data)?;
         // - length
         let length = PUBKEY_BYTES as u32;
         BorshSerialize::serialize(&length, &mut data)?;
 
-        // Assert
+        // Constraint
         // - rule
         BorshSerialize::serialize(&account, &mut data)?;
 
@@ -41,9 +49,9 @@ impl<'a> AdditionalSigner<'a> {
     }
 }
 
-impl<'a> Condition<'a> for AdditionalSigner<'a> {
-    fn condition_type(&self) -> ConditionType {
-        ConditionType::AdditionalSigner
+impl<'a> Constraint<'a> for AdditionalSigner<'a> {
+    fn constraint_type(&self) -> ConstraintType {
+        ConstraintType::AdditionalSigner
     }
 
     fn validate(
@@ -61,20 +69,31 @@ impl<'a> Condition<'a> for AdditionalSigner<'a> {
 
         if let Some(signer) = accounts.get(self.account) {
             if signer.is_signer {
-                RuleResult::Success(self.condition_type().to_error())
+                RuleResult::Success(self.constraint_type().to_error())
             } else {
-                RuleResult::Failure(self.condition_type().to_error())
+                RuleResult::Failure(self.constraint_type().to_error())
             }
         } else {
             RuleResult::Error(RuleSetError::MissingAccount.into())
         }
     }
+
+    /// Return a string representation of the constraint.
+    fn to_text(&self, indent: usize) -> String {
+        let mut output = String::new();
+        output.push_str(&format!("{:1$}!", "AdditionalSigner {\n", indent));
+        output.push_str(&format!(
+            "{:1$}!",
+            &format!("account: \"{}\"\n", self.account),
+            indent * 2
+        ));
+        output.push_str(&format!("{:1$}!", "}", indent));
+        output
+    }
 }
 
 impl<'a> Display for AdditionalSigner<'a> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str("AdditionalSigner {account: [")?;
-        formatter.write_str(&format!("{}", self.account))?;
-        formatter.write_str("]}")
+        formatter.write_str(&self.to_text(0))
     }
 }

@@ -7,7 +7,7 @@ use solana_program::{
     pubkey::{Pubkey, PUBKEY_BYTES},
 };
 
-use super::{Condition, ConditionType, RuleV2, Str32, U64_BYTES};
+use super::{format_with_indentation, Constraint, ConstraintType, RuleV2, Str32, U64_BYTES};
 use crate::{error::RuleSetError, types::LibVersion};
 
 /// The struct containing all Rule Set data, most importantly the map of operations to `Rules`.
@@ -31,18 +31,22 @@ pub struct RuleSetV2<'a> {
 }
 
 impl<'a> RuleSetV2<'a> {
+    /// Returns the lib version of the rule set.
     pub fn lib_version(&self) -> u8 {
         (self.header[0] & 0x000000ff) as u8
     }
 
+    /// Returns the name of the rule set.
     pub fn name(&self) -> String {
         self.rule_set_name.to_string()
     }
 
+    /// Returns the number of rules in the rule set.
     pub fn size(&self) -> u32 {
         self.header[1]
     }
 
+    /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         // header
         let header = bytemuck::from_bytes::<[u32; 2]>(&bytes[..U64_BYTES]);
@@ -85,6 +89,7 @@ impl<'a> RuleSetV2<'a> {
         })
     }
 
+    /// Serialize a `RuleSetV2` into a byte array.
     pub fn serialize(
         owner: Pubkey,
         name: &str,
@@ -136,10 +141,11 @@ impl<'a> RuleSetV2<'a> {
 
     /// Retrieve the `Rule` tree for a given `Operation`.
     pub fn get(&self, operation: String) -> Option<&RuleV2<'a>> {
-        let bytes = operation.as_bytes();
+        let mut bytes = [0u8; Str32::SIZE];
+        bytes[..operation.len()].copy_from_slice(operation.as_bytes());
 
         for (i, operation) in self.operations.iter().enumerate() {
-            if sol_memcmp(&operation.value, bytes, bytes.len()) == 0 {
+            if sol_memcmp(&operation.value, &bytes, bytes.len()) == 0 {
                 return Some(&self.rules[i]);
             }
         }
@@ -153,8 +159,8 @@ impl<'a> RuleSetV2<'a> {
 
         match rule {
             Some(rule) => {
-                match rule.condition_type() {
-                    ConditionType::Namespace => {
+                match rule.constraint_type() {
+                    ConstraintType::Namespace => {
                         // Check for a ':' namespace separator. If it exists try to operation namespace to see if
                         // a fallback exists. E.g. 'transfer:owner' will check for a fallback for 'transfer'.
                         // If it doesn't exist then fail.
@@ -171,31 +177,53 @@ impl<'a> RuleSetV2<'a> {
             None => Err(RuleSetError::OperationNotFound.into()),
         }
     }
+
+    /// Return a string representation of the constraint.
+    pub fn to_text(&self, indent: usize) -> String {
+        let mut output = String::new();
+        output.push_str(&format!("{:>1$}", "RuleSet {\n", indent));
+        output.push_str(&format_with_indentation(
+            &format!("name: \"{}\",\n", self.name()),
+            indent + 1,
+        ));
+        output.push_str(&format_with_indentation(
+            &format!("owner: \"{}\",\n", self.owner),
+            indent + 1,
+        ));
+        output.push_str(&format_with_indentation(
+            &format!("lib_version: {},\n", self.lib_version()),
+            indent + 1,
+        ));
+        output.push_str(&format_with_indentation("operations: [\n", indent + 1));
+
+        for i in 0..self.size() {
+            output.push_str(&format_with_indentation(
+                &format!("\"{}\": {{\n", self.operations[i as usize]),
+                indent + 2,
+            ));
+            output.push_str(&format!("{}\n", self.rules[i as usize].to_text(indent + 3)));
+            output.push_str(&format_with_indentation(
+                &format!("}}{}\n", if i + 1 == self.size() { "" } else { "," }),
+                indent + 2,
+            ));
+        }
+
+        output.push_str(&format_with_indentation("]\n", indent + 1));
+        output.push_str(&format_with_indentation("}", indent));
+        output
+    }
 }
 
 impl<'a> Display for RuleSetV2<'a> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&format!("RuleSet: {} {{", self.rule_set_name))?;
-        formatter.write_str("operations: [")?;
-
-        for i in 0..self.size() {
-            if i > 0 {
-                formatter.write_str(", ")?;
-            }
-            formatter.write_str(&format!(
-                "\"{}\": {:}",
-                self.operations[i as usize], self.rules[i as usize]
-            ))?;
-        }
-
-        formatter.write_str("]}")
+        formatter.write_str(&self.to_text(0))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{
-        state_v2::{Amount, CompareOp, ProgramOwnedList, RuleSetV2},
+        state::v2::{Amount, Operator, ProgramOwnedList, RuleSetV2},
         types::LibVersion,
     };
     use solana_program::pubkey::Pubkey;
@@ -203,7 +231,7 @@ mod tests {
     #[test]
     fn test_create_amount() {
         // amount rule
-        let amount = Amount::serialize(1, CompareOp::Eq, String::from("Destination")).unwrap();
+        let amount = Amount::serialize(1, Operator::Eq, String::from("Destination")).unwrap();
 
         // program owned rule
         let programs = &[Pubkey::default(), Pubkey::default()];

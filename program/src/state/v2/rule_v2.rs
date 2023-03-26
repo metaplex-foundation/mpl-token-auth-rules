@@ -2,33 +2,43 @@ use bytemuck::{Pod, Zeroable};
 use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
 use std::{collections::HashMap, fmt::Display};
 
-use super::{All, Amount, Any, Condition, ConditionType, ProgramOwnedList};
+use super::{All, Amount, Any, Constraint, ConstraintType, ProgramOwnedList, U64_BYTES};
 use crate::{error::RuleSetError, payload::Payload, state::RuleResult, types::Assertable};
 
-// Size of the header section.
-pub const HEADER_SECTION: usize = 8;
+/// Size (in bytes) of the header section.
+pub const HEADER_SECTION: usize = U64_BYTES;
 
+/// Struct representing a 'RuleV2'.
+///
+/// A rule is a combination of a header and a constraint.
 pub struct RuleV2<'a> {
+    /// Header of the rule.
     pub header: &'a Header,
-    pub data: Box<dyn Condition<'a> + 'a>,
+    /// Constraint represented by the rule.
+    pub data: Box<dyn Constraint<'a> + 'a>,
 }
 
 impl<'a> RuleV2<'a> {
+    /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         let (header, data) = bytes.split_at(HEADER_SECTION);
         let header = bytemuck::from_bytes::<Header>(header);
 
-        let condition_type = header.condition_type();
+        let condition_type = header.constraint_type();
         let length = header.length();
 
         let data = match condition_type {
-            ConditionType::Amount => {
-                Box::new(Amount::from_bytes(&data[..length])?) as Box<dyn Condition>
+            ConstraintType::Amount => {
+                Box::new(Amount::from_bytes(&data[..length])?) as Box<dyn Constraint>
             }
-            ConditionType::Any => Box::new(Any::from_bytes(&data[..length])?) as Box<dyn Condition>,
-            ConditionType::All => Box::new(All::from_bytes(&data[..length])?) as Box<dyn Condition>,
-            ConditionType::ProgramOwnedList => {
-                Box::new(ProgramOwnedList::from_bytes(&data[..length])?) as Box<dyn Condition>
+            ConstraintType::Any => {
+                Box::new(Any::from_bytes(&data[..length])?) as Box<dyn Constraint>
+            }
+            ConstraintType::All => {
+                Box::new(All::from_bytes(&data[..length])?) as Box<dyn Constraint>
+            }
+            ConstraintType::ProgramOwnedList => {
+                Box::new(ProgramOwnedList::from_bytes(&data[..length])?) as Box<dyn Constraint>
             }
             _ => unimplemented!("condition type not implemented"),
         };
@@ -36,6 +46,7 @@ impl<'a> RuleV2<'a> {
         Ok(Self { header, data })
     }
 
+    /// Length (in bytes) of the serialized rule.
     pub fn length(&self) -> usize {
         HEADER_SECTION + self.header.length()
     }
@@ -66,9 +77,9 @@ impl<'a> Assertable<'a> for RuleV2<'a> {
     }
 }
 
-impl<'a> Condition<'a> for RuleV2<'a> {
-    fn condition_type(&self) -> ConditionType {
-        self.data.condition_type()
+impl<'a> Constraint<'a> for RuleV2<'a> {
+    fn constraint_type(&self) -> ConstraintType {
+        self.data.constraint_type()
     }
 
     fn validate(
@@ -90,25 +101,34 @@ impl<'a> Condition<'a> for RuleV2<'a> {
             rule_authority,
         )
     }
+
+    /// Return a string representation of the constraint.
+    fn to_text(&self, indent: usize) -> String {
+        self.data.to_text(indent)
+    }
 }
 
 impl<'a> Display for RuleV2<'a> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_fmt(format_args!("{}", self.data))
+        formatter.write_str(&self.to_text(0))
     }
 }
 
+/// Header for the rule.
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 pub struct Header {
+    /// Header data.
     pub data: [u32; 2],
 }
 
 impl Header {
-    pub fn condition_type(&self) -> ConditionType {
-        ConditionType::try_from(self.data[0]).unwrap()
+    /// Returns the type of the constraint.
+    pub fn constraint_type(&self) -> ConstraintType {
+        ConstraintType::try_from(self.data[0]).unwrap()
     }
 
+    /// Returns the length of the data section.
     pub fn length(&self) -> usize {
         self.data[1] as usize
     }
@@ -117,12 +137,12 @@ impl Header {
 #[cfg(test)]
 mod tests {
     use super::RuleV2;
-    use crate::state_v2::{Amount, Any, CompareOp, ProgramOwnedList, Str32};
+    use crate::state::v2::{Amount, Any, Operator, ProgramOwnedList, Str32};
     use solana_program::pubkey::Pubkey;
 
     #[test]
     fn test_create_amount() {
-        let amount = Amount::serialize(1, CompareOp::Eq, String::from("Destination")).unwrap();
+        let amount = Amount::serialize(1, Operator::Eq, String::from("Destination")).unwrap();
 
         // loads the data using bytemuck
 
