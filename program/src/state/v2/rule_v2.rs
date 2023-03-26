@@ -2,11 +2,27 @@ use bytemuck::{Pod, Zeroable};
 use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
 use std::collections::HashMap;
 
-use super::{All, Amount, Any, Constraint, ConstraintType, ProgramOwnedList, U64_BYTES};
-use crate::{error::RuleSetError, payload::Payload, state::RuleResult, types::Assertable};
+use crate::{
+    error::RuleSetError,
+    payload::Payload,
+    state::{constraint::*, Constraint, ConstraintType, RuleResult, U64_BYTES},
+    types::Assertable,
+};
 
 /// Size (in bytes) of the header section.
 pub const HEADER_SECTION: usize = U64_BYTES;
+
+macro_rules! constraint_from_bytes {
+    ( $constraint_type:ident, $slice:expr, $( $available:ident ),+ $(,)? ) => {
+        match $constraint_type {
+            $(
+                $crate::state::ConstraintType::$available => {
+                    Box::new($available::from_bytes(&$slice)?) as Box<dyn Constraint>
+                }
+            )+
+        }
+    };
+}
 
 /// Struct representing a 'RuleV2'.
 ///
@@ -15,7 +31,7 @@ pub struct RuleV2<'a> {
     /// Header of the rule.
     pub header: &'a Header,
     /// Constraint represented by the rule.
-    pub data: Box<dyn Constraint<'a> + 'a>,
+    pub constraint: Box<dyn Constraint<'a> + 'a>,
 }
 
 impl<'a> RuleV2<'a> {
@@ -24,26 +40,31 @@ impl<'a> RuleV2<'a> {
         let (header, data) = bytes.split_at(HEADER_SECTION);
         let header = bytemuck::from_bytes::<Header>(header);
 
-        let condition_type = header.constraint_type();
+        let constraint_type = header.constraint_type();
         let length = header.length();
 
-        let data = match condition_type {
-            ConstraintType::Amount => {
-                Box::new(Amount::from_bytes(&data[..length])?) as Box<dyn Constraint>
-            }
-            ConstraintType::Any => {
-                Box::new(Any::from_bytes(&data[..length])?) as Box<dyn Constraint>
-            }
-            ConstraintType::All => {
-                Box::new(All::from_bytes(&data[..length])?) as Box<dyn Constraint>
-            }
-            ConstraintType::ProgramOwnedList => {
-                Box::new(ProgramOwnedList::from_bytes(&data[..length])?) as Box<dyn Constraint>
-            }
-            _ => unimplemented!("condition type not implemented"),
-        };
+        let constraint = constraint_from_bytes!(
+            constraint_type,
+            data[..length],
+            AdditionalSigner,
+            All,
+            Amount,
+            Any,
+            Frequency,
+            IsWallet,
+            Namespace,
+            Not,
+            Pass,
+            PDAMatch,
+            ProgramOwnedList,
+            ProgramOwnedTree,
+            ProgramOwned,
+            PubkeyListMatch,
+            PubkeyMatch,
+            PubkeyTreeMatch
+        );
 
-        Ok(Self { header, data })
+        Ok(Self { header, constraint })
     }
 
     /// Length (in bytes) of the serialized rule.
@@ -61,7 +82,7 @@ impl<'a> Assertable<'a> for RuleV2<'a> {
         rule_set_state_pda: &Option<&AccountInfo>,
         rule_authority: &Option<&AccountInfo>,
     ) -> ProgramResult {
-        let result = self.data.validate(
+        let result = self.constraint.validate(
             accounts,
             payload,
             update_rule_state,
@@ -79,7 +100,7 @@ impl<'a> Assertable<'a> for RuleV2<'a> {
 
 impl<'a> Constraint<'a> for RuleV2<'a> {
     fn constraint_type(&self) -> ConstraintType {
-        self.data.constraint_type()
+        self.constraint.constraint_type()
     }
 
     fn validate(
@@ -93,7 +114,7 @@ impl<'a> Constraint<'a> for RuleV2<'a> {
         rule_set_state_pda: &Option<&solana_program::account_info::AccountInfo>,
         rule_authority: &Option<&solana_program::account_info::AccountInfo>,
     ) -> RuleResult {
-        self.data.validate(
+        self.constraint.validate(
             accounts,
             payload,
             update_rule_state,
