@@ -13,32 +13,32 @@ use solana_sdk::{signature::Signer, signer::keypair::Keypair};
 use utils::{program_test, Operation, PayloadKey};
 
 #[tokio::test]
-async fn test_less_than_amount() {
+async fn test_less_than_amount_v2() {
     parametric_amount_check(Operator::Lt, 100, 100, 99).await;
 }
 
 #[tokio::test]
-async fn test_less_than_or_equal_to_amount() {
+async fn test_less_than_or_equal_to_amount_v2() {
     parametric_amount_check(Operator::LtEq, 100, 101, 100).await;
 }
 
 #[tokio::test]
-async fn equal_to_amount_fail_less_than() {
+async fn equal_to_amount_fail_less_than_v2() {
     parametric_amount_check(Operator::Eq, 100, 99, 100).await;
 }
 
 #[tokio::test]
-async fn equal_to_amount_fail_greater_than() {
+async fn equal_to_amount_fail_greater_than_v2() {
     parametric_amount_check(Operator::Eq, 100, 101, 100).await;
 }
 
 #[tokio::test]
-async fn test_greater_than_or_equal_to_amount() {
+async fn test_greater_than_or_equal_to_amount_v2() {
     parametric_amount_check(Operator::GtEq, 100, 99, 100).await;
 }
 
 #[tokio::test]
-async fn test_greater_than_amount() {
+async fn test_greater_than_amount_v2() {
     parametric_amount_check(Operator::Gt, 100, 100, 101).await;
 }
 

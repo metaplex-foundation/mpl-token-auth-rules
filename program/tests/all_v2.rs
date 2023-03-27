@@ -14,7 +14,7 @@ use solana_sdk::{signature::Signer, signer::keypair::Keypair};
 use utils::{program_test, Operation, PayloadKey};
 
 #[tokio::test]
-async fn test_all() {
+async fn test_all_v2() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------

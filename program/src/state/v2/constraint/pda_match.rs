@@ -52,7 +52,7 @@ impl<'a> PDAMatch<'a> {
 
     /// Serialize a constraint into a byte array.
     pub fn serialize(
-        program: Pubkey,
+        program: Option<Pubkey>,
         pda_field: String,
         seeds_field: String,
     ) -> std::io::Result<Vec<u8>> {
@@ -68,6 +68,7 @@ impl<'a> PDAMatch<'a> {
 
         // Constraint
         // - program
+        let program = program.unwrap_or(DEFAULT_PUBKEY);
         BorshSerialize::serialize(&program, &mut data)?;
         // - pda_field
         let mut field_bytes = [0u8; Str32::SIZE];

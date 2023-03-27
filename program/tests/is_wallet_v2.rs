@@ -3,23 +3,24 @@
 pub mod utils;
 
 use mpl_token_auth_rules::{
+    error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
-    payload::Payload,
-    state::{Pass, RuleSetV2},
+    payload::{Payload, PayloadType},
+    state::{IsWallet, RuleSetV2},
 };
 use solana_program_test::tokio;
-use solana_sdk::{signature::Signer, signer::keypair::Keypair};
-use utils::{program_test, Operation};
+use solana_sdk::{instruction::AccountMeta, signature::Signer, signer::keypair::Keypair};
+use utils::{program_test, Operation, PayloadKey};
 
 #[tokio::test]
-async fn test_pass_v2() {
+async fn is_wallet_v2() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------
     // Create RuleSet
     // --------------------------------
-    // Create a Pass Rule.
-    let pass_rule = Pass::serialize().unwrap();
+    // Create a Rule.
+    let rule = IsWallet::serialize(PayloadKey::Source.to_string()).unwrap();
 
     // Create a RuleSet.
     let rule_set = RuleSetV2::serialize(
@@ -29,7 +30,7 @@ async fn test_pass_v2() {
             scenario: utils::TransferScenario::Holder,
         }
         .to_string()],
-        &[&pass_rule],
+        &[&rule],
     )
     .unwrap();
 
@@ -39,28 +40,40 @@ async fn test_pass_v2() {
             .await;
 
     // --------------------------------
-    // Validate pass
+    // Validate not implemented
+    // (this will become pass later)
     // --------------------------------
+    // Keypair to check.
+    let wallet = Keypair::new();
+
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
+
+    let payload = Payload::from([(
+        PayloadKey::Source.to_string(),
+        PayloadType::Pubkey(wallet.pubkey()),
+    )]);
 
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .additional_rule_accounts(vec![])
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(wallet.pubkey(), false)])
         .build(ValidateArgs::V1 {
             operation: Operation::Transfer {
                 scenario: utils::TransferScenario::Holder,
             }
             .to_string(),
-            payload: Payload::default(),
+            payload,
             update_rule_state: false,
             rule_set_revision: None,
         })
         .unwrap()
         .instruction();
 
-    // Validate Transfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    // Fail to validate Transfer operation.
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+
+    // Check that error is what we expect.
+    assert_custom_error!(err, RuleSetError::NotImplemented);
 }

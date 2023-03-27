@@ -19,7 +19,7 @@ use utils::{
 };
 
 #[tokio::test]
-async fn program_owned_tree() {
+async fn program_owned_tree_v2() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------

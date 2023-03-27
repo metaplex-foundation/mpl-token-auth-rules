@@ -16,7 +16,7 @@ use solana_sdk::{
 use utils::{create_associated_token_account, create_mint, program_test, Operation, PayloadKey};
 
 #[tokio::test]
-async fn program_owned() {
+async fn program_owned_v2() {
     let mut context = program_test().start_with_context().await;
 
     // --------------------------------
