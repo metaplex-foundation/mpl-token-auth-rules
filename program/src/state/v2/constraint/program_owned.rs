@@ -7,8 +7,11 @@ use solana_program::{
 
 use crate::{
     error::RuleSetError,
-    state::v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
     state::RuleResult,
+    state::{
+        try_from_bytes,
+        v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
+    },
     utils::is_zeroed,
 };
 
@@ -29,9 +32,8 @@ pub struct ProgramOwned<'a> {
 impl<'a> ProgramOwned<'a> {
     /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
-        let (program, field) = bytes.split_at(PUBKEY_BYTES);
-        let program = bytemuck::from_bytes::<Pubkey>(program);
-        let field = bytemuck::from_bytes::<Str32>(field);
+        let program = try_from_bytes::<Pubkey>(0, PUBKEY_BYTES, bytes)?;
+        let field = try_from_bytes::<Str32>(PUBKEY_BYTES, Str32::SIZE, bytes)?;
 
         Ok(Self { program, field })
     }

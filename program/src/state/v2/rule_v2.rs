@@ -9,6 +9,8 @@ use crate::{
     types::Assertable,
 };
 
+use super::try_from_bytes;
+
 /// Size (in bytes) of the header section.
 pub const HEADER_SECTION: usize = U64_BYTES;
 
@@ -17,9 +19,10 @@ macro_rules! constraint_from_bytes {
         match $constraint_type {
             $(
                 $crate::state::ConstraintType::$available => {
-                    Box::new($available::from_bytes(&$slice)?) as Box<dyn Constraint>
+                    Box::new($available::from_bytes($slice)?) as Box<dyn Constraint>
                 }
             )+
+            _ => return Err(RuleSetError::InvalidConstraintType),
         }
     };
 }
@@ -38,14 +41,14 @@ impl<'a> RuleV2<'a> {
     /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         let (header, data) = bytes.split_at(HEADER_SECTION);
-        let header = bytemuck::from_bytes::<Header>(header);
+        let header = try_from_bytes::<Header>(0, HEADER_SECTION, header)?;
 
         let constraint_type = header.constraint_type();
         let length = header.length();
 
         let constraint = constraint_from_bytes!(
             constraint_type,
-            data[..length],
+            &data[..length],
             AdditionalSigner,
             All,
             Amount,

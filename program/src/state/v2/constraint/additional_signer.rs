@@ -7,7 +7,7 @@ use solana_program::{
 use crate::{
     error::RuleSetError,
     state::v2::{Constraint, ConstraintType, HEADER_SECTION},
-    state::RuleResult,
+    state::{try_from_bytes, RuleResult},
 };
 
 /// Constraint representing the requirement that An additional signer must be present.
@@ -23,7 +23,7 @@ pub struct AdditionalSigner<'a> {
 impl<'a> AdditionalSigner<'a> {
     /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
-        let account = bytemuck::from_bytes::<Pubkey>(bytes);
+        let account = try_from_bytes::<Pubkey>(0, PUBKEY_BYTES, bytes)?;
         Ok(Self { account })
     }
 

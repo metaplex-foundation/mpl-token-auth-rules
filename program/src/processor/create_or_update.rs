@@ -63,7 +63,7 @@ fn create_or_update_v1(
                     *rule_set.owner,
                 )
             } else {
-                return Err(RuleSetError::MessagePackDeserializationError.into());
+                return Err(RuleSetError::DeserializationError.into());
             }
         }
         None => {
@@ -80,7 +80,7 @@ fn create_or_update_v1(
                     *rule_set.owner,
                 )
             } else {
-                return Err(RuleSetError::MessagePackDeserializationError.into());
+                return Err(RuleSetError::DeserializationError.into());
             }
         }
     };

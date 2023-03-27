@@ -1,11 +1,12 @@
 use borsh::BorshSerialize;
 use solana_program::{
+    msg,
     program_error::ProgramError,
     program_memory::sol_memcmp,
     pubkey::{Pubkey, PUBKEY_BYTES},
 };
 
-use super::{Constraint, ConstraintType, RuleV2, Str32, U64_BYTES};
+use super::{try_cast_slice, try_from_bytes, Constraint, ConstraintType, RuleV2, Str32, U64_BYTES};
 use crate::{error::RuleSetError, types::LibVersion};
 
 /// The struct containing all Rule Set data, most importantly the map of operations to `Rules`.
@@ -47,15 +48,15 @@ impl<'a> RuleSetV2<'a> {
     /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         // header
-        let header = bytemuck::from_bytes::<[u32; 2]>(&bytes[..U64_BYTES]);
+        let header = try_from_bytes::<[u32; 2]>(0, U64_BYTES, bytes)?;
         let mut cursor = U64_BYTES;
 
         // owner
-        let owner = bytemuck::from_bytes::<Pubkey>(&bytes[cursor..cursor + PUBKEY_BYTES]);
+        let owner = try_from_bytes::<Pubkey>(cursor, PUBKEY_BYTES, bytes)?;
         cursor += PUBKEY_BYTES;
 
         // name
-        let rule_set_name = bytemuck::from_bytes::<Str32>(&bytes[cursor..cursor + Str32::SIZE]);
+        let rule_set_name = try_from_bytes::<Str32>(cursor, Str32::SIZE, bytes)?;
         cursor += Str32::SIZE;
 
         // number of operations and rules
@@ -66,7 +67,14 @@ impl<'a> RuleSetV2<'a> {
             + Str32::SIZE
                 .checked_mul(size)
                 .ok_or(RuleSetError::NumericalOverflow)?;
-        let operations = bytemuck::cast_slice(&bytes[cursor..slice_end]);
+
+        // sanity check: make sure we got the correct slice size
+        if slice_end > bytes.len() {
+            msg!("Invalid slice end: {} > {}", slice_end, bytes.len());
+            return Err(RuleSetError::DeserializationError);
+        }
+
+        let operations = try_cast_slice(&bytes[cursor..slice_end])?;
         cursor = slice_end;
 
         // rules

@@ -6,8 +6,11 @@ use solana_program::{
 
 use crate::{
     error::RuleSetError,
-    state::v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
-    state::RuleResult,
+    state::{
+        try_cast_slice,
+        v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
+    },
+    state::{try_from_bytes, RuleResult},
 };
 
 /// Constraint representing a test where a `Pubkey` must be in the list of `Pubkey`s.
@@ -25,9 +28,8 @@ pub struct PubkeyListMatch<'a> {
 impl<'a> PubkeyListMatch<'a> {
     /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
-        let (field, pubkeys) = bytes.split_at(Str32::SIZE);
-        let field = bytemuck::from_bytes::<Str32>(field);
-        let pubkeys = bytemuck::cast_slice(pubkeys);
+        let field = try_from_bytes::<Str32>(0, Str32::SIZE, bytes)?;
+        let pubkeys = try_cast_slice(&bytes[Str32::SIZE..])?;
 
         Ok(Self { field, pubkeys })
     }
@@ -49,7 +51,7 @@ impl<'a> PubkeyListMatch<'a> {
         let mut field_bytes = [0u8; Str32::SIZE];
         field_bytes[..field.len()].copy_from_slice(field.as_bytes());
         BorshSerialize::serialize(&field_bytes, &mut data)?;
-        // - programs
+        // - pubkeys
         pubkeys.iter().for_each(|x| {
             BorshSerialize::serialize(x, &mut data).unwrap();
         });

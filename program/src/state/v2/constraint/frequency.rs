@@ -7,7 +7,7 @@ use solana_program::{
 use crate::{
     error::RuleSetError,
     state::v2::{Constraint, ConstraintType, HEADER_SECTION},
-    state::RuleResult,
+    state::{try_from_bytes, RuleResult},
 };
 
 /// Constraint representing a comparison based on time between operations.
@@ -24,7 +24,7 @@ pub struct Frequency<'a> {
 impl<'a> Frequency<'a> {
     /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
-        let authority = bytemuck::from_bytes::<Pubkey>(bytes);
+        let authority = try_from_bytes::<Pubkey>(0, PUBKEY_BYTES, bytes)?;
         Ok(Self { authority })
     }
 

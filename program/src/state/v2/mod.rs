@@ -6,14 +6,47 @@ pub use constraint::*;
 pub use rule_set_v2::*;
 pub use rule_v2::*;
 
-use bytemuck::{Pod, Zeroable};
-use solana_program::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
+use bytemuck::{AnyBitPattern, NoUninit, Pod, Zeroable};
+use solana_program::{account_info::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
 use std::{collections::HashMap, fmt::Display};
 
 use crate::{error::RuleSetError, payload::Payload, state::RuleResult, types::MAX_NAME_LENGTH};
 
 /// Size (in bytes) of a u64 value.
 pub const U64_BYTES: usize = std::mem::size_of::<u64>();
+
+/// Re-interprets `&[u8]` as `&T`, mapping any 'PodCastError' to 'RuleSetError'.
+pub(crate) fn try_from_bytes<T: AnyBitPattern>(
+    start: usize,
+    length: usize,
+    bytes: &[u8],
+) -> Result<&T, RuleSetError> {
+    if start + length > bytes.len() {
+        msg!(
+            "Invalid range: start + length > bytes.len() ({} + {} > {})",
+            start,
+            length,
+            bytes.len()
+        );
+        return Err(RuleSetError::DeserializationError);
+    }
+
+    bytemuck::try_from_bytes::<T>(&bytes[start..start + length]).map_err(|error| {
+        msg!("{}", error);
+        RuleSetError::DeserializationError
+    })
+}
+
+/// Try to convert `&[A]` into `&[B]` (possibly with a change in length), mapping
+/// 'PodCastError' to 'RuleSetError'.
+pub(crate) fn try_cast_slice<A: NoUninit, B: AnyBitPattern>(
+    bytes: &[A],
+) -> Result<&[B], RuleSetError> {
+    bytemuck::try_cast_slice(bytes).map_err(|error| {
+        msg!("{}", error);
+        RuleSetError::DeserializationError
+    })
+}
 
 /// Struct representing a 32 byte string.
 #[repr(C)]
@@ -61,8 +94,10 @@ pub trait Constraint<'a> {
 #[derive(Clone, Copy)]
 /// The struct containing every type of Rule and its associated data.
 pub enum ConstraintType {
+    /// Indicates that the contraint is uninitialized.
+    Uninitialized,
     /// An additional signer must be present.
-    AdditionalSigner = 1,
+    AdditionalSigner,
     /// Group AND, where every rule contained must pass.
     All,
     /// Comparison against the amount of tokens being transferred.
@@ -101,30 +136,31 @@ impl ConstraintType {
     /// Convert the rule to a corresponding error resulting from the rule failure.
     pub fn to_error(&self) -> ProgramError {
         match self {
-            ConstraintType::All
-            | ConstraintType::Any
-            | ConstraintType::Pass
-            | ConstraintType::Namespace
-            | ConstraintType::Not => RuleSetError::UnexpectedRuleSetFailure.into(),
-            ConstraintType::ProgramOwnedList => RuleSetError::ProgramOwnedListCheckFailed.into(),
-            ConstraintType::Amount => RuleSetError::AmountCheckFailed.into(),
+            ConstraintType::Uninitialized => RuleSetError::InvalidConstraintType.into(),
             ConstraintType::AdditionalSigner { .. } => {
                 RuleSetError::AdditionalSignerCheckFailed.into()
             }
-            ConstraintType::PubkeyMatch { .. } => RuleSetError::PubkeyMatchCheckFailed.into(),
-            ConstraintType::PubkeyListMatch { .. } => {
-                RuleSetError::PubkeyListMatchCheckFailed.into()
-            }
-            ConstraintType::PubkeyTreeMatch { .. } => {
-                RuleSetError::PubkeyTreeMatchCheckFailed.into()
-            }
+            ConstraintType::All
+            | ConstraintType::Any
+            | ConstraintType::Namespace
+            | ConstraintType::Not
+            | ConstraintType::Pass => RuleSetError::UnexpectedRuleSetFailure.into(),
+            ConstraintType::Amount => RuleSetError::AmountCheckFailed.into(),
+            ConstraintType::Frequency { .. } => RuleSetError::FrequencyCheckFailed.into(),
+            ConstraintType::IsWallet { .. } => RuleSetError::IsWalletCheckFailed.into(),
             ConstraintType::PDAMatch { .. } => RuleSetError::PDAMatchCheckFailed.into(),
-            ConstraintType::ProgramOwned { .. } => RuleSetError::ProgramOwnedCheckFailed.into(),
+            ConstraintType::ProgramOwnedList => RuleSetError::ProgramOwnedListCheckFailed.into(),
             ConstraintType::ProgramOwnedTree { .. } => {
                 RuleSetError::ProgramOwnedTreeCheckFailed.into()
             }
-            ConstraintType::Frequency { .. } => RuleSetError::FrequencyCheckFailed.into(),
-            ConstraintType::IsWallet { .. } => RuleSetError::IsWalletCheckFailed.into(),
+            ConstraintType::ProgramOwned { .. } => RuleSetError::ProgramOwnedCheckFailed.into(),
+            ConstraintType::PubkeyListMatch { .. } => {
+                RuleSetError::PubkeyListMatchCheckFailed.into()
+            }
+            ConstraintType::PubkeyMatch { .. } => RuleSetError::PubkeyMatchCheckFailed.into(),
+            ConstraintType::PubkeyTreeMatch { .. } => {
+                RuleSetError::PubkeyTreeMatchCheckFailed.into()
+            }
         }
     }
 }
@@ -135,6 +171,7 @@ impl TryFrom<u32> for ConstraintType {
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
+            0 => Ok(ConstraintType::Uninitialized),
             1 => Ok(ConstraintType::AdditionalSigner),
             2 => Ok(ConstraintType::All),
             3 => Ok(ConstraintType::Amount),

@@ -6,8 +6,11 @@ use solana_program::{
 
 use crate::{
     error::RuleSetError,
-    state::v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
     state::RuleResult,
+    state::{
+        try_from_bytes,
+        v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
+    },
     utils::assert_derivation,
 };
 
@@ -32,13 +35,13 @@ pub struct PDAMatch<'a> {
 impl<'a> PDAMatch<'a> {
     /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
-        let program = bytemuck::from_bytes::<Pubkey>(&bytes[..PUBKEY_BYTES]);
+        let program = try_from_bytes::<Pubkey>(0, PUBKEY_BYTES, bytes)?;
         let mut cursor = PUBKEY_BYTES;
 
-        let pda_field = bytemuck::from_bytes::<Str32>(&bytes[cursor..cursor + Str32::SIZE]);
+        let pda_field = try_from_bytes::<Str32>(cursor, Str32::SIZE, bytes)?;
         cursor += Str32::SIZE;
 
-        let seeds_field = bytemuck::from_bytes::<Str32>(&bytes[cursor..cursor + Str32::SIZE]);
+        let seeds_field = try_from_bytes::<Str32>(cursor, Str32::SIZE, bytes)?;
 
         Ok(Self {
             program,

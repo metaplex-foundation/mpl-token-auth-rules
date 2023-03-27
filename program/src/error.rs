@@ -161,6 +161,10 @@ pub enum RuleSetError {
     /// 37 - Invalid constraint type value
     #[error("Invalid constraint type value")]
     InvalidConstraintType,
+
+    /// 38 - Deserialization error
+    #[error("Deserialization error")]
+    DeserializationError,
 }
 
 impl PrintProgramError for RuleSetError {

@@ -147,7 +147,7 @@ async fn create_rule_set_empty_buffer_fails() {
         .expect_err("Creation should fail");
 
     // Check that error is what we expect.
-    assert_custom_error!(err, RuleSetError::MessagePackDeserializationError);
+    assert_custom_error!(err, RuleSetError::DeserializationError);
 }
 
 #[tokio::test]
@@ -252,7 +252,7 @@ async fn create_rule_set_partial_buffer_fails() {
         .expect_err("Creation should fail");
 
     // Check that error is what we expect.
-    assert_custom_error!(err, RuleSetError::MessagePackDeserializationError);
+    assert_custom_error!(err, RuleSetError::DeserializationError);
 }
 
 #[tokio::test]
@@ -294,7 +294,7 @@ async fn create_rule_set_empty_rule_set_fails() {
         .expect_err("Creation should fail");
 
     // Check that error is what we expect.
-    assert_custom_error!(err, RuleSetError::MessagePackDeserializationError);
+    assert_custom_error!(err, RuleSetError::DeserializationError);
 }
 
 #[tokio::test]

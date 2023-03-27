@@ -4,7 +4,7 @@ use solana_program::{msg, system_program};
 use crate::{
     error::RuleSetError,
     state::v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
-    state::RuleResult,
+    state::{try_from_bytes, RuleResult},
 };
 
 /// Constraint that represents a test on whether a pubkey can be signed from a client and therefore
@@ -24,7 +24,7 @@ pub struct IsWallet<'a> {
 impl<'a> IsWallet<'a> {
     /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
-        let field = bytemuck::from_bytes::<Str32>(bytes);
+        let field = try_from_bytes::<Str32>(0, Str32::SIZE, bytes)?;
         Ok(Self { field })
     }
 

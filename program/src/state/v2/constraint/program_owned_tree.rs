@@ -3,8 +3,11 @@ use solana_program::{msg, program_error::ProgramError, pubkey::PUBKEY_BYTES};
 
 use crate::{
     error::RuleSetError,
-    state::v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
     state::RuleResult,
+    state::{
+        try_from_bytes,
+        v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
+    },
     utils::{compute_merkle_root, is_zeroed},
 };
 
@@ -29,13 +32,13 @@ pub struct ProgramOwnedTree<'a> {
 impl<'a> ProgramOwnedTree<'a> {
     /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
-        let pubkey_field = bytemuck::from_bytes::<Str32>(&bytes[..Str32::SIZE]);
+        let pubkey_field = try_from_bytes::<Str32>(0, Str32::SIZE, bytes)?;
         let mut cursor = Str32::SIZE;
 
-        let proof_field = bytemuck::from_bytes::<Str32>(&bytes[cursor..cursor + Str32::SIZE]);
+        let proof_field = try_from_bytes::<Str32>(cursor, Str32::SIZE, bytes)?;
         cursor += Str32::SIZE;
 
-        let root = bytemuck::from_bytes::<[u8; 32]>(&bytes[cursor..]);
+        let root = try_from_bytes::<[u8; 32]>(cursor, PUBKEY_BYTES, bytes)?;
 
         Ok(Self {
             pubkey_field,

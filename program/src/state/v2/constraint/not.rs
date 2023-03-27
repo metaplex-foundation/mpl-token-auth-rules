@@ -17,7 +17,6 @@ impl<'a> Not<'a> {
     /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         let rule = RuleV2::from_bytes(bytes)?;
-
         Ok(Self { rule })
     }
 

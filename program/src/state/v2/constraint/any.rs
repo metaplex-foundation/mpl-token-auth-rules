@@ -4,7 +4,7 @@ use solana_program::{msg, program_error::ProgramError};
 use crate::{
     error::RuleSetError,
     state::v2::{Constraint, ConstraintType, RuleV2, HEADER_SECTION, U64_BYTES},
-    state::RuleResult,
+    state::{try_from_bytes, RuleResult},
 };
 
 /// Constraint representing a group OR, where at least one rule contained must pass.
@@ -18,14 +18,13 @@ pub struct Any<'a> {
 impl<'a> Any<'a> {
     /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
-        let (size, data) = bytes.split_at(U64_BYTES);
-        let size = bytemuck::from_bytes::<u64>(size);
+        let size = try_from_bytes::<u64>(0, U64_BYTES, bytes)?;
 
         let mut rules = Vec::with_capacity(*size as usize);
-        let mut offset = 0;
+        let mut offset = U64_BYTES;
 
         for _ in 0..*size {
-            let rule = RuleV2::from_bytes(&data[offset..])?;
+            let rule = RuleV2::from_bytes(&bytes[offset..])?;
             offset += rule.length();
             rules.push(rule);
         }

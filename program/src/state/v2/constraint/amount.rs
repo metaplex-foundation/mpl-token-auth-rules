@@ -4,7 +4,7 @@ use solana_program::msg;
 use crate::{
     error::RuleSetError,
     state::v2::{Constraint, ConstraintType, Operator, Str32, HEADER_SECTION, U64_BYTES},
-    state::RuleResult,
+    state::{try_from_bytes, RuleResult},
 };
 
 /// Constraint representing a comparison against the amount of tokens being transferred.
@@ -25,15 +25,15 @@ impl<'a> Amount<'a> {
     /// Deserialize a constraint from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         // amount
-        let amount = bytemuck::from_bytes::<u64>(&bytes[..U64_BYTES]);
+        let amount = try_from_bytes::<u64>(0, U64_BYTES, bytes)?;
         let mut cursor = U64_BYTES;
 
         // operator
-        let operator = bytemuck::from_bytes::<u64>(&bytes[cursor..cursor + U64_BYTES]);
+        let operator = try_from_bytes::<u64>(cursor, U64_BYTES, bytes)?;
         cursor += U64_BYTES;
 
         // field
-        let field = bytemuck::from_bytes::<Str32>(&bytes[cursor..cursor + Str32::SIZE]);
+        let field = try_from_bytes::<Str32>(cursor, Str32::SIZE, bytes)?;
 
         Ok(Self {
             amount,
