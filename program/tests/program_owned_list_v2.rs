@@ -42,7 +42,7 @@ async fn program_owned_list_v2() {
             scenario: utils::TransferScenario::Holder,
         }
         .to_string()],
-        &[rule],
+        &[&rule],
     )
     .unwrap();
 

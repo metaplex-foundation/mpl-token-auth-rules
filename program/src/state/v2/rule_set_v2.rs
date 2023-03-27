@@ -100,7 +100,7 @@ impl<'a> RuleSetV2<'a> {
         owner: Pubkey,
         name: &str,
         operations: &[String],
-        rules: &[Vec<u8>],
+        rules: &[&[u8]],
     ) -> std::io::Result<Vec<u8>> {
         // length of the rule set
         let length = U64_BYTES
@@ -210,7 +210,7 @@ mod tests {
             Pubkey::default(),
             "Royalties",
             &["deletage_transfer".to_string(), "transfer".to_string()],
-            &[amount, program_owned],
+            &[&amount, &program_owned],
         )
         .unwrap();
 

@@ -147,7 +147,7 @@ fn get_royalty_rule_set_v2(owner: Pubkey) -> Vec<u8> {
     };
 
     operations.push(transfer_transfer_delegate_operation.to_string());
-    rules.push(composed_rules.transfer_rule);
+    rules.push(composed_rules.transfer_rule.as_slice());
 
     // --------------------------------
     // Setup metadata delegate operations
@@ -158,7 +158,7 @@ fn get_royalty_rule_set_v2(owner: Pubkey) -> Vec<u8> {
     };
 
     operations.push(metadata_delegate_authority_operation.to_string());
-    rules.push(composed_rules.delegate_rule);
+    rules.push(composed_rules.delegate_rule.as_slice());
 
     // --------------------------------
     // Setup token delegate operations
@@ -169,7 +169,7 @@ fn get_royalty_rule_set_v2(owner: Pubkey) -> Vec<u8> {
     };
 
     operations.push(token_delegate_locked_transfer_operation.to_string());
-    rules.push(composed_rules.advanced_delegate_rule);
+    rules.push(&composed_rules.advanced_delegate_rule);
 
     RuleSetV2::serialize(owner, RULE_SET_NAME, operations.as_slice(), &rules).unwrap()
 }

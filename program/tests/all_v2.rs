@@ -6,55 +6,27 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
-    state::{Amount, Operator, RuleSetV2},
+    state::{AdditionalSigner, All, Amount, Operator, RuleSetV2},
 };
+use solana_program::instruction::AccountMeta;
 use solana_program_test::tokio;
 use solana_sdk::{signature::Signer, signer::keypair::Keypair};
 use utils::{program_test, Operation, PayloadKey};
 
 #[tokio::test]
-async fn test_less_than_amount() {
-    parametric_amount_check(Operator::Lt, 100, 100, 99).await;
-}
-
-#[tokio::test]
-async fn test_less_than_or_equal_to_amount() {
-    parametric_amount_check(Operator::LtEq, 100, 101, 100).await;
-}
-
-#[tokio::test]
-async fn equal_to_amount_fail_less_than() {
-    parametric_amount_check(Operator::Eq, 100, 99, 100).await;
-}
-
-#[tokio::test]
-async fn equal_to_amount_fail_greater_than() {
-    parametric_amount_check(Operator::Eq, 100, 101, 100).await;
-}
-
-#[tokio::test]
-async fn test_greater_than_or_equal_to_amount() {
-    parametric_amount_check(Operator::GtEq, 100, 99, 100).await;
-}
-
-#[tokio::test]
-async fn test_greater_than_amount() {
-    parametric_amount_check(Operator::Gt, 100, 100, 101).await;
-}
-
-async fn parametric_amount_check(
-    operator: Operator,
-    amount: u64,
-    fail_amount: u64,
-    pass_amount: u64,
-) {
+async fn test_all() {
     let mut context = program_test().start_with_context().await;
+
     // --------------------------------
     // Create RuleSet
     // --------------------------------
-    // Create a rule.
-    let less_than_amount_check =
-        Amount::serialize(amount, operator, PayloadKey::Amount.to_string()).unwrap();
+    // Create some rules.
+    let second_signer = Keypair::new();
+
+    let adtl_signer = AdditionalSigner::serialize(second_signer.pubkey()).unwrap();
+    let amount_check = Amount::serialize(5, Operator::Lt, PayloadKey::Amount.to_string()).unwrap();
+
+    let overall_rule = All::serialize(&[&adtl_signer, &amount_check]).unwrap();
 
     // Create a RuleSet.
     let rule_set = RuleSetV2::serialize(
@@ -64,7 +36,7 @@ async fn parametric_amount_check(
             scenario: utils::TransferScenario::Holder,
         }
         .to_string()],
-        &[&less_than_amount_check],
+        &[&overall_rule],
     )
     .unwrap();
 
@@ -79,23 +51,23 @@ async fn parametric_amount_check(
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new().pubkey();
 
-    // Store a payload of data with an amount not allowed by the Amount Rule.
-    let payload = Payload::from([(
-        PayloadKey::Amount.to_string(),
-        PayloadType::Number(fail_amount),
-    )]);
+    // Store a payload of data with the WRONG amount.
+    let payload = Payload::from([(PayloadKey::Amount.to_string(), PayloadType::Number(5))]);
 
-    // Create a `validate` instruction.
+    // Create a `validate` instruction with the additional signer but sending WRONG amount.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .additional_rule_accounts(vec![])
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(
+            second_signer.pubkey(),
+            true,
+        )])
         .build(ValidateArgs::V1 {
             operation: Operation::Transfer {
                 scenario: utils::TransferScenario::Holder,
             }
             .to_string(),
-            payload,
+            payload: payload.clone(),
             update_rule_state: false,
             rule_set_revision: None,
         })
@@ -103,25 +75,26 @@ async fn parametric_amount_check(
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    let err =
+        process_failing_validate_ix!(&mut context, validate_ix, vec![&second_signer], None).await;
 
-    // Check that error is what we expect.
+    // Check that error is what we expect.  In this case we expect the first failure to roll up.
     assert_custom_error!(err, RuleSetError::AmountCheckFailed);
 
     // --------------------------------
     // Validate pass
     // --------------------------------
-    // Store a payload of data with an amount allowed by the Amount Rule.
-    let payload = Payload::from([(
-        PayloadKey::Amount.to_string(),
-        PayloadType::Number(pass_amount),
-    )]);
+    // Store a payload of data with the CORRECT amount.
+    let payload = Payload::from([(PayloadKey::Amount.to_string(), PayloadType::Number(4))]);
 
-    // Create a `validate` instruction.
+    // Create a `validate` instruction with the additional signer AND sending CORRECT amount.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
         .mint(mint)
-        .additional_rule_accounts(vec![])
+        .additional_rule_accounts(vec![AccountMeta::new_readonly(
+            second_signer.pubkey(),
+            true,
+        )])
         .build(ValidateArgs::V1 {
             operation: Operation::Transfer {
                 scenario: utils::TransferScenario::Holder,
@@ -134,6 +107,6 @@ async fn parametric_amount_check(
         .unwrap()
         .instruction();
 
-    // Validate Transfer operation since because the Amount Rule was NOT'd.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    // Validate Transfer operation since both Rule conditions were true.
+    process_passing_validate_ix!(&mut context, validate_ix, vec![&second_signer], None).await;
 }
