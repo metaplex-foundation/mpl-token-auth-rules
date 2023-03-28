@@ -1,12 +1,10 @@
 // @ts-check
 'use strict';
 const path = require('path');
-
-const localDeployDir = path.join(__dirname, '..', '..', 'program', 'target', 'deploy');
 const { LOCALHOST, tmpLedgerDir } = require('@metaplex-foundation/amman');
 
 function localDeployPath(programName) {
-  return path.join(localDeployDir, `${programName}.so`);
+  return path.join(__dirname, 'test', `${programName}.so`);
 }
 
 const validator = {
