@@ -1,5 +1,5 @@
-import { RuleType } from './ruleType';
+import { RuleTypeV2 } from './ruleType';
 
-export type AnyRule = {
-  type: RuleType.Any;
+export type AnyRuleV2 = {
+  type: RuleTypeV2.Any;
 };

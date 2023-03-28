@@ -1,55 +1,55 @@
 import * as beet from '@metaplex-foundation/beet';
 import {
-  AdditionalSignerRule,
-  deserializeAdditionalSigner,
-  serializeAdditionalSigner,
+  AdditionalSignerRuleV2,
+  deserializeAdditionalSignerV2,
+  serializeAdditionalSignerV2,
 } from './additionalSigner';
-import { AllRule, deserializeAll, serializeAll } from './all';
-import { AnyRule } from './any';
-import { RuleType } from './ruleType';
+import { AllRuleV2, deserializeAllV2, serializeAllV2 } from './all';
+import { AnyRuleV2 as AnyRuleV2 } from './any';
+import { RuleTypeV2 } from './ruleType';
 
-export type Rule =
-  | AdditionalSignerRule
-  | AllRule
-  // | AmountRule
-  | AnyRule;
-// | FrequencyRule
-// | IsWalletRule
-// | NamespaceRule
-// | NotRule
-// | PassRule
-// | PDAMatchRule
-// | ProgramOwnedListRule
-// | ProgramOwnedTreeRule
-// | ProgramOwnedRule
-// | PubkeyListMatchRule
-// | PubkeyMatchRule
-// | PubkeyTreeMatchRule;
+export type RuleV2 =
+  | AdditionalSignerRuleV2
+  | AllRuleV2
+  // | AmountRuleV2
+  | AnyRuleV2;
+// | FrequencyRuleV2
+// | IsWalletRuleV2
+// | NamespaceRuleV2
+// | NotRuleV2
+// | PassRuleV2
+// | PDAMatchRuleV2
+// | ProgramOwnedListRuleV2
+// | ProgramOwnedTreeRuleV2
+// | ProgramOwnedRuleV2
+// | PubkeyListMatchRuleV2
+// | PubkeyMatchRuleV2
+// | PubkeyTreeMatchRuleV2;
 
-export const serializeRule = (rule: Rule): Buffer => {
+export const serializeRuleV2 = (rule: RuleV2): Buffer => {
   switch (rule.type) {
-    case RuleType.AdditionalSigner:
-      return serializeAdditionalSigner(rule);
-    case RuleType.All:
-      return serializeAll(rule);
+    case RuleTypeV2.AdditionalSigner:
+      return serializeAdditionalSignerV2(rule);
+    case RuleTypeV2.All:
+      return serializeAllV2(rule);
     default:
       throw new Error('Unknown rule type: ' + rule.type);
   }
 };
 
-export const deserializeRule = (buffer: Buffer, offset = 0): Rule => {
-  const type = beet.u32.read(buffer, offset) as RuleType;
+export const deserializeRuleV2 = (buffer: Buffer, offset = 0): RuleV2 => {
+  const type = beet.u32.read(buffer, offset) as RuleTypeV2;
   switch (type) {
-    case RuleType.AdditionalSigner:
-      return deserializeAdditionalSigner(buffer);
-    case RuleType.All:
-      return deserializeAll(buffer);
+    case RuleTypeV2.AdditionalSigner:
+      return deserializeAdditionalSignerV2(buffer);
+    case RuleTypeV2.All:
+      return deserializeAllV2(buffer);
     default:
       throw new Error('Unknown rule type: ' + type);
   }
 };
 
-export const serializeRuleHeader = (ruleType: RuleType, length: number): Buffer => {
+export const serializeRuleHeaderV2 = (ruleType: RuleTypeV2, length: number): Buffer => {
   const buffer = Buffer.alloc(8);
   beet.u32.write(buffer, 0, ruleType);
   beet.u32.write(buffer, 4, length);

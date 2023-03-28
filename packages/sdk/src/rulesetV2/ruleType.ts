@@ -1,4 +1,4 @@
-export enum RuleType {
+export enum RuleTypeV2 {
   Uninitialized,
   AdditionalSigner,
   All,

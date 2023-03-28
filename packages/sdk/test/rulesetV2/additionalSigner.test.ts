@@ -1,16 +1,16 @@
 import { Keypair } from '@solana/web3.js';
 import test from 'ava';
 import {
-  additionalSigner,
-  deserializeRule,
-  RuleType,
-  serializeRule,
+  additionalSignerV2,
+  deserializeRuleV2,
+  RuleTypeV2,
+  serializeRuleV2,
 } from '../../src/mpl-token-auth-rules';
 
 test('serialize', async (t) => {
   const publicKey = Keypair.generate().publicKey;
-  const rule = additionalSigner(publicKey);
-  const serializedRule = serializeRule(rule).toString('hex');
+  const rule = additionalSignerV2(publicKey);
+  const serializedRule = serializeRuleV2(rule).toString('hex');
   t.is(
     serializedRule,
     '01000000' + // Rule type
@@ -26,9 +26,9 @@ test('deserialize', async (t) => {
     '20000000' + // Rule length
     publicKey.toBuffer().toString('hex'); // Rule version
   const buffer = Buffer.from(hexBuffer, 'hex');
-  const rule = deserializeRule(buffer);
+  const rule = deserializeRuleV2(buffer);
   t.deepEqual(rule, {
-    type: RuleType.AdditionalSigner,
+    type: RuleTypeV2.AdditionalSigner,
     publicKey,
   });
 });
