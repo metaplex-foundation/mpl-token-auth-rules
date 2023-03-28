@@ -103,13 +103,9 @@ program
         let rulesetPDA = new PublicKey(address);
         let rulesetData = await connection.getAccountInfo(rulesetPDA);
         let data = rulesetData?.data as Buffer;
-        const [header, header_num] = ruleSetHeaderBeet.deserialize(data.slice(0, 9));
-        const [revmap, revmap_num] = ruleSetRevisionMapV1Beet.deserialize(data.slice(parseInt(header.revMapVersionLocation) + 1, data.length));
-        let latestRevision = parseInt(revmap.ruleSetRevisions[revmap.ruleSetRevisions.length - 1]);
-        let rulesetDecoded = decode(data.slice(latestRevision + 1, parseInt(header.revMapVersionLocation)));
-        // console.log(rulesetDecoded);
-        // console.log(JSON.stringify(rulesetDecoded, null, 2));
-        console.log(getLatestRuleSet(data));
+        let ruleset = getLatestRuleSet(data);
+        let rulesetDecoded = JSON.parse(ruleset);
+        console.log(JSON.stringify(rulesetDecoded, pubkey_replacer, 2));
     });
 
 
@@ -135,3 +131,10 @@ program
     .version("0.0.1")
     .description("CLI for controlling and managing RuleSets.")
     .parse(process.argv);
+
+function pubkey_replacer(key, value) {
+    if (Array.isArray(value) && value.length == 32) {
+        return new PublicKey(value).toString();
+    }
+    return value;
+}
