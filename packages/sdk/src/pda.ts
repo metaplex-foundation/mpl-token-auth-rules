@@ -8,6 +8,6 @@ export const findRuleSetPDA = async (payer: PublicKey, name: string) => {
   );
 };
 
-export const findRuleSetBufferPDA = async (payer: PublicKey, name: string) => {
+export const findRuleSetBufferPDA = async (payer: PublicKey) => {
   return await PublicKey.findProgramAddress([Buffer.from(PREFIX), payer.toBuffer()], PROGRAM_ID);
 };

@@ -16,7 +16,7 @@ export const additionalSigner = (publicKey: PublicKey): AdditionalSignerRule => 
 export const serializeAdditionalSigner = (rule: AdditionalSignerRule): Buffer => {
   const headerBuffer = serializeRuleHeader(RuleType.AdditionalSigner, 32);
   const buffer = Buffer.alloc(32);
-  beetSolana.publicKey.write(buffer, 8, rule.publicKey);
+  beetSolana.publicKey.write(buffer, 0, rule.publicKey);
   return Buffer.concat([headerBuffer, buffer]);
 };
 
