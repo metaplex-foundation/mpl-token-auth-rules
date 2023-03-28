@@ -19,7 +19,9 @@
     "fix:lint": "yarn lint --fix",
     "prettier": "prettier \"{src,test}/**/*.ts\" --check",
     "fix:prettier": "prettier --write src",
-    "fix": "yarn fix:lint && yarn fix:prettier"
+    "fix": "yarn fix:lint && yarn fix:prettier",
+    "amman:start": "amman start",
+    "amman:stop": "amman stop"
   },
   "files": [
     "/dist/src"
@@ -44,6 +46,7 @@
   },
   "devDependencies": {
     "@ava/typescript": "^3.0.1",
+    "@metaplex-foundation/amman": "^0.12.1",
     "@types/bn.js": "^5.1.1",
     "ava": "^5.1.0",
     "eslint": "^8.27.0",

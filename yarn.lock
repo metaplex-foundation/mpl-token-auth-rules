@@ -757,6 +757,7 @@ __metadata:
   resolution: "@metaplex-foundation/mpl-token-auth-rules@workspace:packages/sdk"
   dependencies:
     "@ava/typescript": ^3.0.1
+    "@metaplex-foundation/amman": ^0.12.1
     "@metaplex-foundation/beet": ^0.7.1
     "@metaplex-foundation/beet-solana": ^0.4.0
     "@metaplex-foundation/cusper": ^0.0.2
