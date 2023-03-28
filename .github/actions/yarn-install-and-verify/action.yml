@@ -39,6 +39,11 @@ runs:
       working-directory: ${{ inputs.working_dir }}
       shell: bash
 
+    - name: Run local validator
+      run: yarn amman:start
+      working-directory: ${{ inputs.working_dir }}
+      shell: bash
+
     - name: Build TypeScript
       run: yarn build
       working-directory: ${{ inputs.working_dir }}
