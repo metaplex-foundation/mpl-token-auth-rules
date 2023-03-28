@@ -751,6 +751,8 @@ __metadata:
     "@metaplex-foundation/cusper": ^0.0.2
     "@solana/spl-token": ^0.3.6
     "@solana/web3.js": ^1.66.2
+    "@types/bn.js": ^5.1.1
+    bn.js: ^5.2.1
     eslint: ^8.27.0
     rimraf: ^3.0.2
     supports-color: ^9.2.3
@@ -1104,6 +1106,15 @@ __metadata:
   version: 1.0.3
   resolution: "@tsconfig/node16@npm:1.0.3"
   checksum: 3a8b657dd047495b7ad23437d6afd20297ce90380ff0bdee93fc7d39a900dbd8d9e26e53ff6b465e7967ce2adf0b218782590ce9013285121e6a5928fbd6819f
+  languageName: node
+  linkType: hard
+
+"@types/bn.js@npm:^5.1.1":
+  version: 5.1.1
+  resolution: "@types/bn.js@npm:5.1.1"
+  dependencies:
+    "@types/node": "*"
+  checksum: e50ed2dd3abe997e047caf90e0352c71e54fc388679735217978b4ceb7e336e51477791b715f49fd77195ac26dd296c7bad08a3be9750e235f9b2e1edb1b51c2
   languageName: node
   linkType: hard
 
