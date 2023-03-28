@@ -21,13 +21,13 @@ export const serializeRuleSetV2 = (ruleSet: RuleSetV2): Buffer => {
   beet.u32.write(headerBuffer, 0, 2);
   beet.u32.write(headerBuffer, 4, ruleSize);
 
-  // Name.
-  const nameBuffer = Buffer.alloc(32);
-  nameBuffer.write(ruleSet.name);
-
   // Owner.
   const ownerBuffer = Buffer.alloc(32);
   beetSolana.publicKey.write(ownerBuffer, 0, ruleSet.owner);
+
+  // Name.
+  const nameBuffer = Buffer.alloc(32);
+  nameBuffer.write(ruleSet.name);
 
   // Operations.
   const operationsBuffer = Buffer.concat(
@@ -41,7 +41,7 @@ export const serializeRuleSetV2 = (ruleSet: RuleSetV2): Buffer => {
   // Rules.
   const rulesBuffer = serializeRulesV2(rules);
 
-  return Buffer.concat([headerBuffer, nameBuffer, ownerBuffer, operationsBuffer, rulesBuffer]);
+  return Buffer.concat([headerBuffer, ownerBuffer, nameBuffer, operationsBuffer, rulesBuffer]);
 };
 
 export const deserializeRuleSetV2 = (buffer: Buffer, offset = 0): RuleSetV2 => {
@@ -55,15 +55,15 @@ export const deserializeRuleSetV2 = (buffer: Buffer, offset = 0): RuleSetV2 => {
   const ruleSize = beet.u32.read(buffer, offset);
   offset += 4;
 
+  // Owner.
+  const owner = beetSolana.publicKey.read(buffer, offset);
+  offset += 32;
+
   // Name.
   const name = buffer
     .subarray(offset, offset + 32)
     .toString()
     .replace(/\u0000/g, '');
-  offset += 32;
-
-  // Owner.
-  const owner = beetSolana.publicKey.read(buffer, offset);
   offset += 32;
 
   // Operations.
