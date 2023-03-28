@@ -8,12 +8,12 @@ import {
 import type { bignum } from '@metaplex-foundation/beet';
 import { decode } from '@msgpack/msgpack';
 import { BN } from 'bn.js';
-import { deserializeRuleSetV2, RuleSetV2 } from './rulesetV2';
+import { deserializeRuleSetV2, RuleSetV2 } from './ruleSetV2';
 
 export * from './errors';
 export * from './generated';
 export * from './pda';
-export * from './rulesetV2';
+export * from './ruleSetV2';
 
 export const PREFIX = 'rule_set';
 

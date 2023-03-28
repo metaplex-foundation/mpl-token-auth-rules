@@ -8,7 +8,9 @@ inputs:
     description: Directory in which to perform the yarn tasks
     required: true
   skip_test:
-    description: If true, testing is skipped. This should be used when the tests are end-to-end and thus need a locally running test-validator with deployed Rust programs.
+    description:
+      If true, testing is skipped. This should be used when the tests are end-to-end and thus need a
+      locally running test-validator with deployed Rust programs.
     required: false
     default: false
 
@@ -20,7 +22,6 @@ runs:
         path: '**/node_modules'
         key: ${{ inputs.cache_id }}-${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 
-
     - name: Install and Build SDK
       run: |
         echo 'Install SDK: yarn install'
@@ -31,14 +32,14 @@ runs:
       shell: bash
 
     ##############
-    # Verify Contract 
+    # Verify Contract
     ##############
     - name: Install modules
       run: yarn install
       working-directory: ${{ inputs.working_dir }}
       shell: bash
 
-    - name: Build TypeScript 
+    - name: Build TypeScript
       run: yarn build
       working-directory: ${{ inputs.working_dir }}
       shell: bash
@@ -49,7 +50,7 @@ runs:
       working-directory: ${{ inputs.working_dir }}
       shell: bash
 
-    - name: Lint TypeScript 
+    - name: Lint TypeScript
       run: yarn lint
       working-directory: ${{ inputs.working_dir }}
       shell: bash
