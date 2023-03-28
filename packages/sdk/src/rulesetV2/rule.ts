@@ -1,4 +1,5 @@
 import * as beet from '@metaplex-foundation/beet';
+import BN from 'bn.js';
 import {
   AdditionalSignerRuleV2,
   deserializeAdditionalSignerV2,
@@ -37,6 +38,10 @@ export const serializeRuleV2 = (rule: RuleV2): Buffer => {
   }
 };
 
+export const serializeRulesV2 = (rules: RuleV2[]): Buffer => {
+  return Buffer.concat(rules.map(serializeRuleV2));
+};
+
 export const deserializeRuleV2 = (buffer: Buffer, offset = 0): RuleV2 => {
   const type = beet.u32.read(buffer, offset) as RuleTypeV2;
   switch (type) {
@@ -47,6 +52,19 @@ export const deserializeRuleV2 = (buffer: Buffer, offset = 0): RuleV2 => {
     default:
       throw new Error('Unknown rule type: ' + type);
   }
+};
+
+export const deserializeRulesV2 = (buffer: Buffer, size: number | BN, offset = 0): RuleV2[] => {
+  const rules: RuleV2[] = [];
+  const sizeAsNumber = new BN(size).toNumber();
+
+  for (let index = 0; index < sizeAsNumber; index++) {
+    const length = beet.u32.read(buffer, offset + 4);
+    rules.push(deserializeRuleV2(buffer, offset));
+    offset += 8 + length;
+  }
+
+  return rules;
 };
 
 export const serializeRuleHeaderV2 = (ruleType: RuleTypeV2, length: number): Buffer => {
