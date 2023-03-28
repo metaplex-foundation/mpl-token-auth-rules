@@ -46,9 +46,9 @@ export const deserializeRuleV2 = (buffer: Buffer, offset = 0): RuleV2 => {
   const type = beet.u32.read(buffer, offset) as RuleTypeV2;
   switch (type) {
     case RuleTypeV2.AdditionalSigner:
-      return deserializeAdditionalSignerV2(buffer);
+      return deserializeAdditionalSignerV2(buffer, offset);
     case RuleTypeV2.All:
-      return deserializeAllV2(buffer);
+      return deserializeAllV2(buffer, offset);
     default:
       throw new Error('Unknown rule type: ' + type);
   }
