@@ -48,41 +48,8 @@ fn create_or_update_v1(
 
     // Deserialize the `RuleSet`.
     let (rule_set_version, rule_set_name, owner) = match ctx.accounts.buffer_pda_info {
-        Some(account_info) => {
-            if let Ok(rule_set) = rmp_serde::from_slice::<RuleSetV1>(&(*account_info.data).borrow())
-            {
-                (
-                    LibVersion::try_from(rule_set.lib_version())?,
-                    rule_set.name().to_string(),
-                    *rule_set.owner(),
-                )
-            } else if let Ok(rule_set) = RuleSetV2::from_bytes(&(*account_info.data).borrow()) {
-                (
-                    LibVersion::try_from(rule_set.lib_version())?,
-                    rule_set.name(),
-                    *rule_set.owner,
-                )
-            } else {
-                return Err(RuleSetError::DeserializationError.into());
-            }
-        }
-        None => {
-            if let Ok(rule_set) = rmp_serde::from_slice::<RuleSetV1>(&serialized_rule_set) {
-                (
-                    LibVersion::try_from(rule_set.lib_version())?,
-                    rule_set.name().to_string(),
-                    *rule_set.owner(),
-                )
-            } else if let Ok(rule_set) = RuleSetV2::from_bytes(&serialized_rule_set) {
-                (
-                    LibVersion::try_from(rule_set.lib_version())?,
-                    rule_set.name(),
-                    *rule_set.owner,
-                )
-            } else {
-                return Err(RuleSetError::DeserializationError.into());
-            }
-        }
+        Some(account_info) => get_rule_set_info(&(*account_info.data).borrow())?,
+        None => get_rule_set_info(&serialized_rule_set)?,
     };
 
     // Check that the name is not too long.
@@ -141,9 +108,13 @@ fn create_or_update_v1(
                 .checked_rem(U64_BYTES)
                 .ok_or(RuleSetError::NumericalOverflow)?;
 
-            U64_BYTES
-                .checked_sub(delta)
-                .ok_or(RuleSetError::NumericalOverflow)?
+            if delta > 0 {
+                U64_BYTES
+                    .checked_sub(delta)
+                    .ok_or(RuleSetError::NumericalOverflow)?
+            } else {
+                0
+            }
         } else {
             0
         };
@@ -242,8 +213,27 @@ fn create_or_update_v1(
     Ok(())
 }
 
-// Write the `RuleSet` lib version, a serialized `RuleSet`, the revision map version,
-// a revision map, and a header to the `RuleSet` PDA.
+/// Returns the lib version, name, and owner of a rule set.
+fn get_rule_set_info(data: &[u8]) -> Result<(LibVersion, String, Pubkey), ProgramError> {
+    if let Ok(rule_set) = rmp_serde::from_slice::<RuleSetV1>(data) {
+        Ok((
+            LibVersion::try_from(rule_set.lib_version())?,
+            rule_set.name().to_string(),
+            *rule_set.owner(),
+        ))
+    } else if let Ok(rule_set) = RuleSetV2::from_bytes(data) {
+        Ok((
+            LibVersion::try_from(rule_set.lib_version())?,
+            rule_set.name(),
+            *rule_set.owner,
+        ))
+    } else {
+        Err(RuleSetError::DeserializationError.into())
+    }
+}
+
+/// Write the `RuleSet` lib version, a serialized `RuleSet`, the revision map version,
+/// a revision map, and a header to the `RuleSet` PDA.
 fn write_data_to_pda(
     rule_set_pda_info: &AccountInfo,
     starting_location: usize,
