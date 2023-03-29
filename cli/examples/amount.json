@@ -1,6 +1,5 @@
 [
     1,
-    "AmountRuleSet",
     [
       179,
       107,
@@ -35,6 +34,7 @@
       54,
       236
     ],
+    "AmountRuleSet",
     {
       "Transfer": {
         "Amount": [

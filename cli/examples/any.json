@@ -1,6 +1,5 @@
 [
     1,
-    "AnyRuleSet",
     [
       179,
       107,
@@ -35,6 +34,7 @@
       54,
       236
     ],
+    "AnyRuleSet",
     {
       "Transfer": {
         "Any": [
