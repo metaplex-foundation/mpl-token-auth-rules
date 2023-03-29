@@ -1,10 +1,9 @@
-use borsh::BorshSerialize;
 use solana_program::msg;
 
 use crate::{
     error::RuleSetError,
     state::v2::{Constraint, ConstraintType, RuleV2, HEADER_SECTION},
-    state::RuleResult,
+    state::{Header, RuleResult},
 };
 
 /// Constraint representing a negation, where the contained rule must fail.
@@ -25,12 +24,7 @@ impl<'a> Not<'a> {
         let mut data = Vec::with_capacity(HEADER_SECTION + rule.len());
 
         // Header
-        // - rule type
-        let rule_type = ConstraintType::Not as u32;
-        BorshSerialize::serialize(&rule_type, &mut data)?;
-        // - length
-        let length = rule.len() as u32;
-        BorshSerialize::serialize(&length, &mut data)?;
+        Header::serialize(ConstraintType::Not, rule.len() as u32, &mut data);
 
         // Constraint
         // - rule

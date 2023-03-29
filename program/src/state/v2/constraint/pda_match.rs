@@ -1,4 +1,3 @@
-use borsh::BorshSerialize;
 use solana_program::{
     msg,
     pubkey::{Pubkey, PUBKEY_BYTES},
@@ -10,6 +9,7 @@ use crate::{
     state::{
         try_from_bytes,
         v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
+        Header,
     },
     utils::assert_derivation,
 };
@@ -60,24 +60,20 @@ impl<'a> PDAMatch<'a> {
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 
         // Header
-        // - rule type
-        let rule_type = ConstraintType::PDAMatch as u32;
-        BorshSerialize::serialize(&rule_type, &mut data)?;
-        // - length
-        BorshSerialize::serialize(&length, &mut data)?;
+        Header::serialize(ConstraintType::PDAMatch, length, &mut data);
 
         // Constraint
         // - program
         let program = program.unwrap_or(DEFAULT_PUBKEY);
-        BorshSerialize::serialize(&program, &mut data)?;
+        data.extend(program.as_ref());
         // - pda_field
         let mut field_bytes = [0u8; Str32::SIZE];
         field_bytes[..pda_field.len()].copy_from_slice(pda_field.as_bytes());
-        BorshSerialize::serialize(&field_bytes, &mut data)?;
+        data.extend(field_bytes);
         // - seeds_field
         let mut field_bytes = [0u8; Str32::SIZE];
         field_bytes[..seeds_field.len()].copy_from_slice(seeds_field.as_bytes());
-        BorshSerialize::serialize(&field_bytes, &mut data)?;
+        data.extend(field_bytes);
 
         Ok(data)
     }

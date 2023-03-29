@@ -1,4 +1,3 @@
-use borsh::BorshSerialize;
 use solana_program::{
     msg,
     pubkey::{Pubkey, PUBKEY_BYTES},
@@ -6,8 +5,11 @@ use solana_program::{
 
 use crate::{
     error::RuleSetError,
-    state::v2::{Constraint, ConstraintType, HEADER_SECTION},
     state::{try_from_bytes, RuleResult},
+    state::{
+        v2::{Constraint, ConstraintType, HEADER_SECTION},
+        Header,
+    },
 };
 
 /// Constraint representing the requirement that An additional signer must be present.
@@ -32,16 +34,15 @@ impl<'a> AdditionalSigner<'a> {
         let mut data = Vec::with_capacity(HEADER_SECTION + PUBKEY_BYTES);
 
         // Header
-        // - rule type
-        let rule_type = ConstraintType::AdditionalSigner as u32;
-        BorshSerialize::serialize(&rule_type, &mut data)?;
-        // - length
-        let length = PUBKEY_BYTES as u32;
-        BorshSerialize::serialize(&length, &mut data)?;
+        Header::serialize(
+            ConstraintType::AdditionalSigner,
+            PUBKEY_BYTES as u32,
+            &mut data,
+        );
 
         // Constraint
         // - rule
-        BorshSerialize::serialize(&account, &mut data)?;
+        data.extend(account.as_ref());
 
         Ok(data)
     }

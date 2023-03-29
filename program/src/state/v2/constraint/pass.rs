@@ -1,10 +1,9 @@
-use borsh::BorshSerialize;
 use solana_program::msg;
 
 use crate::{
     error::RuleSetError,
     state::v2::{Constraint, ConstraintType, HEADER_SECTION},
-    state::RuleResult,
+    state::{Header, RuleResult},
 };
 
 /// Constraint representing an operation that always succeeds.
@@ -19,13 +18,8 @@ impl<'a> Pass {
     /// Serialize a constraint into a byte array.
     pub fn serialize() -> std::io::Result<Vec<u8>> {
         let mut data = Vec::with_capacity(HEADER_SECTION);
-
         // Header
-        // - rule type
-        let rule_type = ConstraintType::Pass as u32;
-        BorshSerialize::serialize(&rule_type, &mut data)?;
-        // - length
-        BorshSerialize::serialize(&0u32, &mut data)?;
+        Header::serialize(ConstraintType::Pass, 0, &mut data);
 
         Ok(data)
     }

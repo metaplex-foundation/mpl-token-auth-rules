@@ -14,6 +14,7 @@ use super::try_from_bytes;
 /// Size (in bytes) of the header section.
 pub const HEADER_SECTION: usize = U64_BYTES;
 
+/// Macro to automate the code required to deserialize a constraint from a byte array.
 macro_rules! constraint_from_bytes {
     ( $constraint_type:ident, $slice:expr, $( $available:ident ),+ $(,)? ) => {
         match $constraint_type {
@@ -144,6 +145,14 @@ impl Header {
     /// Returns the length of the data section.
     pub fn length(&self) -> usize {
         self.data[1] as usize
+    }
+
+    /// Serialize the header.
+    pub fn serialize(constraint_type: ConstraintType, length: u32, data: &mut Vec<u8>) {
+        // constraint type
+        data.extend(u32::to_le_bytes(constraint_type as u32));
+        // length
+        data.extend(u32::to_le_bytes(length));
     }
 }
 

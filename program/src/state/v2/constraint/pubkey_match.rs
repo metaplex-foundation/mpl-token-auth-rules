@@ -1,4 +1,3 @@
-use borsh::BorshSerialize;
 use solana_program::{
     msg,
     pubkey::{Pubkey, PUBKEY_BYTES},
@@ -6,8 +5,11 @@ use solana_program::{
 
 use crate::{
     error::RuleSetError,
-    state::v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
     state::{try_from_bytes, RuleResult},
+    state::{
+        v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
+        Header,
+    },
 };
 
 /// Constraint representing a direct comparison between `Pubkey`s.
@@ -37,19 +39,15 @@ impl<'a> PubkeyMatch<'a> {
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 
         // Header
-        // - rule type
-        let rule_type = ConstraintType::PubkeyMatch as u32;
-        BorshSerialize::serialize(&rule_type, &mut data)?;
-        // - length
-        BorshSerialize::serialize(&length, &mut data)?;
+        Header::serialize(ConstraintType::PubkeyMatch, length, &mut data);
 
         // Constraint
         // - pubkey
-        BorshSerialize::serialize(&pubkey, &mut data)?;
+        data.extend(pubkey.as_ref());
         // - field
         let mut field_bytes = [0u8; Str32::SIZE];
         field_bytes[..field.len()].copy_from_slice(field.as_bytes());
-        BorshSerialize::serialize(&field_bytes, &mut data)?;
+        data.extend(field_bytes);
 
         Ok(data)
     }

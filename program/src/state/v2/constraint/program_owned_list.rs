@@ -1,4 +1,3 @@
-use borsh::BorshSerialize;
 use solana_program::{
     msg,
     program_error::ProgramError,
@@ -11,6 +10,7 @@ use crate::{
     state::{
         try_cast_slice, try_from_bytes,
         v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
+        Header,
     },
     utils::is_zeroed,
 };
@@ -44,20 +44,16 @@ impl<'a> ProgramOwnedList<'a> {
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 
         // Header
-        // - rule type
-        let rule_type = ConstraintType::ProgramOwnedList as u32;
-        BorshSerialize::serialize(&rule_type, &mut data)?;
-        // - length
-        BorshSerialize::serialize(&length, &mut data)?;
+        Header::serialize(ConstraintType::ProgramOwnedList, length, &mut data);
 
         // Constraint
         // - field
         let mut field_bytes = [0u8; Str32::SIZE];
         field_bytes[..field.len()].copy_from_slice(field.as_bytes());
-        BorshSerialize::serialize(&field_bytes, &mut data)?;
+        data.extend(field_bytes);
         // - programs
-        programs.iter().for_each(|x| {
-            BorshSerialize::serialize(x, &mut data).unwrap();
+        programs.iter().for_each(|p| {
+            data.extend(p.as_ref());
         });
 
         Ok(data)

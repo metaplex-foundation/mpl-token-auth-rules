@@ -1,10 +1,12 @@
-use borsh::BorshSerialize;
 use solana_program::{msg, system_program};
 
 use crate::{
     error::RuleSetError,
-    state::v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
     state::{try_from_bytes, RuleResult},
+    state::{
+        v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
+        Header,
+    },
 };
 
 /// Constraint that represents a test on whether a pubkey can be signed from a client and therefore
@@ -33,18 +35,13 @@ impl<'a> IsWallet<'a> {
         let mut data = Vec::with_capacity(HEADER_SECTION + Str32::SIZE);
 
         // Header
-        // - rule type
-        let rule_type = ConstraintType::IsWallet as u32;
-        BorshSerialize::serialize(&rule_type, &mut data)?;
-        // - length
-        let length = Str32::SIZE as u32;
-        BorshSerialize::serialize(&length, &mut data)?;
+        Header::serialize(ConstraintType::IsWallet, Str32::SIZE as u32, &mut data);
 
         // Constraint
         // - field
         let mut field_bytes = [0u8; Str32::SIZE];
         field_bytes[..field.len()].copy_from_slice(field.as_bytes());
-        BorshSerialize::serialize(&field_bytes, &mut data)?;
+        data.extend(field_bytes);
 
         Ok(data)
     }

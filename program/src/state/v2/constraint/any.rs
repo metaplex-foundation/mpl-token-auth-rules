@@ -1,10 +1,12 @@
-use borsh::BorshSerialize;
 use solana_program::{msg, program_error::ProgramError};
 
 use crate::{
     error::RuleSetError,
-    state::v2::{Constraint, ConstraintType, RuleV2, HEADER_SECTION, U64_BYTES},
     state::{try_from_bytes, RuleResult},
+    state::{
+        v2::{Constraint, ConstraintType, RuleV2, HEADER_SECTION, U64_BYTES},
+        Header,
+    },
 };
 
 /// Constraint representing a group OR, where at least one rule contained must pass.
@@ -45,16 +47,11 @@ impl<'a> Any<'a> {
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 
         // Header
-        // - rule type
-        let rule_type = ConstraintType::Any as u32;
-        BorshSerialize::serialize(&rule_type, &mut data)?;
-        // - length
-        BorshSerialize::serialize(&length, &mut data)?;
+        Header::serialize(ConstraintType::Any, length, &mut data);
 
         // Constraint
         // - size
-        let size = rules.len() as u64;
-        BorshSerialize::serialize(&size, &mut data)?;
+        data.extend(u64::to_le_bytes(rules.len() as u64));
         // - rules
         rules.iter().for_each(|x| data.extend(x.iter()));
 

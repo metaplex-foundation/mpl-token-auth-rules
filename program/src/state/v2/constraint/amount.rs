@@ -1,10 +1,12 @@
-use borsh::BorshSerialize;
 use solana_program::msg;
 
 use crate::{
     error::RuleSetError,
-    state::v2::{Constraint, ConstraintType, Operator, Str32, HEADER_SECTION, U64_BYTES},
     state::{try_from_bytes, RuleResult},
+    state::{
+        v2::{Constraint, ConstraintType, Operator, Str32, HEADER_SECTION, U64_BYTES},
+        Header,
+    },
 };
 
 /// Constraint representing a comparison against the amount of tokens being transferred.
@@ -49,22 +51,17 @@ impl<'a> Amount<'a> {
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 
         // Header
-        // - rule type
-        let rule_type = ConstraintType::Amount as u32;
-        BorshSerialize::serialize(&rule_type, &mut data)?;
-        // - length
-        BorshSerialize::serialize(&length, &mut data)?;
+        Header::serialize(ConstraintType::Amount, length, &mut data);
 
         // Constraint
         // - amount
-        BorshSerialize::serialize(&amount, &mut data)?;
+        data.extend(u64::to_le_bytes(amount));
         // - operator
-        let operator = operator as u64;
-        BorshSerialize::serialize(&operator, &mut data)?;
+        data.extend(u64::to_le_bytes(operator as u64));
         // - field
         let mut field_bytes = [0u8; Str32::SIZE];
         field_bytes[..field.len()].copy_from_slice(field.as_bytes());
-        BorshSerialize::serialize(&field_bytes, &mut data)?;
+        data.extend(field_bytes);
 
         Ok(data)
     }

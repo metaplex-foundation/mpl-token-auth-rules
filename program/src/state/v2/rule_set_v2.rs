@@ -1,4 +1,3 @@
-use borsh::BorshSerialize;
 use solana_program::{
     msg,
     program_error::ProgramError,
@@ -69,7 +68,7 @@ impl<'a> RuleSetV2<'a> {
                 .ok_or(RuleSetError::NumericalOverflow)?;
 
         // sanity check: make sure we got the correct slice size
-        if slice_end > bytes.len() {
+        if (slice_end + 1) > bytes.len() {
             msg!("Invalid slice end: {} > {}", slice_end, bytes.len());
             return Err(RuleSetError::DeserializationError);
         }
@@ -116,27 +115,25 @@ impl<'a> RuleSetV2<'a> {
 
         let mut data = Vec::with_capacity(length);
 
-        // header
+        // header section
         // - lib version
-        let lib_version = u32::from_le_bytes([LibVersion::V2 as u8, 0, 0, 0]);
-        BorshSerialize::serialize(&lib_version, &mut data)?;
+        data.extend([LibVersion::V2 as u8, 0, 0, 0]);
         // - size
-        let size = operations.len() as u32;
-        BorshSerialize::serialize(&size, &mut data)?;
+        data.extend(u32::to_le_bytes(operations.len() as u32));
 
         // owner
-        BorshSerialize::serialize(&owner, &mut data)?;
+        data.extend(owner.as_ref());
 
         // name
         let mut field_bytes = [0u8; Str32::SIZE];
         field_bytes[..name.len()].copy_from_slice(name.as_bytes());
-        BorshSerialize::serialize(&field_bytes, &mut data)?;
+        data.extend(field_bytes);
 
         // operations
         operations.iter().for_each(|x| {
             let mut field_bytes = [0u8; Str32::SIZE];
             field_bytes[..x.len()].copy_from_slice(x.as_bytes());
-            BorshSerialize::serialize(&field_bytes, &mut data).unwrap();
+            data.extend(field_bytes);
         });
 
         // rules

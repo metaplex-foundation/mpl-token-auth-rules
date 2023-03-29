@@ -1,4 +1,3 @@
-use borsh::BorshSerialize;
 use solana_program::{msg, pubkey::PUBKEY_BYTES};
 
 use crate::{
@@ -7,6 +6,7 @@ use crate::{
     state::{
         try_from_bytes,
         v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
+        Header,
     },
     utils::compute_merkle_root,
 };
@@ -53,21 +53,17 @@ impl<'a> PubkeyTreeMatch<'a> {
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 
         // Header
-        // - rule type
-        let rule_type = ConstraintType::PubkeyTreeMatch as u32;
-        BorshSerialize::serialize(&rule_type, &mut data)?;
-        // - length
-        BorshSerialize::serialize(&length, &mut data)?;
+        Header::serialize(ConstraintType::PubkeyTreeMatch, length, &mut data);
 
         // Constraint
         // - pubkey_field
         let mut field_bytes = [0u8; Str32::SIZE];
         field_bytes[..pubkey_field.len()].copy_from_slice(pubkey_field.as_bytes());
-        BorshSerialize::serialize(&field_bytes, &mut data)?;
-        // - pubkey_field
+        data.extend(field_bytes);
+        // - proof_field
         let mut field_bytes = [0u8; Str32::SIZE];
         field_bytes[..proof_field.len()].copy_from_slice(proof_field.as_bytes());
-        BorshSerialize::serialize(&field_bytes, &mut data)?;
+        data.extend(field_bytes);
         // - root
         data.extend_from_slice(root);
 

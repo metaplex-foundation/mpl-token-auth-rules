@@ -1,4 +1,3 @@
-use borsh::BorshSerialize;
 use solana_program::{
     msg,
     pubkey::{Pubkey, PUBKEY_BYTES},
@@ -6,8 +5,11 @@ use solana_program::{
 
 use crate::{
     error::RuleSetError,
-    state::v2::{Constraint, ConstraintType, HEADER_SECTION},
     state::{try_from_bytes, RuleResult},
+    state::{
+        v2::{Constraint, ConstraintType, HEADER_SECTION},
+        Header,
+    },
 };
 
 /// Constraint representing a comparison based on time between operations.
@@ -34,15 +36,11 @@ impl<'a> Frequency<'a> {
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 
         // Header
-        // - rule type
-        let rule_type = ConstraintType::Frequency as u32;
-        BorshSerialize::serialize(&rule_type, &mut data)?;
-        // - length
-        BorshSerialize::serialize(&length, &mut data)?;
+        Header::serialize(ConstraintType::Frequency, length, &mut data);
 
         // Constraint
         // - pubkey
-        BorshSerialize::serialize(&authority, &mut data)?;
+        data.extend(authority.as_ref());
 
         Ok(data)
     }
