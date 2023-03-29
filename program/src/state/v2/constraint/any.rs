@@ -35,7 +35,7 @@ impl<'a> Any<'a> {
     }
 
     /// Serialize a constraint into a byte array.
-    pub fn serialize(rules: &[&[u8]]) -> std::io::Result<Vec<u8>> {
+    pub fn serialize(rules: &[&[u8]]) -> Result<Vec<u8>, RuleSetError> {
         let length = (U64_BYTES
             + rules
                 .iter()

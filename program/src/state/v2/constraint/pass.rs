@@ -16,7 +16,7 @@ impl<'a> Pass {
     }
 
     /// Serialize a constraint into a byte array.
-    pub fn serialize() -> std::io::Result<Vec<u8>> {
+    pub fn serialize() -> Result<Vec<u8>, RuleSetError> {
         let mut data = Vec::with_capacity(HEADER_SECTION);
         // Header
         Header::serialize(ConstraintType::Pass, 0, &mut data);

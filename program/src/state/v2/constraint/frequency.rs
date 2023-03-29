@@ -31,7 +31,7 @@ impl<'a> Frequency<'a> {
     }
 
     /// Serialize a constraint into a byte array.
-    pub fn serialize(authority: Pubkey) -> std::io::Result<Vec<u8>> {
+    pub fn serialize(authority: Pubkey) -> Result<Vec<u8>, RuleSetError> {
         let length = PUBKEY_BYTES as u32;
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 

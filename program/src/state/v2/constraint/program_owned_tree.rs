@@ -52,7 +52,7 @@ impl<'a> ProgramOwnedTree<'a> {
         pubkey_field: String,
         proof_field: String,
         root: &[u8; PUBKEY_BYTES],
-    ) -> std::io::Result<Vec<u8>> {
+    ) -> Result<Vec<u8>, RuleSetError> {
         let length = (Str32::SIZE + Str32::SIZE + PUBKEY_BYTES) as u32;
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 

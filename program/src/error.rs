@@ -165,6 +165,10 @@ pub enum RuleSetError {
     /// 38 - Deserialization error
     #[error("Deserialization error")]
     DeserializationError,
+
+    /// 39 - Duplicated operation name
+    #[error("Duplicated operation name")]
+    DuplicatedOperationName,
 }
 
 impl PrintProgramError for RuleSetError {

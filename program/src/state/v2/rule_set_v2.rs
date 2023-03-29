@@ -100,7 +100,7 @@ impl<'a> RuleSetV2<'a> {
         name: &str,
         operations: &[String],
         rules: &[&[u8]],
-    ) -> std::io::Result<Vec<u8>> {
+    ) -> Result<Vec<u8>, RuleSetError> {
         // length of the rule set
         let length = U64_BYTES
             + PUBKEY_BYTES
@@ -130,6 +130,12 @@ impl<'a> RuleSetV2<'a> {
         data.extend(field_bytes);
 
         // operations
+
+        // sanity check: checks whether we have duplicated operation names
+        if (1..operations.len()).any(|i| operations[i..].contains(&operations[i - 1])) {
+            return Err(RuleSetError::DuplicatedOperationName);
+        }
+
         operations.iter().for_each(|x| {
             let mut field_bytes = [0u8; Str32::SIZE];
             field_bytes[..x.len()].copy_from_slice(x.as_bytes());
@@ -185,6 +191,7 @@ impl<'a> RuleSetV2<'a> {
 #[cfg(test)]
 mod tests {
     use crate::{
+        error::RuleSetError,
         state::v2::{Amount, Operator, ProgramOwnedList, RuleSetV2},
         types::LibVersion,
     };
@@ -218,5 +225,30 @@ mod tests {
         assert_eq!(rule_set.operations.len(), 2);
         assert_eq!(rule_set.rules.len(), 2);
         assert_eq!(rule_set.lib_version(), LibVersion::V2 as u8);
+    }
+
+    #[test]
+    fn test_duplicated_operation_name() {
+        // amount rule
+        let amount = Amount::serialize(1, Operator::Eq, String::from("Destination")).unwrap();
+
+        // program owned rule
+        let programs = &[Pubkey::default(), Pubkey::default()];
+        let program_owned =
+            ProgramOwnedList::serialize(String::from("Destination"), programs).unwrap();
+
+        // rule set with duplicated operation names
+
+        let error = RuleSetV2::serialize(
+            Pubkey::default(),
+            "Royalties",
+            &["transfer".to_string(), "transfer".to_string()],
+            &[&amount, &program_owned],
+        )
+        .unwrap_err();
+
+        // asserts that we got the expected error
+
+        assert_eq!(error, RuleSetError::DuplicatedOperationName);
     }
 }

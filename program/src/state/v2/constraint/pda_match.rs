@@ -55,7 +55,7 @@ impl<'a> PDAMatch<'a> {
         program: Option<Pubkey>,
         pda_field: String,
         seeds_field: String,
-    ) -> std::io::Result<Vec<u8>> {
+    ) -> Result<Vec<u8>, RuleSetError> {
         let length = (PUBKEY_BYTES + Str32::SIZE + Str32::SIZE) as u32;
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 

@@ -45,7 +45,11 @@ impl<'a> Amount<'a> {
     }
 
     /// Serialize a constraint into a byte array.
-    pub fn serialize(amount: u64, operator: Operator, field: String) -> std::io::Result<Vec<u8>> {
+    pub fn serialize(
+        amount: u64,
+        operator: Operator,
+        field: String,
+    ) -> Result<Vec<u8>, RuleSetError> {
         // length of the assert
         let length = (U64_BYTES + U64_BYTES + Str32::SIZE) as u32;
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);

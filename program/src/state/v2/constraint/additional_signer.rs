@@ -30,7 +30,7 @@ impl<'a> AdditionalSigner<'a> {
     }
 
     /// Serialize a constraint into a byte array.
-    pub fn serialize(account: Pubkey) -> std::io::Result<Vec<u8>> {
+    pub fn serialize(account: Pubkey) -> Result<Vec<u8>, RuleSetError> {
         let mut data = Vec::with_capacity(HEADER_SECTION + PUBKEY_BYTES);
 
         // Header

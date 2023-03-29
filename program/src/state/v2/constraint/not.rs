@@ -20,7 +20,7 @@ impl<'a> Not<'a> {
     }
 
     /// Serialize a constraint into a byte array.
-    pub fn serialize(rule: &[u8]) -> std::io::Result<Vec<u8>> {
+    pub fn serialize(rule: &[u8]) -> Result<Vec<u8>, RuleSetError> {
         let mut data = Vec::with_capacity(HEADER_SECTION + rule.len());
 
         // Header

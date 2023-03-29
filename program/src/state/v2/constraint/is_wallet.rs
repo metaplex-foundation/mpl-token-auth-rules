@@ -31,7 +31,7 @@ impl<'a> IsWallet<'a> {
     }
 
     /// Serialize a constraint into a byte array.
-    pub fn serialize(field: String) -> std::io::Result<Vec<u8>> {
+    pub fn serialize(field: String) -> Result<Vec<u8>, RuleSetError> {
         let mut data = Vec::with_capacity(HEADER_SECTION + Str32::SIZE);
 
         // Header
