@@ -10,11 +10,11 @@ import { RuleTypeV2 } from './ruleType';
 
 export type ProgramOwnedRuleV2 = {
   type: RuleTypeV2.ProgramOwned;
-  program: PublicKey;
   field: string;
+  program: PublicKey;
 };
 
-export const programOwnedV2 = (program: PublicKey, field: string): ProgramOwnedRuleV2 => ({
+export const programOwnedV2 = (field: string, program: PublicKey): ProgramOwnedRuleV2 => ({
   type: RuleTypeV2.ProgramOwned,
   program,
   field,

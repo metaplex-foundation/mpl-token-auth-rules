@@ -10,11 +10,11 @@ import { RuleTypeV2 } from './ruleType';
 
 export type PubkeyMatchRuleV2 = {
   type: RuleTypeV2.PubkeyMatch;
-  publicKey: PublicKey;
   field: string;
+  publicKey: PublicKey;
 };
 
-export const pubkeyMatchV2 = (publicKey: PublicKey, field: string): PubkeyMatchRuleV2 => ({
+export const pubkeyMatchV2 = (field: string, publicKey: PublicKey): PubkeyMatchRuleV2 => ({
   type: RuleTypeV2.PubkeyMatch,
   publicKey,
   field,
