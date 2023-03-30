@@ -37,6 +37,7 @@ import {
 import { AmountRuleV2, deserializeAmountV2, serializeAmountV2 } from './amount';
 import { deserializeNamespaceV2, NamespaceRuleV2, serializeNamespaceV2 } from './namespace';
 import { deserializeNotV2, NotRuleV2, serializeNotV2 } from './not';
+import { deserializePassV2, PassRuleV2, serializePassV2 } from './pass';
 
 export type RuleV2 =
   | AdditionalSignerRuleV2
@@ -47,7 +48,7 @@ export type RuleV2 =
   // | IsWalletRuleV2
   | NamespaceRuleV2
   | NotRuleV2
-  // | PassRuleV2
+  | PassRuleV2
   // | PDAMatchRuleV2
   | ProgramOwnedRuleV2
   | ProgramOwnedListRuleV2
@@ -75,8 +76,8 @@ export const serializeRuleV2 = (rule: RuleV2): Buffer => {
       return serializeNamespaceV2(rule);
     case RuleTypeV2.Not:
       return serializeNotV2(rule);
-    // case RuleTypeV2.Pass:
-    //   return serializePassV2(rule);
+    case RuleTypeV2.Pass:
+      return serializePassV2(rule);
     // case RuleTypeV2.PDAMatch:
     //   return serializePDAMatchV2(rule);
     case RuleTypeV2.ProgramOwned:
@@ -121,8 +122,8 @@ export const deserializeRuleV2 = (buffer: Buffer, offset = 0): RuleV2 => {
       return deserializeNamespaceV2(buffer, offset);
     case RuleTypeV2.Not:
       return deserializeNotV2(buffer, offset);
-    // case RuleTypeV2.Pass:
-    //   return deserializePassV2(buffer, offset);
+    case RuleTypeV2.Pass:
+      return deserializePassV2(buffer, offset);
     // case RuleTypeV2.PDAMatch:
     //   return deserializePDAMatchV2(buffer, offset);
     case RuleTypeV2.ProgramOwned:
