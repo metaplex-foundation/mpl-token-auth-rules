@@ -20,7 +20,7 @@ async fn test_not_v2() {
     // --------------------------------
     // Create some rules.
     let amount_check =
-        Amount::serialize(100, Operator::Lt, PayloadKey::Amount.to_string()).unwrap();
+        Amount::serialize(PayloadKey::Amount.to_string(), Operator::Lt, 100).unwrap();
 
     let not_amount_check = Not::serialize(&amount_check).unwrap();
 

@@ -46,9 +46,9 @@ impl<'a> Amount<'a> {
 
     /// Serialize a constraint into a byte array.
     pub fn serialize(
-        amount: u64,
-        operator: Operator,
         field: String,
+        operator: Operator,
+        amount: u64,
     ) -> Result<Vec<u8>, RuleSetError> {
         // length of the assert
         let length = (U64_BYTES + U64_BYTES + Str32::SIZE) as u32;

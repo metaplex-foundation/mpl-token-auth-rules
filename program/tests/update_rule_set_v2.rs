@@ -66,9 +66,9 @@ fn get_composed_rules_v2() -> ComposedRulesV2 {
     // --------------------------------
 
     let nft_amount = Amount::serialize(
-        1,
-        mpl_token_auth_rules::state::Operator::Eq,
         PayloadKey::Amount.to_string(),
+        mpl_token_auth_rules::state::Operator::Eq,
+        1,
     )
     .unwrap();
 

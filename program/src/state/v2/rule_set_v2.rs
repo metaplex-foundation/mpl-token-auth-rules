@@ -200,7 +200,7 @@ mod tests {
     #[test]
     fn test_create_amount() {
         // amount rule
-        let amount = Amount::serialize(1, Operator::Eq, String::from("Destination")).unwrap();
+        let amount = Amount::serialize(String::from("Destination"), Operator::Eq, 1).unwrap();
 
         // program owned rule
         let programs = &[Pubkey::default(), Pubkey::default()];
@@ -230,7 +230,7 @@ mod tests {
     #[test]
     fn test_duplicated_operation_name() {
         // amount rule
-        let amount = Amount::serialize(1, Operator::Eq, String::from("Destination")).unwrap();
+        let amount = Amount::serialize(String::from("Destination"), Operator::Eq, 1).unwrap();
 
         // program owned rule
         let programs = &[Pubkey::default(), Pubkey::default()];

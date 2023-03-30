@@ -29,7 +29,7 @@ async fn composed_rule_v2() {
 
     let adtl_signer2 = AdditionalSigner::serialize(second_signer.pubkey()).unwrap();
 
-    let amount_check = Amount::serialize(1, Operator::Eq, PayloadKey::Amount.to_string()).unwrap();
+    let amount_check = Amount::serialize(PayloadKey::Amount.to_string(), Operator::Eq, 1).unwrap();
 
     let not_amount_check = Not::serialize(&amount_check).unwrap();
 

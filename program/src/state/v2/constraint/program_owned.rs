@@ -39,7 +39,7 @@ impl<'a> ProgramOwned<'a> {
     }
 
     /// Serialize a constraint into a byte array.
-    pub fn serialize(program: Pubkey, field: String) -> Result<Vec<u8>, RuleSetError> {
+    pub fn serialize(field: String, program: Pubkey) -> Result<Vec<u8>, RuleSetError> {
         let length = (PUBKEY_BYTES + Str32::SIZE) as u32;
         let mut data = Vec::with_capacity(HEADER_SECTION + length as usize);
 

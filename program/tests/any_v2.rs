@@ -21,7 +21,7 @@ async fn test_any_v2() {
     // --------------------------------
     // Create some rules.
     let adtl_signer = AdditionalSigner::serialize(Keypair::new().pubkey()).unwrap();
-    let amount_check = Amount::serialize(5, Operator::Lt, PayloadKey::Amount.to_string()).unwrap();
+    let amount_check = Amount::serialize(PayloadKey::Amount.to_string(), Operator::Lt, 5).unwrap();
 
     let overall_rule = Any::serialize(&[&adtl_signer, &amount_check]).unwrap();
 

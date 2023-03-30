@@ -54,7 +54,7 @@ async fn parametric_amount_check(
     // --------------------------------
     // Create a rule.
     let less_than_amount_check =
-        Amount::serialize(amount, operator, PayloadKey::Amount.to_string()).unwrap();
+        Amount::serialize(PayloadKey::Amount.to_string(), operator, amount).unwrap();
 
     // Create a RuleSet.
     let rule_set = RuleSetV2::serialize(

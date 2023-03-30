@@ -24,8 +24,8 @@ async fn program_owned_v2() {
     // --------------------------------
     // Create a Rule.  The target must be owned by the program ID specified in the Rule.
     let rule = ProgramOwned::serialize(
-        mpl_token_auth_rules::ID,
         PayloadKey::Destination.to_string(),
+        mpl_token_auth_rules::ID,
     )
     .unwrap();
 

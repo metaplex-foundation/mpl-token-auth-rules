@@ -22,8 +22,8 @@ async fn test_pda_match_assumed_owner_v2() {
     // --------------------------------
     // Create a Rule.
     let rule = PDAMatch::serialize(
-        None,
         PayloadKey::Destination.to_string(),
+        None,
         PayloadKey::DestinationSeeds.to_string(),
     )
     .unwrap();

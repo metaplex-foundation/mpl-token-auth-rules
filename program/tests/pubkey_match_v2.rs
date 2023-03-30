@@ -23,7 +23,7 @@ async fn test_pubkey_match_v2() {
     let target = Keypair::new();
 
     let rule =
-        PubkeyMatch::serialize(target.pubkey(), PayloadKey::Destination.to_string()).unwrap();
+        PubkeyMatch::serialize(PayloadKey::Destination.to_string(), target.pubkey()).unwrap();
 
     // Create a RuleSet.
     let rule_set = RuleSetV2::serialize(

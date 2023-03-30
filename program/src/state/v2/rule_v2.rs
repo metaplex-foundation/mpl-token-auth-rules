@@ -164,7 +164,7 @@ mod tests {
 
     #[test]
     fn test_create_amount() {
-        let amount = Amount::serialize(1, Operator::Eq, String::from("Destination")).unwrap();
+        let amount = Amount::serialize(String::from("Destination"), Operator::Eq, 1).unwrap();
 
         // loads the data using bytemuck
 

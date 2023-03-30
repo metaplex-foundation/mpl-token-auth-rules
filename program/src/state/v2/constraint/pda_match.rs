@@ -52,8 +52,8 @@ impl<'a> PDAMatch<'a> {
 
     /// Serialize a constraint into a byte array.
     pub fn serialize(
-        program: Option<Pubkey>,
         pda_field: String,
+        program: Option<Pubkey>,
         seeds_field: String,
     ) -> Result<Vec<u8>, RuleSetError> {
         let length = (PUBKEY_BYTES + Str32::SIZE + Str32::SIZE) as u32;
