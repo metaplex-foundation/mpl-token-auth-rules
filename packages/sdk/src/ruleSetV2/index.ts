@@ -6,6 +6,7 @@ export * from './any';
 export * from './namespace';
 export * from './not';
 export * from './pass';
+export * from './pdaMatch';
 export * from './programOwned';
 export * from './programOwnedList';
 export * from './programOwnedTree';

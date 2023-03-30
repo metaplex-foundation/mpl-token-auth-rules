@@ -9,7 +9,7 @@ export enum RuleTypeV2 {
   Namespace, // 7
   Not, // 8
   Pass, // 9
-  PDAMatch, // 10
+  PdaMatch, // 10
   ProgramOwned, // 11
   ProgramOwnedList, // 12
   ProgramOwnedTree, // 13
