@@ -6,6 +6,7 @@ import {
   RuleSetV2,
   serializeRuleSetV2,
 } from '../../src/mpl-token-auth-rules';
+import { serializeString32 } from '../../src/ruleSetV2/helpers';
 
 test('serialize', async (t) => {
   const owner = Keypair.generate().publicKey;
@@ -21,12 +22,6 @@ test('serialize', async (t) => {
   };
   const serializedRuleSet = serializeRuleSetV2(ruleSet).toString('hex');
 
-  const expectedName = Buffer.alloc(32);
-  expectedName.write('My Rule Set');
-  const expectedDepositOperation = Buffer.alloc(32);
-  expectedDepositOperation.write('deposit');
-  const expectedWithdrawOperation = Buffer.alloc(32);
-  expectedWithdrawOperation.write('withdraw');
   const expectedRuleA = '0100000020000000' + publicKeyA.toBuffer().toString('hex');
   const expectedRuleB = '0100000020000000' + publicKeyB.toBuffer().toString('hex');
   t.is(
@@ -34,9 +29,9 @@ test('serialize', async (t) => {
     '02000000' + // Rule Set Version
       '02000000' + // Number of operations/rules
       owner.toBuffer().toString('hex') + // Owner
-      expectedName.toString('hex') + // Name
-      expectedDepositOperation.toString('hex') + // Deposit operation
-      expectedWithdrawOperation.toString('hex') + // Withdraw operation
+      serializeString32('My Rule Set').toString('hex') + // Name
+      serializeString32('deposit').toString('hex') + // Deposit operation
+      serializeString32('withdraw').toString('hex') + // Withdraw operation
       expectedRuleA +
       expectedRuleB,
   );
@@ -48,19 +43,13 @@ test('deserialize', async (t) => {
   const publicKeyB = Keypair.generate().publicKey;
   const ruleA = '0100000020000000' + publicKeyA.toBuffer().toString('hex');
   const ruleB = '0100000020000000' + publicKeyB.toBuffer().toString('hex');
-  const name = Buffer.alloc(32);
-  name.write('My Rule Set');
-  const depositOperation = Buffer.alloc(32);
-  depositOperation.write('deposit');
-  const withdrawOperation = Buffer.alloc(32);
-  withdrawOperation.write('withdraw');
   const hexBuffer =
     '02000000' + // Rule Set Version
     '02000000' + // Number of operations/rules
     owner.toBuffer().toString('hex') + // Owner
-    name.toString('hex') + // Name
-    depositOperation.toString('hex') + // Deposit operation
-    withdrawOperation.toString('hex') + // Withdraw operation
+    serializeString32('My Rule Set').toString('hex') + // Name
+    serializeString32('deposit').toString('hex') + // Deposit operation
+    serializeString32('withdraw').toString('hex') + // Withdraw operation
     ruleA +
     ruleB;
   const buffer = Buffer.from(hexBuffer, 'hex');

@@ -6,38 +6,39 @@ import {
   serializeRuleV2,
   programOwnedListV2,
 } from '../../src/mpl-token-auth-rules';
+import { serializeString32 } from '../../src/ruleSetV2/helpers';
 
 test('serialize', async (t) => {
-  const program = Keypair.generate().publicKey;
-  const field = 'test';
-  const programs: PublicKey[] = [program, program];
-  const rule = programOwnedListV2(field, programs);
+  const programA = Keypair.generate().publicKey;
+  const programB = Keypair.generate().publicKey;
+  const programs: PublicKey[] = [programA, programB];
+  const rule = programOwnedListV2('myTestField', programs);
   const serializedRule = serializeRuleV2(rule).toString('hex');
   t.is(
     serializedRule,
     '0c000000' + // Rule type
       '60000000' + // Rule length
-      Buffer.from(field.padEnd(32, '\0')).toString('hex') + // Field
-      program.toBuffer().toString('hex') + // Program 1
-      program.toBuffer().toString('hex'), // Program 2
+      serializeString32('myTestField').toString('hex') + // Field
+      programA.toBuffer().toString('hex') + // Program A
+      programB.toBuffer().toString('hex'), // Program B
   );
 });
 
 test('deserialize', async (t) => {
-  const program = Keypair.generate().publicKey;
-  const field = 'test';
-  const programs: PublicKey[] = [program, program];
+  const programA = Keypair.generate().publicKey;
+  const programB = Keypair.generate().publicKey;
+  const programs: PublicKey[] = [programA, programB];
   const hexBuffer =
     '0c000000' + // Rule type
     '60000000' + // Rule length
-    Buffer.from(field.padEnd(32, '\0')).toString('hex') + // Field
-    program.toBuffer().toString('hex') + // Program 1
-    program.toBuffer().toString('hex'); // Program 2
+    serializeString32('myTestField').toString('hex') + // Field
+    programA.toBuffer().toString('hex') + // Program A
+    programB.toBuffer().toString('hex'); // Program B
   const buffer = Buffer.from(hexBuffer, 'hex');
   const rule = deserializeRuleV2(buffer);
   t.deepEqual(rule, {
     type: RuleTypeV2.ProgramOwnedList,
-    field,
+    field: 'myTestField',
     programs,
   });
 });

@@ -6,40 +6,43 @@ import {
   serializeRuleV2,
   pubkeyListMatchV2,
 } from '../../src/mpl-token-auth-rules';
+import { serializeString32 } from '../../src/ruleSetV2/helpers';
 
 test('serialize', async (t) => {
-  const publicKey = Keypair.generate().publicKey;
-  const field = 'test';
-  const publicKeys: PublicKey[] = [publicKey, publicKey, publicKey];
-  const rule = pubkeyListMatchV2(field, publicKeys);
+  const publicKeyA = Keypair.generate().publicKey;
+  const publicKeyB = Keypair.generate().publicKey;
+  const publicKeyC = Keypair.generate().publicKey;
+  const publicKeys: PublicKey[] = [publicKeyA, publicKeyB, publicKeyC];
+  const rule = pubkeyListMatchV2('myTestField', publicKeys);
   const serializedRule = serializeRuleV2(rule).toString('hex');
   t.is(
     serializedRule,
     '0e000000' + // Rule type
       '80000000' + // Rule length
-      Buffer.from(field.padEnd(32, '\0')).toString('hex') + // Field
-      publicKey.toBuffer().toString('hex') + // PublicKey 1
-      publicKey.toBuffer().toString('hex') + // PublicKey 2
-      publicKey.toBuffer().toString('hex'), // PublicKey 3
+      serializeString32('myTestField').toString('hex') + // Field
+      publicKeyA.toBuffer().toString('hex') + // PublicKey A
+      publicKeyB.toBuffer().toString('hex') + // PublicKey B
+      publicKeyC.toBuffer().toString('hex'), // PublicKey C
   );
 });
 
 test('deserialize', async (t) => {
-  const publicKey = Keypair.generate().publicKey;
-  const field = 'test';
-  const publicKeys: PublicKey[] = [publicKey, publicKey, publicKey];
+  const publicKeyA = Keypair.generate().publicKey;
+  const publicKeyB = Keypair.generate().publicKey;
+  const publicKeyC = Keypair.generate().publicKey;
+  const publicKeys: PublicKey[] = [publicKeyA, publicKeyB, publicKeyC];
   const hexBuffer =
     '0e000000' + // Rule type
     '80000000' + // Rule length
-    Buffer.from(field.padEnd(32, '\0')).toString('hex') + // Field
-    publicKey.toBuffer().toString('hex') + // PublicKey 1
-    publicKey.toBuffer().toString('hex') + // PublicKey 2
-    publicKey.toBuffer().toString('hex'); // PublicKey 3
+    serializeString32('myTestField').toString('hex') + // Field
+    publicKeyA.toBuffer().toString('hex') + // PublicKey A
+    publicKeyB.toBuffer().toString('hex') + // PublicKey B
+    publicKeyC.toBuffer().toString('hex'); // PublicKey C
   const buffer = Buffer.from(hexBuffer, 'hex');
   const rule = deserializeRuleV2(buffer);
   t.deepEqual(rule, {
     type: RuleTypeV2.PubkeyListMatch,
-    field,
+    field: 'myTestField',
     publicKeys,
   });
 });
