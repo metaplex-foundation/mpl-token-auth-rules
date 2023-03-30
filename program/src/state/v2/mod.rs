@@ -116,13 +116,13 @@ pub enum ConstraintType {
     Pass,
     /// A resulting PDA derivation of seeds must prove the account is a PDA.
     PDAMatch,
+    /// The `Pubkey` must be owned by a given program.  When the `Validate` instruction is called,
+    /// this rule requires a `PayloadType` value of `PayloadType::Pubkey`.
+    ProgramOwned,
     /// The `Pubkey` must be owned by a program in the list of `Pubkey`s.
     ProgramOwnedList,
     /// The `Pubkey` must be owned by a member of the Merkle tree in the rule.
     ProgramOwnedTree,
-    /// The `Pubkey` must be owned by a given program.  When the `Validate` instruction is called,
-    /// this rule requires a `PayloadType` value of `PayloadType::Pubkey`.
-    ProgramOwned,
     /// The comparing `Pubkey` must be in the list of `Pubkey`s.
     PubkeyListMatch,
     /// Direct comparison between `Pubkey`s.  When the `Validate` instruction is called, this rule
@@ -149,11 +149,11 @@ impl ConstraintType {
             ConstraintType::Frequency { .. } => RuleSetError::FrequencyCheckFailed.into(),
             ConstraintType::IsWallet { .. } => RuleSetError::IsWalletCheckFailed.into(),
             ConstraintType::PDAMatch { .. } => RuleSetError::PDAMatchCheckFailed.into(),
+            ConstraintType::ProgramOwned { .. } => RuleSetError::ProgramOwnedCheckFailed.into(),
             ConstraintType::ProgramOwnedList => RuleSetError::ProgramOwnedListCheckFailed.into(),
             ConstraintType::ProgramOwnedTree { .. } => {
                 RuleSetError::ProgramOwnedTreeCheckFailed.into()
             }
-            ConstraintType::ProgramOwned { .. } => RuleSetError::ProgramOwnedCheckFailed.into(),
             ConstraintType::PubkeyListMatch { .. } => {
                 RuleSetError::PubkeyListMatchCheckFailed.into()
             }
@@ -182,9 +182,9 @@ impl TryFrom<u32> for ConstraintType {
             8 => Ok(ConstraintType::Not),
             9 => Ok(ConstraintType::Pass),
             10 => Ok(ConstraintType::PDAMatch),
-            11 => Ok(ConstraintType::ProgramOwnedList),
-            12 => Ok(ConstraintType::ProgramOwnedTree),
-            13 => Ok(ConstraintType::ProgramOwned),
+            11 => Ok(ConstraintType::ProgramOwned),
+            12 => Ok(ConstraintType::ProgramOwnedList),
+            13 => Ok(ConstraintType::ProgramOwnedTree),
             14 => Ok(ConstraintType::PubkeyListMatch),
             15 => Ok(ConstraintType::PubkeyMatch),
             16 => Ok(ConstraintType::PubkeyTreeMatch),
