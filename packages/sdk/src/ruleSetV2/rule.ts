@@ -29,7 +29,11 @@ import {
   serializeProgramOwnedV2,
   deserializeProgramOwnedV2,
 } from './programOwned';
-import { deserializeProgramOwnedTreeV2, ProgramOwnedTreeRuleV2, serializeProgramOwnedTreeV2 } from './programOwnedTree';
+import {
+  deserializeProgramOwnedTreeV2,
+  ProgramOwnedTreeRuleV2,
+  serializeProgramOwnedTreeV2,
+} from './programOwnedTree';
 
 export type RuleV2 =
   | AdditionalSignerRuleV2

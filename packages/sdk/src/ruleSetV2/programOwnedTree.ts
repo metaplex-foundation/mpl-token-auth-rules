@@ -33,7 +33,10 @@ export const serializeProgramOwnedTreeV2 = (rule: ProgramOwnedTreeRuleV2): Buffe
   return Buffer.concat([headerBuffer, pubkeyFieldBuffer, proofFieldBuffer, rule.root]);
 };
 
-export const deserializeProgramOwnedTreeV2 = (buffer: Buffer, offset = 0): ProgramOwnedTreeRuleV2 => {
+export const deserializeProgramOwnedTreeV2 = (
+  buffer: Buffer,
+  offset = 0,
+): ProgramOwnedTreeRuleV2 => {
   // Skip rule header.
   offset += 8;
   // PubkeyField.

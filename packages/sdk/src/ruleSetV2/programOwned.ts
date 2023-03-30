@@ -1,5 +1,10 @@
-import * as beetSolana from '@metaplex-foundation/beet-solana';
 import { PublicKey } from '@solana/web3.js';
+import {
+  deserializePublicKey,
+  deserializeString32,
+  serializePublicKey,
+  serializeString32,
+} from './helpers';
 import { serializeRuleHeaderV2 } from './rule';
 import { RuleTypeV2 } from './ruleType';
 
@@ -16,27 +21,18 @@ export const programOwnedV2 = (program: PublicKey, field: string): ProgramOwnedR
 });
 
 export const serializeProgramOwnedV2 = (rule: ProgramOwnedRuleV2): Buffer => {
-  const headerBuffer = serializeRuleHeaderV2(RuleTypeV2.ProgramOwned, 64);
-  // PublicKey.
-  const publicKeyBuffer = Buffer.alloc(32);
-  beetSolana.publicKey.write(publicKeyBuffer, 0, rule.program);
-  // Field.
-  const fieldBuffer = Buffer.alloc(32);
-  fieldBuffer.write(rule.field);
-  return Buffer.concat([headerBuffer, publicKeyBuffer, fieldBuffer]);
+  return Buffer.concat([
+    serializeRuleHeaderV2(RuleTypeV2.ProgramOwned, 64),
+    serializePublicKey(rule.program),
+    serializeString32(rule.field),
+  ]);
 };
 
 export const deserializeProgramOwnedV2 = (buffer: Buffer, offset = 0): ProgramOwnedRuleV2 => {
-  // Skip rule header.
-  offset += 8;
-  // PublicKey.
-  const program = beetSolana.publicKey.read(buffer, offset);
+  offset += 8; // Skip rule header.
+  const program = deserializePublicKey(buffer, offset);
   offset += 32;
-  // Field.
-  const field = buffer
-    .subarray(offset, offset + 32)
-    .toString()
-    .replace(/\u0000/g, '');
+  const field = deserializeString32(buffer, offset);
   offset += 32;
 
   return { type: RuleTypeV2.ProgramOwned, program, field };
