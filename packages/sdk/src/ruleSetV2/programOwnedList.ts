@@ -1,5 +1,11 @@
-import * as beetSolana from '@metaplex-foundation/beet-solana';
+import * as beet from '@metaplex-foundation/beet';
 import { PublicKey } from '@solana/web3.js';
+import {
+  deserializePublicKey,
+  deserializeString32,
+  serializePublicKey,
+  serializeString32,
+} from './helpers';
 import { serializeRuleHeaderV2 } from './rule';
 import { RuleTypeV2 } from './ruleType';
 
@@ -19,37 +25,32 @@ export const programOwnedListV2 = (
 });
 
 export const serializeProgramOwnedListV2 = (rule: ProgramOwnedListRuleV2): Buffer => {
-  const headerBuffer = serializeRuleHeaderV2(
-    RuleTypeV2.ProgramOwnedList,
-    32 + 32 * rule.programs.length,
-  );
-  // Field.
-  const fieldBuffer = Buffer.alloc(32);
-  fieldBuffer.write(rule.field);
-  // PublicKeys.
-  const publicKeysBuffer = Buffer.alloc(32 * rule.programs.length);
-  let offset = 0;
-  rule.programs.forEach((publicKey) => {
-    beetSolana.publicKey.write(publicKeysBuffer, offset, publicKey);
-    offset += 32;
-  });
-  return Buffer.concat([headerBuffer, fieldBuffer, publicKeysBuffer]);
+  const length = 32 + 32 * rule.programs.length;
+  const headerBuffer = serializeRuleHeaderV2(RuleTypeV2.ProgramOwnedList, length);
+  const fieldBuffer = serializeString32(rule.field);
+  const publicKeyBuffers = rule.programs.map((publicKey) => serializePublicKey(publicKey));
+  return Buffer.concat([headerBuffer, fieldBuffer, ...publicKeyBuffers]);
 };
 
-export const deserializeProgramOwnedListV2 = (buffer: Buffer, offset = 0): ProgramOwnedListRuleV2 => {
-  // Skip rule header.
+export const deserializeProgramOwnedListV2 = (
+  buffer: Buffer,
+  offset = 0,
+): ProgramOwnedListRuleV2 => {
+  // Header.
+  const length = beet.u32.read(buffer, offset + 4);
+  const numberOfPublicKeys = Math.floor((length - 32) / 32);
   offset += 8;
+
   // Field.
-  const field = buffer
-    .subarray(offset, offset + 32)
-    .toString()
-    .replace(/\u0000/g, '');
-  buffer = buffer.subarray(offset + 32);
+  const field = deserializeString32(buffer, offset);
+  offset += 32;
+
   // PublicKeys.
   const programs = [];
-  while (buffer.length) {
-    programs.push(beetSolana.publicKey.read(buffer, 0));
-    buffer = buffer.subarray(32);
+  for (let index = 0; index < numberOfPublicKeys; index++) {
+    programs.push(deserializePublicKey(buffer, offset));
+    offset += 32;
   }
+
   return { type: RuleTypeV2.ProgramOwnedList, field, programs };
 };
