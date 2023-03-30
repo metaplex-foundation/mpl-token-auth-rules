@@ -1,3 +1,4 @@
+import { deserializeString32, serializeString32 } from './helpers';
 import { serializeRuleHeaderV2 } from './rule';
 import { RuleTypeV2 } from './ruleType';
 
@@ -20,40 +21,23 @@ export const programOwnedTreeV2 = (
 });
 
 export const serializeProgramOwnedTreeV2 = (rule: ProgramOwnedTreeRuleV2): Buffer => {
-  const headerBuffer = serializeRuleHeaderV2(RuleTypeV2.ProgramOwnedTree, 96);
-
-  // PubkeyField.
-  const pubkeyFieldBuffer = Buffer.alloc(32);
-  pubkeyFieldBuffer.write(rule.pubkeyField);
-
-  // ProofField.
-  const proofFieldBuffer = Buffer.alloc(32);
-  proofFieldBuffer.write(rule.proofField);
-
-  return Buffer.concat([headerBuffer, pubkeyFieldBuffer, proofFieldBuffer, rule.root]);
+  return Buffer.concat([
+    serializeRuleHeaderV2(RuleTypeV2.ProgramOwnedTree, 96),
+    serializeString32(rule.pubkeyField),
+    serializeString32(rule.proofField),
+    rule.root,
+  ]);
 };
 
 export const deserializeProgramOwnedTreeV2 = (
   buffer: Buffer,
   offset = 0,
 ): ProgramOwnedTreeRuleV2 => {
-  // Skip rule header.
-  offset += 8;
-  // PubkeyField.
-  const pubkeyField = buffer
-    .subarray(offset, offset + 32)
-    .toString()
-    .replace(/\u0000/g, '');
+  offset += 8; // Skip rule header.
+  const pubkeyField = deserializeString32(buffer, offset);
   offset += 32;
-
-  // ProofField.
-  const proofField = buffer
-    .subarray(offset, offset + 32)
-    .toString()
-    .replace(/\u0000/g, '');
+  const proofField = deserializeString32(buffer, offset);
   offset += 32;
-
-  // Root.
   const root = new Uint8Array(buffer.subarray(offset, offset + 32));
 
   return { type: RuleTypeV2.ProgramOwnedTree, pubkeyField, proofField, root };

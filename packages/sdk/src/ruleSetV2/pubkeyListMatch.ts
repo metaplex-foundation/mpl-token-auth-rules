@@ -1,5 +1,11 @@
-import * as beetSolana from '@metaplex-foundation/beet-solana';
+import * as beet from '@metaplex-foundation/beet';
 import { PublicKey } from '@solana/web3.js';
+import {
+  deserializePublicKey,
+  deserializeString32,
+  serializePublicKey,
+  serializeString32,
+} from './helpers';
 import { serializeRuleHeaderV2 } from './rule';
 import { RuleTypeV2 } from './ruleType';
 
@@ -19,37 +25,29 @@ export const pubkeyListMatchV2 = (
 });
 
 export const serializePubkeyListMatchV2 = (rule: PubkeyListMatchRuleV2): Buffer => {
-  const headerBuffer = serializeRuleHeaderV2(
-    RuleTypeV2.PubkeyListMatch,
-    32 + 32 * rule.publicKeys.length,
-  );
-  // Field.
-  const fieldBuffer = Buffer.alloc(32);
-  fieldBuffer.write(rule.field);
-  // PublicKeys.
-  const publicKeysBuffer = Buffer.alloc(32 * rule.publicKeys.length);
-  let offset = 0;
-  rule.publicKeys.forEach((publicKey) => {
-    beetSolana.publicKey.write(publicKeysBuffer, offset, publicKey);
-    offset += 32;
-  });
-  return Buffer.concat([headerBuffer, fieldBuffer, publicKeysBuffer]);
+  const length = 32 + 32 * rule.publicKeys.length;
+  const headerBuffer = serializeRuleHeaderV2(RuleTypeV2.PubkeyListMatch, length);
+  const fieldBuffer = serializeString32(rule.field);
+  const publicKeyBuffers = rule.publicKeys.map((publicKey) => serializePublicKey(publicKey));
+  return Buffer.concat([headerBuffer, fieldBuffer, ...publicKeyBuffers]);
 };
 
 export const deserializePubkeyListMatchV2 = (buffer: Buffer, offset = 0): PubkeyListMatchRuleV2 => {
-  // Skip rule header.
+  // Header.
+  const length = beet.u32.read(buffer, offset + 4);
+  const numberOfPublicKeys = Math.floor((length - 32) / 32);
   offset += 8;
+
   // Field.
-  const field = buffer
-    .subarray(offset, offset + 32)
-    .toString()
-    .replace(/\u0000/g, '');
-  buffer = buffer.subarray(offset + 32);
+  const field = deserializeString32(buffer, offset);
+  offset += 32;
+
   // PublicKeys.
   const publicKeys = [];
-  while (buffer.length) {
-    publicKeys.push(beetSolana.publicKey.read(buffer, 0));
-    buffer = buffer.subarray(32);
+  for (let index = 0; index < numberOfPublicKeys; index++) {
+    publicKeys.push(deserializePublicKey(buffer, offset));
+    offset += 32;
   }
+
   return { type: RuleTypeV2.PubkeyListMatch, field, publicKeys };
 };
