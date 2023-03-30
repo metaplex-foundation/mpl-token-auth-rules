@@ -42,8 +42,7 @@ export const serializeAmountV2 = (rule: AmountRuleV2): Buffer => {
 };
 
 export const deserializeAmountV2 = (buffer: Buffer, offset = 0): AmountRuleV2 => {
-  // Skip rule header.
-  offset += 8;
+  offset += 8; // Skip rule header.
   const amount = beet.u64.read(buffer, offset);
   offset += 8;
   const operator = Number(beet.u64.read(buffer, offset)) as AmountOperator;
