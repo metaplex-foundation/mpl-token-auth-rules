@@ -2,7 +2,7 @@ export * from './additionalSigner';
 export * from './all';
 export * from './amount';
 export * from './any';
-export * from './isWallet';
+// export * from './isWallet';
 export * from './programOwned';
 export * from './programOwnedList';
 export * from './programOwnedTree';

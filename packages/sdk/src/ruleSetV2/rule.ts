@@ -35,7 +35,6 @@ import {
   serializeProgramOwnedTreeV2,
 } from './programOwnedTree';
 import { AmountRuleV2, deserializeAmountV2, serializeAmountV2 } from './amount';
-import { deserializeIsWalletV2, IsWalletRuleV2, serializeIsWalletV2 } from './isWallet';
 
 export type RuleV2 =
   | AdditionalSignerRuleV2
@@ -43,7 +42,7 @@ export type RuleV2 =
   | AmountRuleV2
   | AnyRuleV2
   // | FrequencyRuleV2
-  | IsWalletRuleV2
+  // | IsWalletRuleV2
   // | NamespaceRuleV2
   // | NotRuleV2
   // | PassRuleV2
@@ -68,8 +67,8 @@ export const serializeRuleV2 = (rule: RuleV2): Buffer => {
       return serializeAnyV2(rule);
     // case RuleTypeV2.Frequency:
     //   return serializeFrequencyV2(rule);
-    case RuleTypeV2.IsWallet:
-      return serializeIsWalletV2(rule);
+    // case RuleTypeV2.IsWallet:
+    //   return serializeIsWalletV2(rule);
     // case RuleTypeV2.Namespace:
     //   return serializeNamespaceV2(rule);
     // case RuleTypeV2.Not:
@@ -114,8 +113,8 @@ export const deserializeRuleV2 = (buffer: Buffer, offset = 0): RuleV2 => {
       return deserializeAnyV2(buffer, offset);
     // case RuleTypeV2.Frequency:
     //   return deserializeFrequencyV2(buffer, offset);
-    case RuleTypeV2.IsWallet:
-      return deserializeIsWalletV2(buffer, offset);
+    // case RuleTypeV2.IsWallet:
+    //   return deserializeIsWalletV2(buffer, offset);
     // case RuleTypeV2.Namespace:
     //   return deserializeNamespaceV2(buffer, offset);
     // case RuleTypeV2.Not:
