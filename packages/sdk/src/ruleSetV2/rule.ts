@@ -34,11 +34,12 @@ import {
   ProgramOwnedTreeRuleV2,
   serializeProgramOwnedTreeV2,
 } from './programOwnedTree';
+import { AmountRuleV2, deserializeAmountV2, serializeAmountV2 } from './amount';
 
 export type RuleV2 =
   | AdditionalSignerRuleV2
   | AllRuleV2
-  // | AmountRuleV2
+  | AmountRuleV2
   | AnyRuleV2
   // | FrequencyRuleV2
   // | IsWalletRuleV2
@@ -59,6 +60,8 @@ export const serializeRuleV2 = (rule: RuleV2): Buffer => {
       return serializeAdditionalSignerV2(rule);
     case RuleTypeV2.All:
       return serializeAllV2(rule);
+    case RuleTypeV2.Amount:
+      return serializeAmountV2(rule);
     case RuleTypeV2.ProgramOwned:
       return serializeProgramOwnedV2(rule);
     case RuleTypeV2.ProgramOwnedList:
@@ -87,6 +90,8 @@ export const deserializeRuleV2 = (buffer: Buffer, offset = 0): RuleV2 => {
       return deserializeAdditionalSignerV2(buffer, offset);
     case RuleTypeV2.All:
       return deserializeAllV2(buffer, offset);
+    case RuleTypeV2.Amount:
+      return deserializeAmountV2(buffer, offset);
     case RuleTypeV2.ProgramOwned:
       return deserializeProgramOwnedV2(buffer, offset);
     case RuleTypeV2.ProgramOwnedList:
