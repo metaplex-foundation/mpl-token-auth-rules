@@ -3,6 +3,7 @@ export * from './all';
 export * from './amount';
 export * from './any';
 // export * from './isWallet';
+export * from './namespace';
 export * from './programOwned';
 export * from './programOwnedList';
 export * from './programOwnedTree';
