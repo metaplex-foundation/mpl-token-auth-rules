@@ -11,7 +11,7 @@ import {
   serializePubkeyTreeMatchV2,
 } from './pubkeyTreeMatch';
 import { AllRuleV2, deserializeAllV2, serializeAllV2 } from './all';
-import { AnyRuleV2 as AnyRuleV2 } from './any';
+import { AnyRuleV2 as AnyRuleV2, deserializeAnyV2, serializeAnyV2 } from './any';
 import { RuleTypeV2 } from './ruleType';
 import { deserializePubkeyMatchV2, PubkeyMatchRuleV2, serializePubkeyMatchV2 } from './pubkeyMatch';
 import {
@@ -55,13 +55,28 @@ export type RuleV2 =
   | PubkeyTreeMatchRuleV2;
 
 export const serializeRuleV2 = (rule: RuleV2): Buffer => {
-  switch (rule.type) {
+  const type = rule.type;
+  switch (type) {
     case RuleTypeV2.AdditionalSigner:
       return serializeAdditionalSignerV2(rule);
     case RuleTypeV2.All:
       return serializeAllV2(rule);
     case RuleTypeV2.Amount:
       return serializeAmountV2(rule);
+    case RuleTypeV2.Any:
+      return serializeAnyV2(rule);
+    // case RuleTypeV2.Frequency:
+    //   return serializeFrequencyV2(rule);
+    // case RuleTypeV2.IsWallet:
+    //   return serializeIsWalletV2(rule);
+    // case RuleTypeV2.Namespace:
+    //   return serializeNamespaceV2(rule);
+    // case RuleTypeV2.Not:
+    //   return serializeNotV2(rule);
+    // case RuleTypeV2.Pass:
+    //   return serializePassV2(rule);
+    // case RuleTypeV2.PDAMatch:
+    //   return serializePDAMatchV2(rule);
     case RuleTypeV2.ProgramOwned:
       return serializeProgramOwnedV2(rule);
     case RuleTypeV2.ProgramOwnedList:
@@ -75,7 +90,9 @@ export const serializeRuleV2 = (rule: RuleV2): Buffer => {
     case RuleTypeV2.PubkeyTreeMatch:
       return serializePubkeyTreeMatchV2(rule);
     default:
-      throw new Error('Unknown rule type: ' + rule.type);
+      // Ensures all cases are handled.
+      const neverType: never = type;
+      throw new Error('Unknown rule type: ' + neverType);
   }
 };
 
@@ -84,7 +101,7 @@ export const serializeRulesV2 = (rules: RuleV2[]): Buffer => {
 };
 
 export const deserializeRuleV2 = (buffer: Buffer, offset = 0): RuleV2 => {
-  const type = beet.u32.read(buffer, offset) as RuleTypeV2;
+  const type = beet.u32.read(buffer, offset) as RuleV2['type'];
   switch (type) {
     case RuleTypeV2.AdditionalSigner:
       return deserializeAdditionalSignerV2(buffer, offset);
@@ -92,6 +109,20 @@ export const deserializeRuleV2 = (buffer: Buffer, offset = 0): RuleV2 => {
       return deserializeAllV2(buffer, offset);
     case RuleTypeV2.Amount:
       return deserializeAmountV2(buffer, offset);
+    case RuleTypeV2.Any:
+      return deserializeAnyV2(buffer, offset);
+    // case RuleTypeV2.Frequency:
+    //   return deserializeFrequencyV2(buffer, offset);
+    // case RuleTypeV2.IsWallet:
+    //   return deserializeIsWalletV2(buffer, offset);
+    // case RuleTypeV2.Namespace:
+    //   return deserializeNamespaceV2(buffer, offset);
+    // case RuleTypeV2.Not:
+    //   return deserializeNotV2(buffer, offset);
+    // case RuleTypeV2.Pass:
+    //   return deserializePassV2(buffer, offset);
+    // case RuleTypeV2.PDAMatch:
+    //   return deserializePDAMatchV2(buffer, offset);
     case RuleTypeV2.ProgramOwned:
       return deserializeProgramOwnedV2(buffer, offset);
     case RuleTypeV2.ProgramOwnedList:
@@ -105,7 +136,9 @@ export const deserializeRuleV2 = (buffer: Buffer, offset = 0): RuleV2 => {
     case RuleTypeV2.PubkeyTreeMatch:
       return deserializePubkeyTreeMatchV2(buffer, offset);
     default:
-      throw new Error('Unknown rule type: ' + type);
+      // Ensures all cases are handled.
+      const neverType: never = type;
+      throw new Error('Unknown rule type: ' + neverType);
   }
 };
 
