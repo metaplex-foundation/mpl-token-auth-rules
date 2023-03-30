@@ -81,7 +81,7 @@ export const writeAndPuff = async (
   payer: Keypair,
   name: string,
   data: Uint8Array,
-  overwrite: boolean = false,
+  overwrite = false,
 ) => {
   const bufferAddress = await findRuleSetBufferPDA(payer.publicKey);
 
