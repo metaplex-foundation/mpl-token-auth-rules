@@ -20,7 +20,7 @@ test('serialize', async (t) => {
   t.is(
     serializedRule,
     '04000000' + // Rule type
-      '50000000' + // Rule length
+      '58000000' + // Rule length
       '0200000000000000' + // Number of rules
       expectedRuleA +
       expectedRuleB,
@@ -34,7 +34,7 @@ test('deserialize', async (t) => {
   const ruleB = '0100000020000000' + publicKeyB.toBuffer().toString('hex');
   const hexBuffer =
     '04000000' + // Rule type
-    '50000000' + // Rule length
+    '58000000' + // Rule length
     '0200000000000000' + // Number of rules
     ruleA +
     ruleB;

@@ -16,7 +16,10 @@ export const serializeAllV2 = (allRule: AllRuleV2): Buffer => {
   const sizeBuffer = Buffer.alloc(8);
   beet.u64.write(sizeBuffer, 0, allRule.rules.length);
   const rulesBuffer = serializeRulesV2(allRule.rules);
-  const headerBuffer = serializeRuleHeaderV2(RuleTypeV2.All, rulesBuffer.length);
+  const headerBuffer = serializeRuleHeaderV2(
+    RuleTypeV2.All,
+    sizeBuffer.length + rulesBuffer.length,
+  );
   return Buffer.concat([headerBuffer, sizeBuffer, rulesBuffer]);
 };
 
