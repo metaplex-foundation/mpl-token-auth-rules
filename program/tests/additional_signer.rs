@@ -68,8 +68,6 @@ async fn create_not_rule_set(context: &mut ProgramTestContext) -> (Pubkey, Keypa
         )
         .unwrap();
 
-    println!("{:#?}", rule_set);
-
     // Put the RuleSet on chain.
     let rule_set_addr =
         create_rule_set_on_chain!(context, rule_set, "test rule_set".to_string()).await;
@@ -192,7 +190,7 @@ async fn test_not_additional_signer_not_signer() {
     let mint = Keypair::new().pubkey();
 
     // --------------------------------
-    // Validate fail not a signer
+    // Validate passes when not a signer
     // --------------------------------
 
     // Create a `validate` instruction WITH the additional account but not as a signer.
@@ -248,14 +246,14 @@ async fn test_additional_signer_pass() {
 }
 
 #[tokio::test]
-async fn test_not_additional_signer_pass() {
+async fn test_not_additional_signer_fail() {
     let mut context = program_test().start_with_context().await;
 
     let (rule_set_addr, adtl_signer) = create_not_rule_set(&mut context).await;
     let mint = Keypair::new().pubkey();
 
     // --------------------------------
-    // Validate pass
+    // Validate fail
     // --------------------------------
     // Create a `validate` instruction WITH the additional signer.
     let validate_ix = ValidateBuilder::new()

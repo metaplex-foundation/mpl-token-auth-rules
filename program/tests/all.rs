@@ -88,8 +88,6 @@ async fn create_not_rule_set(context: &mut ProgramTestContext) -> (Pubkey, Keypa
         )
         .unwrap();
 
-    println!("{:#?}", rule_set);
-
     // Put the RuleSet on chain.
     let rule_set_addr =
         create_rule_set_on_chain!(context, rule_set, "test rule_set".to_string()).await;
@@ -190,7 +188,7 @@ async fn test_not_all_success() {
     let mint = Keypair::new().pubkey();
 
     // --------------------------------
-    // Validate fail
+    // Validate pass
     // --------------------------------
 
     // Store a payload of data with the WRONG amount.
@@ -230,7 +228,7 @@ async fn test_not_all_fail() {
     let mint = Keypair::new().pubkey();
 
     // --------------------------------
-    // Validate pass
+    // Validate fail
     // --------------------------------
     // Store a payload of data with the CORRECT amount.
     let payload = Payload::from([(PayloadKey::Amount.to_string(), PayloadType::Number(4))]);

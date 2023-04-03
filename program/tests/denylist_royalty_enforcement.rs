@@ -114,7 +114,7 @@ fn get_composed_rules() -> ComposedRules {
     // Create Composed Rules from
     // Primitive Rules
     // --------------------------------
-    // amount is 1 && (source owner on allow list || dest owner on allow list || authority owner on allow list )
+    // amount is 1 && (source owner NOT on allow list || dest owner NOT on allow list || authority owner NOT on allow list )
     let transfer_rule = Rule::All {
         rules: vec![
             nft_amount.clone(),
@@ -521,10 +521,14 @@ async fn wallet_to_prog_owned() {
 }
 
 #[tokio::test]
-async fn wallet_to_prog_owned_missing_namespace() {
+async fn wallet_to_prog_owned_missing_op_no_namespace() {
     let mut context = program_test().start_with_context().await;
+    let transfer_owner_operation = Operation::Transfer {
+        scenario: TransferScenario::Holder,
+    };
     let rule_set_addr =
-        create_incomplete_royalty_rule_set(&mut context, "Transfer:Owner".to_string()).await;
+        create_incomplete_royalty_rule_set(&mut context, transfer_owner_operation.to_string())
+            .await;
 
     // Create a Keypair to simulate a token mint address.
     let mint = Keypair::new();
@@ -565,10 +569,6 @@ async fn wallet_to_prog_owned_missing_namespace() {
         ),
     ]);
 
-    let transfer_owner_operation = Operation::Transfer {
-        scenario: TransferScenario::Holder,
-    };
-
     // Create a `validate` instruction.
     let validate_ix = ValidateBuilder::new()
         .rule_set_pda(rule_set_addr)
@@ -604,7 +604,7 @@ async fn wallet_to_prog_owned_missing_namespace() {
 }
 
 #[tokio::test]
-async fn wallet_to_prog_owned_no_default() {
+async fn wallet_to_prog_owned_no_namespace() {
     let mut context = program_test().start_with_context().await;
     let rule_set_addr =
         create_incomplete_royalty_rule_set(&mut context, "Transfer".to_string()).await;
@@ -954,7 +954,7 @@ async fn wrong_amount_fails() {
 }
 
 #[tokio::test]
-async fn prog_owner_not_on_list_fails() {
+async fn prog_owner_not_on_list_pass() {
     let mut context = program_test().start_with_context().await;
     let rule_set_addr = create_royalty_rule_set(&mut context).await;
 
