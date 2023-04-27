@@ -228,7 +228,7 @@ fn get_rule_set_info(data: &[u8]) -> Result<(LibVersion, String, Pubkey), Progra
             *rule_set.owner,
         ))
     } else {
-        Err(RuleSetError::DeserializationError.into())
+        Err(RuleSetError::RuleSetReadFailed.into())
     }
 }
 

@@ -158,8 +158,6 @@ async fn test_pda_match_specified_owner() {
         )
         .unwrap();
 
-    println!("{:#?}", rule_set);
-
     // Put the RuleSet on chain.
     let rule_set_addr =
         create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;

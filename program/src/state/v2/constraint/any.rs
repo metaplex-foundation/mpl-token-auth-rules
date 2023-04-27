@@ -96,11 +96,12 @@ impl<'a> Constraint<'a> for Any<'a> {
             }
         }
 
-        // Return failure if and only if all rules failed.  Use the last failure.
+        // Return the last failure if and only if no rules passed and there was at least one failure,
+        // otherwise return the last error
+
         if let Some(err) = last_failure {
             RuleResult::Failure(err)
         } else if let Some(err) = last_error {
-            // Return invalid if and only if all rules were invalid.  Use the last invalid.
             RuleResult::Error(err)
         } else {
             RuleResult::Error(RuleSetError::UnexpectedRuleSetFailure.into())

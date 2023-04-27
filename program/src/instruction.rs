@@ -13,7 +13,8 @@ use solana_program::{
 pub enum CreateOrUpdateArgs {
     /// V1 implementation of the `create` instruction arguments.
     V1 {
-        /// RuleSet pre-serialized by caller into the MessagePack format.
+        /// RuleSet pre-serialized by caller. Both MessagePack and Bytemuck formats
+        /// are supported.
         serialized_rule_set: Vec<u8>,
     },
 }

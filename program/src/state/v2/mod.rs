@@ -28,12 +28,12 @@ pub(crate) fn try_from_bytes<T: AnyBitPattern>(
             length,
             bytes.len()
         );
-        return Err(RuleSetError::DeserializationError);
+        return Err(RuleSetError::RuleSetReadFailed);
     }
 
     bytemuck::try_from_bytes::<T>(&bytes[start..start + length]).map_err(|error| {
         msg!("{}", error);
-        RuleSetError::DeserializationError
+        RuleSetError::RuleSetReadFailed
     })
 }
 
@@ -44,7 +44,7 @@ pub(crate) fn try_cast_slice<A: NoUninit, B: AnyBitPattern>(
 ) -> Result<&[B], RuleSetError> {
     bytemuck::try_cast_slice(bytes).map_err(|error| {
         msg!("{}", error);
-        RuleSetError::DeserializationError
+        RuleSetError::RuleSetReadFailed
     })
 }
 

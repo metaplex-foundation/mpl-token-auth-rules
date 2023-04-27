@@ -163,8 +163,8 @@ pub enum RuleSetError {
     InvalidConstraintType,
 
     /// 38 - Deserialization error
-    #[error("Deserialization error")]
-    DeserializationError,
+    #[error("Failed to read the rule set")]
+    RuleSetReadFailed,
 
     /// 39 - Duplicated operation name
     #[error("Duplicated operation name")]

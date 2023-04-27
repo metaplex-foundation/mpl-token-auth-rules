@@ -777,6 +777,86 @@ createErrorFromNameLookup.set(
 );
 
 /**
+ * InvalidCompareOp: 'Invalid compare operator'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class InvalidCompareOpError extends Error {
+  readonly code: number = 0x24;
+  readonly name: string = 'InvalidCompareOp';
+  constructor() {
+    super('Invalid compare operator');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, InvalidCompareOpError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x24, () => new InvalidCompareOpError());
+createErrorFromNameLookup.set('InvalidCompareOp', () => new InvalidCompareOpError());
+
+/**
+ * InvalidConstraintType: 'Invalid constraint type value'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class InvalidConstraintTypeError extends Error {
+  readonly code: number = 0x25;
+  readonly name: string = 'InvalidConstraintType';
+  constructor() {
+    super('Invalid constraint type value');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, InvalidConstraintTypeError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x25, () => new InvalidConstraintTypeError());
+createErrorFromNameLookup.set('InvalidConstraintType', () => new InvalidConstraintTypeError());
+
+/**
+ * RuleSetReadFailed: 'Failed to read the rule set'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class RuleSetReadFailedError extends Error {
+  readonly code: number = 0x26;
+  readonly name: string = 'RuleSetReadFailed';
+  constructor() {
+    super('Failed to read the rule set');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, RuleSetReadFailedError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x26, () => new RuleSetReadFailedError());
+createErrorFromNameLookup.set('RuleSetReadFailed', () => new RuleSetReadFailedError());
+
+/**
+ * DuplicatedOperationName: 'Duplicated operation name'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class DuplicatedOperationNameError extends Error {
+  readonly code: number = 0x27;
+  readonly name: string = 'DuplicatedOperationName';
+  constructor() {
+    super('Duplicated operation name');
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, DuplicatedOperationNameError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x27, () => new DuplicatedOperationNameError());
+createErrorFromNameLookup.set('DuplicatedOperationName', () => new DuplicatedOperationNameError());
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

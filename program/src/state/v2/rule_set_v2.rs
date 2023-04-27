@@ -70,7 +70,7 @@ impl<'a> RuleSetV2<'a> {
         // sanity check: make sure we got the correct slice size
         if (slice_end + 1) > bytes.len() {
             msg!("Invalid slice end: {} > {}", slice_end, bytes.len());
-            return Err(RuleSetError::DeserializationError);
+            return Err(RuleSetError::RuleSetReadFailed);
         }
 
         let operations = try_cast_slice(&bytes[cursor..slice_end])?;
