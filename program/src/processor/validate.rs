@@ -105,7 +105,7 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         None => return Err(RuleSetError::DataTypeMismatch.into()),
     };
 
-    let rule_set = match lib_version {
+    let rule_set: Box<dyn RuleSet> = match lib_version {
         LibVersion::V1 => {
             // Increment starting location by size of lib version.
             let start = start
@@ -117,14 +117,14 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
                 Box::new(
                     rmp_serde::from_slice::<RuleSetV1>(&data[start..end])
                         .map_err(|_| RuleSetError::MessagePackDeserializationError)?,
-                ) as Box<dyn RuleSet>
+                )
             } else {
                 return Err(RuleSetError::DataTypeMismatch.into());
             }
         }
         LibVersion::V2 => {
             if end < ctx.accounts.rule_set_pda_info.data_len() {
-                Box::new(RuleSetV2::from_bytes(&data[start..end])?) as Box<dyn RuleSet>
+                Box::new(RuleSetV2::from_bytes(&data[start..end])?)
             } else {
                 return Err(RuleSetError::DataTypeMismatch.into());
             }
