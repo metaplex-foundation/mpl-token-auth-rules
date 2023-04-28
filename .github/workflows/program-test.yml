@@ -9,7 +9,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  SOLANA_VERSION: 1.13.5
+  SOLANA_VERSION: 1.14.13
   RUST_TOOLCHAIN: 1.65.0
 
 jobs:
@@ -42,7 +42,7 @@ jobs:
             ${{ env.cache_id }}-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{
             env.RUSTC_HASH }}
 
-      # Run test
+      # Run bpf test
       - name: test-program
         id: run_test
         working-directory: ./program
@@ -50,3 +50,9 @@ jobs:
           cargo +${{ env.RUST_TOOLCHAIN }} test -- --nocapture --test-threads 1
           cargo +${{ env.RUST_TOOLCHAIN }} test-bpf --version
           cargo +${{ env.RUST_TOOLCHAIN }} test-bpf --bpf-out-dir ../../target/deploy/ -- --nocapture --test-threads 1
+
+      # Run integration test
+      - uses: ./.github/actions/yarn-install-and-verify
+        with:
+          cache_id: sdk
+          working_dir: packages/sdk
