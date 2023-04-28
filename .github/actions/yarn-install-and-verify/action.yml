@@ -22,12 +22,10 @@ runs:
         path: '**/node_modules'
         key: ${{ inputs.cache_id }}-${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 
-    - name: Buidl Program
-      working-directory: ./program
-      run: |
-        cargo +${{ env.RUST_STABLE }} build-bpf --version
-        cargo +${{ env.RUST_STABLE }} build-bpf --bpf-out-dir target/deploy/
-      shell: bash
+    - uses: actions/cache@v2
+      with:
+        path: ./program/target/deploy
+        key: ${{ runner.os }}-program
 
     - name: Install and Build SDK
       run: |
