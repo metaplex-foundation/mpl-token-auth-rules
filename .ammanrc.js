@@ -4,19 +4,20 @@ const path = require('path');
 const accountProviders = require('./packages/sdk/dist/src/generated/accounts');
 
 const localDeployDir = path.join(__dirname, 'program', 'target', 'deploy');
+const { LOCALHOST, tmpLedgerDir } = require('@metaplex-foundation/amman');
 const MY_PROGRAM_ID = require("./packages/sdk/idl/mpl_token_auth_rules.json").metadata.address;
 
 function localDeployPath(programName) {
     return path.join(localDeployDir, `${programName}.so`);
 }
 
-const programs = [
-    {
+const programs = {
+    token_auth_rules: {
         label: 'mpl_token_auth_rules',
         programId: MY_PROGRAM_ID,
         deployPath: localDeployPath('mpl_token_auth_rules')
     },
-];
+};
 
 const accounts = [
     {
@@ -35,17 +36,23 @@ const accounts = [
 ];
 
 const validator = {
+    killRunningValidators: true,
     programs,
     // The accounts below is commented out. Uncomment if you want to pull remote accounts. Check Amman docs for more info
     accounts,
     verifyFees: false,
     limitLedgerSize: 10000000,
+    commitment: 'singleGossip',
+    resetLedger: true,
+    jsonRpcUrl: LOCALHOST,
+    websocketUrl: '',
+    ledgerDir: tmpLedgerDir(),
 };
 
 module.exports = {
+    programs,
     validator,
     relay: {
         accountProviders,
-
     },
 };

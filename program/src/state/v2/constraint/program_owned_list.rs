@@ -79,36 +79,71 @@ impl<'a> Constraint<'a> for ProgramOwnedList<'a> {
         msg!("Validating ProgramOwnedList");
 
         let field = self.field.to_string();
+        let mut evaluation: Option<RuleResult> = None;
 
         for field in field.split('|') {
-            let key = match payload.get_pubkey(&field.to_string()) {
-                Some(pubkey) => pubkey,
-                _ => return RuleResult::Error(RuleSetError::MissingPayloadValue.into()),
-            };
+            let result = Self::validate_field(self, accounts, payload, field.to_string());
 
-            let account = match accounts.get(key) {
-                Some(account) => account,
-                _ => return RuleResult::Error(RuleSetError::MissingAccount.into()),
-            };
-
-            let data = match account.data.try_borrow() {
-                Ok(data) => data,
-                Err(_) => return RuleResult::Error(ProgramError::AccountBorrowFailed),
-            };
-
-            if is_zeroed(&data) {
-                // Print helpful errors.
-                msg!(if data.len() == 0 {
-                    "Account data is empty"
-                } else {
-                    "Account data is zeroed"
-                });
-
-                return RuleResult::Error(RuleSetError::DataIsEmpty.into());
-            } else if self.programs.contains(account.owner) {
-                // Account owner must be in the set.
-                return RuleResult::Success(self.constraint_type().to_error());
+            match result {
+                RuleResult::Success(_) => {
+                    evaluation = Some(result);
+                    // If any field is successful, we can stop evaluating.
+                    break;
+                }
+                RuleResult::Failure(_) => evaluation = Some(result),
+                RuleResult::Error(_) => {
+                    // Precedence is to store failures over errors.
+                    if !matches!(evaluation, Some(RuleResult::Failure(_))) {
+                        evaluation = Some(result)
+                    }
+                }
             }
+        }
+
+        match evaluation {
+            Some(result) => result,
+            None => RuleResult::Error(RuleSetError::UnexpectedRuleSetFailure.into()),
+        }
+    }
+}
+
+impl<'a> ProgramOwnedList<'a> {
+    fn validate_field(
+        &self,
+        accounts: &std::collections::HashMap<
+            solana_program::pubkey::Pubkey,
+            &solana_program::account_info::AccountInfo,
+        >,
+        payload: &crate::payload::Payload,
+        field: String,
+    ) -> RuleResult {
+        let key = match payload.get_pubkey(&field) {
+            Some(pubkey) => pubkey,
+            _ => return RuleResult::Error(RuleSetError::MissingPayloadValue.into()),
+        };
+
+        let account = match accounts.get(key) {
+            Some(account) => account,
+            _ => return RuleResult::Error(RuleSetError::MissingAccount.into()),
+        };
+
+        let data = match account.data.try_borrow() {
+            Ok(data) => data,
+            Err(_) => return RuleResult::Error(ProgramError::AccountBorrowFailed),
+        };
+
+        if is_zeroed(&data) {
+            // Print helpful errors.
+            msg!(if data.len() == 0 {
+                "Account data is empty"
+            } else {
+                "Account data is zeroed"
+            });
+
+            return RuleResult::Error(RuleSetError::DataIsEmpty.into());
+        } else if self.programs.contains(account.owner) {
+            // Account owner must be in the set.
+            return RuleResult::Success(self.constraint_type().to_error());
         }
 
         RuleResult::Failure(self.constraint_type().to_error())

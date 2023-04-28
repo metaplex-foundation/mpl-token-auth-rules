@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, pubkey::Pubkey};
+use solana_program::{
+    account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
+    pubkey::Pubkey,
+};
 
 use crate::{error::RuleSetError, payload::Payload};
 
@@ -34,4 +37,18 @@ pub trait Assertable<'a> {
         rule_set_state_pda: &Option<&AccountInfo>,
         rule_authority: &Option<&AccountInfo>,
     ) -> ProgramResult;
+}
+
+pub trait RuleSet<'a> {
+    /// Returns the name of the `RuleSet`.
+    fn name(&self) -> String;
+
+    /// Returns the ownwer of the `RuleSet`.
+    fn owner(&self) -> &Pubkey;
+
+    /// Returns the version of the `RuleSet`.
+    fn lib_version(&self) -> u8;
+
+    /// Returns the rule associated with an operation.
+    fn get_rule(&self, operation: String) -> Result<&dyn Assertable<'a>, ProgramError>;
 }

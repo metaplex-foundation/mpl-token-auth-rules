@@ -11,7 +11,7 @@ use crate::{
     payload::Payload,
     pda::{PREFIX, STATE_PDA},
     state::{RuleSetV1, RuleSetV2},
-    types::{Assertable, LibVersion},
+    types::{Assertable, LibVersion, RuleSet},
     utils::{assert_derivation, get_existing_revision_map},
 };
 
@@ -105,7 +105,7 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         None => return Err(RuleSetError::DataTypeMismatch.into()),
     };
 
-    match lib_version {
+    let rule_set = match lib_version {
         LibVersion::V1 => {
             // Increment starting location by size of lib version.
             let start = start
@@ -114,40 +114,33 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
 
             // Deserialize `RuleSet`.
             if end < ctx.accounts.rule_set_pda_info.data_len() {
-                let rule_set = rmp_serde::from_slice::<RuleSetV1>(&data[start..end])
-                    .map_err(|_| RuleSetError::MessagePackDeserializationError)?;
-                // Validate the `Rule` and update the `RuleSet` state if requested.
-                validate_rule(
-                    program_id,
-                    &ctx,
-                    rule_set.name().to_string(),
-                    *rule_set.owner(),
-                    rule_set.get_operation(operation)? as &dyn Assertable,
-                    payload,
-                    update_rule_state,
-                )
+                Box::new(
+                    rmp_serde::from_slice::<RuleSetV1>(&data[start..end])
+                        .map_err(|_| RuleSetError::MessagePackDeserializationError)?,
+                ) as Box<dyn RuleSet>
             } else {
-                Err(RuleSetError::DataTypeMismatch.into())
+                return Err(RuleSetError::DataTypeMismatch.into());
             }
         }
         LibVersion::V2 => {
             if end < ctx.accounts.rule_set_pda_info.data_len() {
-                let rule_set = RuleSetV2::from_bytes(&data[start..end])?;
-                // Validate the `Rule` and update the `RuleSet` state if requested.
-                validate_rule(
-                    program_id,
-                    &ctx,
-                    rule_set.name(),
-                    *rule_set.owner,
-                    rule_set.get_operation(operation)? as &dyn Assertable,
-                    payload,
-                    update_rule_state,
-                )
+                Box::new(RuleSetV2::from_bytes(&data[start..end])?) as Box<dyn RuleSet>
             } else {
-                Err(RuleSetError::DataTypeMismatch.into())
+                return Err(RuleSetError::DataTypeMismatch.into());
             }
         }
-    }
+    };
+
+    // Validate the `Rule` and update the `RuleSet` state if requested.
+    validate_rule(
+        program_id,
+        &ctx,
+        rule_set.name(),
+        *rule_set.owner(),
+        rule_set.get_rule(operation)?,
+        payload,
+        update_rule_state,
+    )
 }
 
 fn validate_rule(

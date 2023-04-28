@@ -301,6 +301,7 @@ impl Rule {
                 }
             }
             Rule::Not { rule } => {
+                msg!("Validating Not");
                 let result = rule.low_level_validate(
                     accounts,
                     payload,

@@ -6,7 +6,13 @@ use solana_program::{
 };
 
 use super::{try_cast_slice, try_from_bytes, Constraint, ConstraintType, RuleV2, Str32, U64_BYTES};
-use crate::{error::RuleSetError, types::LibVersion};
+use crate::{
+    error::RuleSetError,
+    types::{Assertable, LibVersion, RuleSet},
+};
+
+// Length of a empty array.
+const EMPTY: usize = 0;
 
 /// The struct containing all Rule Set data, most importantly the map of operations to `Rules`.
 ///  See top-level module for description of PDA memory layout.
@@ -29,22 +35,12 @@ pub struct RuleSetV2<'a> {
 }
 
 impl<'a> RuleSetV2<'a> {
-    /// Returns the lib version of the rule set.
-    pub fn lib_version(&self) -> u8 {
-        (self.header[0] & 0x000000ff) as u8
-    }
-
-    /// Returns the name of the rule set.
-    pub fn name(&self) -> String {
-        self.rule_set_name.to_string()
-    }
-
     /// Returns the number of rules in the rule set.
     pub fn size(&self) -> u32 {
         self.header[1]
     }
 
-    /// Deserialize a constraint from a byte array.
+    /// Deserialize a `RuleSetV2` from a byte array.
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, RuleSetError> {
         // header
         let header = try_from_bytes::<[u32; 2]>(0, U64_BYTES, bytes)?;
@@ -68,7 +64,7 @@ impl<'a> RuleSetV2<'a> {
                 .ok_or(RuleSetError::NumericalOverflow)?;
 
         // sanity check: make sure we got the correct slice size
-        if (slice_end + 1) > bytes.len() {
+        if size > 0 && (slice_end + 1) > bytes.len() {
             msg!("Invalid slice end: {} > {}", slice_end, bytes.len());
             return Err(RuleSetError::RuleSetReadFailed);
         }
@@ -110,8 +106,7 @@ impl<'a> RuleSetV2<'a> {
                 .iter()
                 .map(|v| v.len())
                 .reduce(|accum, item| accum + item)
-                .ok_or(RuleSetError::DataIsEmpty)
-                .unwrap();
+                .unwrap_or(EMPTY);
 
         let mut data = Vec::with_capacity(length);
 
@@ -161,9 +156,23 @@ impl<'a> RuleSetV2<'a> {
 
         None
     }
+}
+
+impl<'a> RuleSet<'a> for RuleSetV2<'a> {
+    fn name(&self) -> String {
+        self.rule_set_name.to_string()
+    }
+
+    fn owner(&self) -> &Pubkey {
+        self.owner
+    }
+
+    fn lib_version(&self) -> u8 {
+        (self.header[0] & 0x000000ff) as u8
+    }
 
     /// This function returns the rule for an operation by recursively searching through fallbacks
-    pub fn get_operation(&self, operation: String) -> Result<&RuleV2<'a>, ProgramError> {
+    fn get_rule(&self, operation: String) -> Result<&dyn Assertable<'a>, ProgramError> {
         let rule = self.get(operation.to_string());
 
         match rule {
@@ -175,7 +184,7 @@ impl<'a> RuleSetV2<'a> {
                         // If it doesn't exist then fail.
                         let split = operation.split(':').collect::<Vec<&str>>();
                         if split.len() > 1 {
-                            self.get_operation(split[0].to_owned())
+                            self.get_rule(split[0].to_owned())
                         } else {
                             Err(RuleSetError::OperationNotFound.into())
                         }
@@ -193,7 +202,7 @@ mod tests {
     use crate::{
         error::RuleSetError,
         state::v2::{Amount, Operator, ProgramOwnedList, RuleSetV2},
-        types::LibVersion,
+        types::{LibVersion, RuleSet},
     };
     use solana_program::pubkey::Pubkey;
 

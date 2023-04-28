@@ -2,7 +2,7 @@
 use crate::{
     error::RuleSetError,
     state::{Key, Rule},
-    types::LibVersion,
+    types::{Assertable, LibVersion, RuleSet},
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
@@ -76,21 +76,6 @@ impl RuleSetV1 {
         }
     }
 
-    /// Get the name of the `RuleSet`.
-    pub fn name(&self) -> &str {
-        &self.rule_set_name
-    }
-
-    /// Get the version of the `RuleSet`.
-    pub fn lib_version(&self) -> u8 {
-        self.lib_version
-    }
-
-    /// Get the owner of the `RuleSet`.
-    pub fn owner(&self) -> &Pubkey {
-        &self.owner
-    }
-
     /// Add a key-value pair into a `RuleSet`.  If this key is already in the `RuleSet`
     /// nothing is updated and an error is returned.
     pub fn add(&mut self, operation: String, rules: Rule) -> ProgramResult {
@@ -106,9 +91,24 @@ impl RuleSetV1 {
     pub fn get(&self, operation: String) -> Option<&Rule> {
         self.operations.get(&operation)
     }
+}
+
+impl<'a> RuleSet<'a> for RuleSetV1 {
+    /// Get the name of the `RuleSet`.
+    fn name(&self) -> String {
+        self.rule_set_name.clone()
+    }
+
+    fn owner(&self) -> &Pubkey {
+        &self.owner
+    }
+
+    fn lib_version(&self) -> u8 {
+        self.lib_version
+    }
 
     /// This function returns the rule for an operation by recursively searching through fallbacks
-    pub fn get_operation(&self, operation: String) -> Result<&Rule, ProgramError> {
+    fn get_rule(&self, operation: String) -> Result<&dyn Assertable<'a>, ProgramError> {
         let rule = self.get(operation.to_string());
 
         match rule {
@@ -118,7 +118,7 @@ impl RuleSetV1 {
                 // If it doesn't exist then fail.
                 let split = operation.split(':').collect::<Vec<&str>>();
                 if split.len() > 1 {
-                    self.get_operation(split[0].to_owned())
+                    self.get_rule(split[0].to_owned())
                 } else {
                     Err(RuleSetError::OperationNotFound.into())
                 }

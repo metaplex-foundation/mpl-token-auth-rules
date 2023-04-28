@@ -6,7 +6,7 @@ use mpl_token_auth_rules::{
     error::RuleSetError,
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType, SeedsVec},
-    state::{PDAMatch, Rule, RuleSetV1, RuleSetV2},
+    state::{PDAMatch, RuleSetV2},
 };
 use solana_program::{instruction::AccountMeta, pubkey::Pubkey};
 use solana_program_test::tokio;
@@ -140,27 +140,29 @@ async fn test_pda_match_specified_owner() {
     // Create RuleSet
     // --------------------------------
     // Create a Rule.
-    let rule = Rule::PDAMatch {
-        program: Some(mpl_token_auth_rules::ID),
-        pda_field: PayloadKey::Authority.to_string(),
-        seeds_field: PayloadKey::AuthoritySeeds.to_string(),
-    };
+    let rule = PDAMatch::serialize(
+        PayloadKey::Authority.to_string(),
+        Some(mpl_token_auth_rules::ID),
+        PayloadKey::AuthoritySeeds.to_string(),
+    )
+    .unwrap();
 
     // Create a RuleSet.
-    let mut rule_set = RuleSetV1::new("test rule_set".to_string(), context.payer.pubkey());
-    rule_set
-        .add(
-            Operation::Transfer {
-                scenario: utils::TransferScenario::Holder,
-            }
-            .to_string(),
-            rule,
-        )
-        .unwrap();
+    let rule_set = RuleSetV2::serialize(
+        context.payer.pubkey(),
+        "test rule_set",
+        &[Operation::Transfer {
+            scenario: utils::TransferScenario::Holder,
+        }
+        .to_string()],
+        &[&rule],
+    )
+    .unwrap();
 
     // Put the RuleSet on chain.
     let rule_set_addr =
-        create_rule_set_on_chain!(&mut context, rule_set, "test rule_set".to_string()).await;
+        create_rule_set_on_chain_serialized!(&mut context, rule_set, "test rule_set".to_string())
+            .await;
 
     // --------------------------------
     // Validate fail

@@ -12,14 +12,12 @@ use crate::{
         RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RuleSetV2, RULE_SET_REV_MAP_VERSION,
         RULE_SET_SERIALIZED_HEADER_LEN, U64_BYTES,
     },
-    types::{LibVersion, MAX_NAME_LENGTH},
+    types::{LibVersion, RuleSet, MAX_NAME_LENGTH},
     utils::{
         assert_derivation, create_or_allocate_account_raw, get_existing_revision_map, is_zeroed,
         resize_or_reallocate_account_raw,
     },
 };
-
-const ALIGNMENT_PADDING: usize = (U64_BYTES * 2) - RULE_SET_SERIALIZED_HEADER_LEN;
 
 // Function to match on `CreateOrUpdateArgs` version and call correct implementation.
 pub(crate) fn create_or_update<'a>(
@@ -87,14 +85,17 @@ fn create_or_update_v1(
         let mut revision_map = RuleSetRevisionMapV1::default();
 
         // Initially set the latest revision location to a the value right after the header.
-        revision_map.rule_set_revisions.push(
-            RULE_SET_SERIALIZED_HEADER_LEN
-                + if matches!(rule_set_version, LibVersion::V2) {
-                    ALIGNMENT_PADDING
-                } else {
-                    0
-                },
-        );
+        revision_map
+            .rule_set_revisions
+            .push(if matches!(rule_set_version, LibVersion::V2) {
+                std::alloc::Layout::from_size_align(RULE_SET_SERIALIZED_HEADER_LEN, U64_BYTES)
+                    .map_err(|_| RuleSetError::AlignmentError)?
+                    .pad_to_align()
+                    .size()
+            } else {
+                RULE_SET_SERIALIZED_HEADER_LEN
+            });
+
         revision_map
     } else {
         // Get existing revision map and its serialized length.
@@ -103,25 +104,16 @@ fn create_or_update_v1(
 
         // The next `RuleSet` revision will start where the existing revision map was + any
         // alignment required (V2 only)
-        let alignment = if matches!(rule_set_version, LibVersion::V2) {
-            let delta = existing_rev_map_loc
-                .checked_rem(U64_BYTES)
-                .ok_or(RuleSetError::NumericalOverflow)?;
-
-            if delta > 0 {
-                U64_BYTES
-                    .checked_sub(delta)
-                    .ok_or(RuleSetError::NumericalOverflow)?
-            } else {
-                0
-            }
-        } else {
-            0
-        };
-
         revision_map
             .rule_set_revisions
-            .push(existing_rev_map_loc + alignment);
+            .push(if matches!(rule_set_version, LibVersion::V2) {
+                std::alloc::Layout::from_size_align(existing_rev_map_loc, U64_BYTES)
+                    .map_err(|_| RuleSetError::AlignmentError)?
+                    .pad_to_align()
+                    .size()
+            } else {
+                existing_rev_map_loc
+            });
 
         revision_map
     };
@@ -158,8 +150,8 @@ fn create_or_update_v1(
             // `RuleSetV1` lib version + revision map version
             2
         })
-        .and_then(|len| len.checked_add(serialized_rev_map.len()))
         .and_then(|len| len.checked_add(new_rule_set_data_len))
+        .and_then(|len| len.checked_add(serialized_rev_map.len()))
         .ok_or(RuleSetError::NumericalOverflow)?;
 
     // Create or allocate, resize or reallocate the `RuleSet` PDA.
@@ -184,33 +176,27 @@ fn create_or_update_v1(
     // Write all the data to the PDA.  The user-pre-serialized `RuleSet` is either in a buffer
     // account or provided as an argument.
     match ctx.accounts.buffer_pda_info {
-        Some(account_info) => {
-            write_data_to_pda(
-                ctx.accounts.rule_set_pda_info,
-                *revision_map
-                    .rule_set_revisions
-                    .last()
-                    .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?,
-                &serialized_rev_map,
-                &account_info.data.borrow(),
-                matches!(rule_set_version, LibVersion::V1),
-            )?;
-        }
-        None => {
-            write_data_to_pda(
-                ctx.accounts.rule_set_pda_info,
-                *revision_map
-                    .rule_set_revisions
-                    .last()
-                    .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?,
-                &serialized_rev_map,
-                &serialized_rule_set,
-                matches!(rule_set_version, LibVersion::V1),
-            )?;
-        }
-    };
-
-    Ok(())
+        Some(account_info) => write_data_to_pda(
+            ctx.accounts.rule_set_pda_info,
+            *revision_map
+                .rule_set_revisions
+                .last()
+                .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?,
+            &serialized_rev_map,
+            &account_info.data.borrow(),
+            matches!(rule_set_version, LibVersion::V1),
+        ),
+        None => write_data_to_pda(
+            ctx.accounts.rule_set_pda_info,
+            *revision_map
+                .rule_set_revisions
+                .last()
+                .ok_or(RuleSetError::RuleSetRevisionNotAvailable)?,
+            &serialized_rev_map,
+            &serialized_rule_set,
+            matches!(rule_set_version, LibVersion::V1),
+        ),
+    }
 }
 
 /// Returns the lib version, name, and owner of a rule set.
@@ -218,7 +204,7 @@ fn get_rule_set_info(data: &[u8]) -> Result<(LibVersion, String, Pubkey), Progra
     if let Ok(rule_set) = rmp_serde::from_slice::<RuleSetV1>(data) {
         Ok((
             LibVersion::try_from(rule_set.lib_version())?,
-            rule_set.name().to_string(),
+            rule_set.name(),
             *rule_set.owner(),
         ))
     } else if let Ok(rule_set) = RuleSetV2::from_bytes(data) {

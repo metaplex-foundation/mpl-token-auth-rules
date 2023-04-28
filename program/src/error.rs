@@ -169,6 +169,10 @@ pub enum RuleSetError {
     /// 39 - Duplicated operation name
     #[error("Duplicated operation name")]
     DuplicatedOperationName,
+
+    /// 40 - Could not determine alignemnt
+    #[error("Could not determine alignemnt")]
+    AlignmentError,
 }
 
 impl PrintProgramError for RuleSetError {

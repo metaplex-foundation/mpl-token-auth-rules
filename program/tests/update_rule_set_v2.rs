@@ -9,7 +9,7 @@ use mpl_token_auth_rules::{
         CompareOp, Rule, RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1,
         RULE_SET_SERIALIZED_HEADER_LEN,
     },
-    types::LibVersion,
+    types::{LibVersion, RuleSet},
 };
 use rmp_serde::Serializer;
 use serde::Serialize;

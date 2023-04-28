@@ -75,17 +75,44 @@ impl<'a> Constraint<'a> for PubkeyListMatch<'a> {
         msg!("Validating PubkeyListMatch");
 
         let field = self.field.to_string();
+        let mut evaluation: Option<RuleResult> = None;
 
         for field in field.split('|') {
-            let key = match payload.get_pubkey(&field.to_string()) {
-                Some(pubkey) => pubkey,
-                _ => return RuleResult::Error(RuleSetError::MissingPayloadValue.into()),
-            };
+            let result = Self::validate_field(self, payload, field.to_string());
 
-            if self.pubkeys.contains(key) {
-                // Account owner must be in the set.
-                return RuleResult::Success(self.constraint_type().to_error());
+            match result {
+                RuleResult::Success(_) => {
+                    evaluation = Some(result);
+                    // If any field is successful, we can stop evaluating.
+                    break;
+                }
+                RuleResult::Failure(_) => evaluation = Some(result),
+                RuleResult::Error(_) => {
+                    // Precedence is to store failures over errors.
+                    if !matches!(evaluation, Some(RuleResult::Failure(_))) {
+                        evaluation = Some(result)
+                    }
+                }
             }
+        }
+
+        match evaluation {
+            Some(result) => result,
+            None => RuleResult::Error(RuleSetError::UnexpectedRuleSetFailure.into()),
+        }
+    }
+}
+
+impl<'a> PubkeyListMatch<'a> {
+    fn validate_field(&self, payload: &crate::payload::Payload, field: String) -> RuleResult {
+        let key = match payload.get_pubkey(&field) {
+            Some(pubkey) => pubkey,
+            _ => return RuleResult::Error(RuleSetError::MissingPayloadValue.into()),
+        };
+
+        if self.pubkeys.contains(key) {
+            // Account owner must be in the set.
+            return RuleResult::Success(self.constraint_type().to_error());
         }
 
         RuleResult::Failure(self.constraint_type().to_error())
