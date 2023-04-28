@@ -29,6 +29,8 @@ jobs:
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
       - uses: ./.github/actions/build-program
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
 
       # Restore Cache from previous build/test
       - uses: actions/cache@v2

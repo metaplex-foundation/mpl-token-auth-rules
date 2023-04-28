@@ -5,6 +5,12 @@
 # - ./.github/actions/install-rust
 
 name: Build Program
+
+inputs:
+  toolchain:
+    description: The Rust version to use, default env.RUST_TOOLCHAIN
+    required: true
+
 runs:
   using: 'composite'
   steps:
@@ -17,6 +23,6 @@ runs:
     - name: build-program
       working-directory: ./program
       run: |
-        cargo +${{ env.RUST_STABLE }} build-bpf --version
-        cargo +${{ env.RUST_STABLE }} build-bpf --bpf-out-dir target/deploy/
+        cargo +${{ inputs.toolchain }} build-bpf --version
+        cargo +${{ inputs.toolchain }} build-bpf --bpf-out-dir target/deploy/
       shell: bash
