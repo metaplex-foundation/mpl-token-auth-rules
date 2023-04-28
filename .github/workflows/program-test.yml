@@ -28,6 +28,7 @@ jobs:
       - uses: ./.github/actions/install-rust
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
+      - uses: ./.github/actions/build-program
 
       # Restore Cache from previous build/test
       - uses: actions/cache@v2
