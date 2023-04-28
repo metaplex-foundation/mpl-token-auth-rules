@@ -153,6 +153,26 @@ pub enum RuleSetError {
     /// 35 - Program Owned Set check failed
     #[error("Program Owned Set check failed")]
     ProgramOwnedSetCheckFailed,
+
+    /// 36 - Invalid compare operator
+    #[error("Invalid compare operator")]
+    InvalidCompareOp,
+
+    /// 37 - Invalid constraint type value
+    #[error("Invalid constraint type value")]
+    InvalidConstraintType,
+
+    /// 38 - Deserialization error
+    #[error("Failed to read the rule set")]
+    RuleSetReadFailed,
+
+    /// 39 - Duplicated operation name
+    #[error("Duplicated operation name")]
+    DuplicatedOperationName,
+
+    /// 40 - Could not determine alignemnt
+    #[error("Could not determine alignemnt")]
+    AlignmentError,
 }
 
 impl PrintProgramError for RuleSetError {

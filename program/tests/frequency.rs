@@ -10,8 +10,7 @@ use mpl_token_auth_rules::{
     state::{Rule, RuleSetV1},
 };
 use solana_program::program_error::ProgramError;
-use solana_program_test::tokio;
-use solana_program_test::BanksClientError;
+use solana_program_test::{tokio, BanksClientError};
 use solana_sdk::{signature::Signer, signer::keypair::Keypair, transaction::TransactionError};
 use utils::{program_test, Operation};
 

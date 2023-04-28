@@ -8,6 +8,8 @@ use mpl_token_auth_rules::{
     payload::{Payload, PayloadType},
     state::{CompareOp, Rule, RuleSetV1},
 };
+use rmp_serde::Serializer;
+use serde::Serialize;
 use solana_program::{instruction::InstructionError, pubkey, pubkey::Pubkey};
 use solana_program_test::{tokio, ProgramTestContext};
 use solana_sdk::{
@@ -334,10 +336,15 @@ fn get_royalty_rule_set(owner: Pubkey) -> RuleSetV1 {
 async fn create_royalty_rule_set(context: &mut ProgramTestContext) -> Pubkey {
     let royalty_rule_set = get_royalty_rule_set(context.payer.pubkey());
 
+    let mut serialized_rule_set = Vec::new();
+    royalty_rule_set
+        .serialize(&mut Serializer::new(&mut serialized_rule_set))
+        .unwrap();
+
     // Put the `RuleSet` on chain.
     create_big_rule_set_on_chain!(
         context,
-        royalty_rule_set.clone(),
+        serialized_rule_set,
         RULE_SET_NAME.to_string(),
         Some(ADDITIONAL_COMPUTE)
     )

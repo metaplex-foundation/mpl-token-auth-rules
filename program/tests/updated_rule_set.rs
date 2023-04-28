@@ -8,9 +8,10 @@ use mpl_token_auth_rules::{
     instruction::{builders::ValidateBuilder, InstructionBuilder, ValidateArgs},
     payload::{Payload, PayloadType},
     state::{
-        CompareOp, Rule, RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RULE_SET_LIB_VERSION,
-        RULE_SET_REV_MAP_VERSION, RULE_SET_SERIALIZED_HEADER_LEN,
+        CompareOp, Rule, RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RULE_SET_REV_MAP_VERSION,
+        RULE_SET_SERIALIZED_HEADER_LEN,
     },
+    types::LibVersion,
 };
 use rmp_serde::Serializer;
 use serde::Serialize;
@@ -239,7 +240,8 @@ async fn test_update_ruleset_data_integrity() {
 
         // Check the nth `RuleSet` lib version.
         assert_eq!(
-            data[rule_set_version_loc], RULE_SET_LIB_VERSION,
+            data[rule_set_version_loc],
+            LibVersion::V1 as u8,
             "The buffer doesn't match rule set {} lib version,",
             n
         );

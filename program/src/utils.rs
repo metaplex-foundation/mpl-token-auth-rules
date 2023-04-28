@@ -3,7 +3,7 @@ use crate::{
     error::RuleSetError,
     payload::ProofInfo,
     state::{
-        Rule, RuleSetHeader, RuleSetRevisionMapV1, RuleSetV1, RULE_SET_REV_MAP_VERSION,
+        RuleSetHeader, RuleSetRevisionMapV1, RULE_SET_REV_MAP_VERSION,
         RULE_SET_SERIALIZED_HEADER_LEN,
     },
 };
@@ -14,7 +14,8 @@ use solana_program::{
     msg,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
-    pubkey::Pubkey,
+    program_memory::sol_memcmp,
+    pubkey::{Pubkey, PUBKEY_BYTES},
     rent::Rent,
     system_instruction,
     sysvar::Sysvar,
@@ -118,6 +119,11 @@ pub fn assert_owned_by(account: &AccountInfo, owner: &Pubkey) -> ProgramResult {
     }
 }
 
+/// Convenience function for comparing two [`Pubkey`]s.
+pub fn cmp_pubkeys(a: &Pubkey, b: &Pubkey) -> bool {
+    sol_memcmp(a.as_ref(), b.as_ref(), PUBKEY_BYTES) == 0
+}
+
 /// Compute the root of a Merkle tree given a leaf and a proof.  Uses a constant value
 /// of 0x01 as an input to the hashing function along with the values to be hashed.
 pub fn compute_merkle_root(leaf: &Pubkey, merkle_proof: &ProofInfo) -> [u8; 32] {
@@ -165,7 +171,9 @@ pub fn get_existing_revision_map(
 
             // Deserialize revision map.
             if start < data.len() {
-                let revision_map = RuleSetRevisionMapV1::try_from_slice(&data[start..])?;
+                let mut location = &data[start..];
+                let revision_map = RuleSetRevisionMapV1::deserialize(&mut location)?;
+
                 Ok((revision_map, header.rev_map_version_location))
             } else {
                 Err(RuleSetError::DataTypeMismatch.into())
@@ -220,26 +228,5 @@ pub fn is_zeroed(buf: &[u8]) -> bool {
     {
         chunks.all(|chunk| chunk == &ZEROS[..])
             && chunks.remainder() == &ZEROS[..chunks.remainder().len()]
-    }
-}
-
-/// This function returns the rule for an operation by recursively searching through fallbacks
-pub fn get_operation(operation: String, rule_set: &RuleSetV1) -> Result<&Rule, ProgramError> {
-    let rule = rule_set.get(operation.to_string());
-
-    match rule {
-        Some(Rule::Namespace) => {
-            // Check for a ':' namespace separator. If it exists try to operation namespace to see if
-            // a fallback exists. E.g. 'transfer:owner' will check for a fallback for 'transfer'.
-            // If it doesn't exist then fail.
-            let split = operation.split(':').collect::<Vec<&str>>();
-            if split.len() > 1 {
-                get_operation(split[0].to_owned(), rule_set)
-            } else {
-                Err(RuleSetError::OperationNotFound.into())
-            }
-        }
-        Some(r) => Ok(r),
-        None => Err(RuleSetError::OperationNotFound.into()),
     }
 }

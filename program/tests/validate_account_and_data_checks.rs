@@ -9,8 +9,7 @@ use mpl_token_auth_rules::{
     state::{Rule, RuleSetV1},
 };
 
-use solana_program::program_error::ProgramError;
-use solana_program::system_instruction;
+use solana_program::{program_error::ProgramError, system_instruction};
 use solana_program_test::{tokio, BanksClientError};
 use solana_sdk::{
     signature::Signer,
