@@ -1,17 +1,16 @@
 use std::collections::HashMap;
 
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
     pubkey::Pubkey,
 };
 
 use crate::{
     error::RuleSetError,
     instruction::{Context, Validate, ValidateArgs},
-    payload::Payload,
-    pda::{PREFIX, STATE_PDA},
+    pda::STATE_PDA,
     state::{RuleSetV1, RuleSetV2},
-    types::{Assertable, LibVersion, RuleSet},
+    types::{LibVersion, RuleSet},
     utils::{assert_derivation, get_existing_revision_map},
 };
 
@@ -131,34 +130,6 @@ fn validate_v1(program_id: &Pubkey, ctx: Context<Validate>, args: ValidateArgs) 
         }
     };
 
-    // Validate the `Rule` and update the `RuleSet` state if requested.
-    validate_rule(
-        program_id,
-        &ctx,
-        rule_set.name(),
-        *rule_set.owner(),
-        rule_set.get_rule(operation)?,
-        payload,
-        update_rule_state,
-    )
-}
-
-fn validate_rule(
-    program_id: &Pubkey,
-    ctx: &Context<Validate>,
-    rule_set_name: String,
-    owner: Pubkey,
-    rule: &dyn Assertable,
-    payload: Payload,
-    update_rule_state: bool,
-) -> ProgramResult {
-    // Check `RuleSet` account info derivation.
-    let _bump = assert_derivation(
-        program_id,
-        ctx.accounts.rule_set_pda_info.key,
-        &[PREFIX.as_bytes(), owner.as_ref(), rule_set_name.as_bytes()],
-    )?;
-
     // If `RuleSet` state is to be updated, check account info derivation.
     if update_rule_state {
         if let Some(rule_set_state_pda_info) = ctx.accounts.rule_set_state_pda_info {
@@ -167,8 +138,8 @@ fn validate_rule(
                 rule_set_state_pda_info.key,
                 &[
                     STATE_PDA.as_bytes(),
-                    owner.as_ref(),
-                    rule_set_name.as_bytes(),
+                    rule_set.owner().as_ref(),
+                    rule_set.name().as_bytes(),
                     ctx.accounts.mint_info.key.as_ref(),
                 ],
             )?;
@@ -187,16 +158,11 @@ fn validate_rule(
         .collect::<HashMap<Pubkey, &AccountInfo>>();
 
     // Validate the `Rule`.
-    if let Err(err) = rule.validate(
+    rule_set.get_rule(operation)?.validate(
         &accounts_map,
         &payload,
         update_rule_state,
         &ctx.accounts.rule_set_state_pda_info,
         &ctx.accounts.rule_authority_info,
-    ) {
-        msg!("Failed to validate: {}", err);
-        return Err(err);
-    }
-
-    Ok(())
+    )
 }
