@@ -4,7 +4,7 @@ import { PublicKey } from '@solana/web3.js';
 import { deserializeRulesV2, RuleV2, serializeRulesV2 } from './rule';
 
 export type RuleSetV2 = {
-  // libVersion = 2
+  // version = 2
   name: string;
   owner: PublicKey;
   operations: Record<string, RuleV2>;
