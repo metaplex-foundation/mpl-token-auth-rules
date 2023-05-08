@@ -13,7 +13,9 @@ import { deserializeRuleSetV2, RuleSetV2 } from './ruleSetV2';
 export * from './errors';
 export * from './generated';
 export * from './pda';
+export * from './ruleSetV1';
 export * from './ruleSetV2';
+export * from './shared';
 
 export const PREFIX = 'rule_set';
 
