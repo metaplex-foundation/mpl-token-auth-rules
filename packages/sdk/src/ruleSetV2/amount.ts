@@ -3,16 +3,7 @@ import BN from 'bn.js';
 import { deserializeString32, serializeString32 } from './helpers';
 import { serializeRuleHeaderV2 } from './rule';
 import { RuleTypeV2 } from './ruleType';
-
-export enum AmountOperator {
-  Lt, // Less Than
-  LtEq, // Less Than or Equal To
-  Eq, // Equal To
-  GtEq, // Greater Than or Equal To
-  Gt, // Greater Than
-}
-
-export type AmountOperatorString = '<' | '<=' | '=' | '>=' | '>';
+import { AmountOperator, AmountOperatorString, parseAmountOperator } from '../shared';
 
 export type AmountRuleV2 = {
   type: RuleTypeV2.Amount;
@@ -49,16 +40,4 @@ export const deserializeAmountV2 = (buffer: Buffer, offset = 0): AmountRuleV2 =>
   offset += 8;
   const field = deserializeString32(buffer, offset);
   return { type: RuleTypeV2.Amount, field, operator, amount };
-};
-
-const parseAmountOperator = (operator: AmountOperator | AmountOperatorString): AmountOperator => {
-  return (
-    {
-      '<': AmountOperator.Lt,
-      '<=': AmountOperator.LtEq,
-      '=': AmountOperator.Eq,
-      '>=': AmountOperator.GtEq,
-      '>': AmountOperator.Gt,
-    }[operator] ?? operator
-  );
 };
