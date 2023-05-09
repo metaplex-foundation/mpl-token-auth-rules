@@ -67,7 +67,7 @@ export type PdaMatchRuleV1 = {
 
 export type ProgramOwnedRuleV1 = {
   ProgramOwned: {
-    publicKey: PublicKeyAsArrayOfBytes;
+    program: PublicKeyAsArrayOfBytes;
     field: string;
   };
 };

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Keypair } from '@solana/web3.js';
 import { encode } from '@msgpack/msgpack';
 import test from 'ava';
@@ -20,6 +21,7 @@ import {
   pubkeyTreeMatchV2,
   RuleSetV2,
   serializeRuleSetV2,
+  RuleSetV1,
 } from '../src/mpl-token-auth-rules';
 import {
   createOrUpdateLargeRuleset,
@@ -57,7 +59,7 @@ test('it can update a ruleset from v1 to v2', async (t) => {
   // Given a ruleset v1 account data.
   const { connection, payer } = await getConnectionAndPayer();
   const name = 'My Rule Set';
-  const ruleSetV1 = {
+  const ruleSetV1: RuleSetV1 = {
     libVersion: 1,
     ruleSetName: name,
     owner: Array.from(payer.publicKey.toBytes()),
@@ -77,8 +79,8 @@ test('it can update a ruleset from v1 to v2', async (t) => {
 
   // Then the latest ruleset is a ruleset v1.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const latestDeserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as string;
-  t.is(latestDeserializedRuleSet, JSON.stringify(ruleSetV1, null, 2));
+  const latestDeserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data);
+  t.deepEqual(latestDeserializedRuleSet, ruleSetV1);
 
   // Additionally, Given a serialized ruleset v2 account data.
   const publicKeyA = Keypair.generate().publicKey;
@@ -98,9 +100,7 @@ test('it can update a ruleset from v1 to v2', async (t) => {
 
   // Then the latest ruleset is a ruleset v2.
   const updatedRawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const updatedLatestDeserializedRuleSet = getLatestRuleSet(
-    updatedRawRuleSetPdaAccount?.data,
-  ) as RuleSetV2;
+  const updatedLatestDeserializedRuleSet = getLatestRuleSet(updatedRawRuleSetPdaAccount?.data);
   t.deepEqual(updatedLatestDeserializedRuleSet, ruleSetV2);
 });
 
@@ -133,7 +133,7 @@ test('it can update a ruleset from v2 to v1', async (t) => {
 
   // Additionally, Given a ruleset v1 account data.
 
-  const ruleSetV1 = {
+  const ruleSetV1: RuleSetV1 = {
     libVersion: 1,
     ruleSetName: name,
     owner: Array.from(payer.publicKey.toBytes()),
@@ -153,8 +153,8 @@ test('it can update a ruleset from v2 to v1', async (t) => {
 
   // Then the latest ruleset is a ruleset v1.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const latestDeserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as string;
-  t.is(latestDeserializedRuleSet, JSON.stringify(ruleSetV1, null, 2));
+  const latestDeserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetV1;
+  t.deepEqual(latestDeserializedRuleSet, ruleSetV1);
 });
 
 test('it can create a ruleset v2 from a buffer account', async (t) => {

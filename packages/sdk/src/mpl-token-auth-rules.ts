@@ -9,6 +9,7 @@ import type { bignum } from '@metaplex-foundation/beet';
 import { decode } from '@msgpack/msgpack';
 import { BN } from 'bn.js';
 import { deserializeRuleSetV2, RuleSetV2 } from './ruleSetV2';
+import { RuleSetV1 } from './ruleSetV1';
 
 export * from './errors';
 export * from './generated';
@@ -27,12 +28,12 @@ export const getHeader = (data: Buffer): RuleSetHeader => {
 export const getRevisionMapV1 = (data: Buffer): RuleSetRevisionMapV1 => {
   const header = getHeader(data);
   const [revmap] = ruleSetRevisionMapV1Beet.deserialize(
-    data.slice(bignumToNumber(header.revMapVersionLocation) + 1, data.length),
+    data.subarray(bignumToNumber(header.revMapVersionLocation) + 1, data.length),
   );
   return revmap;
 };
 
-export const getLatestRuleSet = (data: Buffer): string | RuleSetV2 => {
+export const getLatestRuleSet = (data: Buffer): RuleSetV1 | RuleSetV2 => {
   const header = getHeader(data);
   const revmap = getRevisionMapV1(data);
   const latestRevision = bignumToNumber(
@@ -42,8 +43,7 @@ export const getLatestRuleSet = (data: Buffer): string | RuleSetV2 => {
   const endOfRuleSet = bignumToNumber(header.revMapVersionLocation);
   switch (ruleSetVersion) {
     case 1:
-      const rulesetDecoded = decode(data.subarray(latestRevision + 1, endOfRuleSet));
-      return JSON.stringify(rulesetDecoded, null, 2);
+      return decode(data.subarray(latestRevision + 1, endOfRuleSet)) as RuleSetV1;
     case 2:
       return deserializeRuleSetV2(data.subarray(latestRevision, endOfRuleSet));
     default:
