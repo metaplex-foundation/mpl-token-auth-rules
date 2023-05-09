@@ -13,6 +13,7 @@ test('serialize', async (t) => {
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
   const ruleSet: RuleSetV2 = {
+    libVersion: 2,
     name: 'My Rule Set',
     owner,
     operations: {
@@ -55,6 +56,7 @@ test('deserialize', async (t) => {
   const buffer = Buffer.from(hexBuffer, 'hex');
   const ruleSet = deserializeRuleSetV2(buffer);
   t.deepEqual(ruleSet, {
+    libVersion: 2,
     name: 'My Rule Set',
     owner,
     operations: {

@@ -37,6 +37,7 @@ test('it can create a ruleset v2', async (t) => {
   const publicKeyB = Keypair.generate().publicKey;
   const name = 'My Rule Set';
   const ruleSet: RuleSetV2 = {
+    libVersion: 2,
     name,
     owner: payer.publicKey,
     operations: {
@@ -86,6 +87,7 @@ test('it can update a ruleset from v1 to v2', async (t) => {
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
   const ruleSetV2: RuleSetV2 = {
+    libVersion: 2,
     name,
     owner: payer.publicKey,
     operations: {
@@ -112,6 +114,7 @@ test('it can update a ruleset from v2 to v1', async (t) => {
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
   const ruleSetV2: RuleSetV2 = {
+    libVersion: 2,
     name,
     owner: payer.publicKey,
     operations: {
@@ -164,6 +167,7 @@ test('it can create a ruleset v2 from a buffer account', async (t) => {
   const publicKeyB = Keypair.generate().publicKey;
   const name = 'My Rule Set';
   const ruleSet: RuleSetV2 = {
+    libVersion: 2,
     name,
     owner: payer.publicKey,
     operations: {
@@ -190,6 +194,7 @@ test('it can create a large ruleset v2 from a buffer account', async (t) => {
   const { connection, payer } = await getConnectionAndPayer();
   const name = 'My Large Rule Set';
   const ruleSet: RuleSetV2 = {
+    libVersion: 2,
     name,
     owner: payer.publicKey,
     operations: {
@@ -216,6 +221,7 @@ test('it can create a composed ruleset v2', async (t) => {
   const name = 'My Composed Rule Set';
 
   const ruleSet: RuleSetV2 = {
+    libVersion: 2,
     name,
     owner: payer.publicKey,
     operations: {
@@ -250,6 +256,7 @@ test('it can create a ruleset v2 with all rule types', async (t) => {
   const name = 'My Composed Rule Set';
 
   const ruleSet: RuleSetV2 = {
+    libVersion: 2,
     name,
     owner: payer.publicKey,
     operations: {
@@ -312,6 +319,7 @@ test('it can update a ruleset v2', async (t) => {
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
   const ruleSetV2: RuleSetV2 = {
+    libVersion: 2,
     name,
     owner: payer.publicKey,
     operations: {
@@ -334,6 +342,7 @@ test('it can update a ruleset v2', async (t) => {
   // Given a updated ruleset v2 account data.
 
   const updatedRuleSetV2: RuleSetV2 = {
+    libVersion: 2,
     name,
     owner: payer.publicKey,
     operations: {
