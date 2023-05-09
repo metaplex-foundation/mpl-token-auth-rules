@@ -31,9 +31,9 @@ export type AllRuleV1 = {
 
 export type AmountRuleV1 = {
   Amount: {
-    field: string;
-    operator: AmountOperator;
     amount: number;
+    operator: AmountOperator;
+    field: string;
   };
 };
 
@@ -74,7 +74,7 @@ export type ProgramOwnedRuleV1 = {
 
 export type ProgramOwnedListRuleV1 = {
   ProgramOwnedList: {
-    publicKeys: PublicKeyAsArrayOfBytes[];
+    programs: PublicKeyAsArrayOfBytes[];
     field: string;
   };
 };
@@ -82,21 +82,21 @@ export type ProgramOwnedListRuleV1 = {
 export type ProgramOwnedTreeRuleV1 = {
   ProgramOwnedTree: {
     root: number[];
-    publicKeyField: string;
+    pubkeyField: string;
     proofField: string;
   };
 };
 
 export type PubkeyListMatchRuleV1 = {
   PubkeyListMatch: {
-    publicKeys: PublicKeyAsArrayOfBytes[];
+    pubkeys: PublicKeyAsArrayOfBytes[];
     field: string;
   };
 };
 
 export type PubkeyMatchRuleV1 = {
   PubkeyMatch: {
-    publicKey: PublicKeyAsArrayOfBytes;
+    pubkey: PublicKeyAsArrayOfBytes;
     field: string;
   };
 };
@@ -104,7 +104,7 @@ export type PubkeyMatchRuleV1 = {
 export type PubkeyTreeMatchRuleV1 = {
   PubkeyTreeMatch: {
     root: number[];
-    publicKeyField: string;
+    pubkeyField: string;
     proofField: string;
   };
 };
