@@ -1,9 +1,9 @@
 import { serializeRuleHeaderV2 } from './rule';
 import { RuleTypeV2 } from './ruleType';
 
-export type NamespaceRuleV2 = { type: RuleTypeV2.Namespace };
+export type NamespaceRuleV2 = { type: 'Namespace' };
 
-export const namespaceV2 = (): NamespaceRuleV2 => ({ type: RuleTypeV2.Namespace });
+export const namespaceV2 = (): NamespaceRuleV2 => ({ type: 'Namespace' });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const serializeNamespaceV2 = (rule: NamespaceRuleV2): Buffer => {
@@ -12,5 +12,5 @@ export const serializeNamespaceV2 = (rule: NamespaceRuleV2): Buffer => {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const deserializeNamespaceV2 = (buffer: Buffer, offset = 0): NamespaceRuleV2 => {
-  return { type: RuleTypeV2.Namespace };
+  return namespaceV2();
 };

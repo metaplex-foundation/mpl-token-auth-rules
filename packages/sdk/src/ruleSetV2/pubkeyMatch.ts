@@ -7,16 +7,20 @@ import {
 } from './helpers';
 import { serializeRuleHeaderV2 } from './rule';
 import { RuleTypeV2 } from './ruleType';
+import { Base58PublicKey, toBase58PublicKey } from './base58PublicKey';
 
 export type PubkeyMatchRuleV2 = {
-  type: RuleTypeV2.PubkeyMatch;
+  type: 'PubkeyMatch';
   field: string;
-  publicKey: PublicKey;
+  publicKey: Base58PublicKey;
 };
 
-export const pubkeyMatchV2 = (field: string, publicKey: PublicKey): PubkeyMatchRuleV2 => ({
-  type: RuleTypeV2.PubkeyMatch,
-  publicKey,
+export const pubkeyMatchV2 = (
+  field: string,
+  publicKey: PublicKey | Base58PublicKey,
+): PubkeyMatchRuleV2 => ({
+  type: 'PubkeyMatch',
+  publicKey: toBase58PublicKey(publicKey),
   field,
 });
 
@@ -35,5 +39,5 @@ export const deserializePubkeyMatchV2 = (buffer: Buffer, offset = 0): PubkeyMatc
   const field = deserializeString32(buffer, offset);
   offset += 32;
 
-  return { type: RuleTypeV2.PubkeyMatch, publicKey, field };
+  return pubkeyMatchV2(field, publicKey);
 };

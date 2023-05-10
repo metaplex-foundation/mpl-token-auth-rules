@@ -1,4 +1,5 @@
 import { PublicKey } from '@solana/web3.js';
+import { Base58PublicKey, toBase58PublicKey } from './base58PublicKey';
 import {
   deserializePublicKey,
   deserializeString32,
@@ -9,20 +10,20 @@ import { serializeRuleHeaderV2 } from './rule';
 import { RuleTypeV2 } from './ruleType';
 
 export type PdaMatchRuleV2 = {
-  type: RuleTypeV2.PdaMatch;
+  type: 'PdaMatch';
   pdaField: string;
-  program: PublicKey;
+  program: Base58PublicKey;
   seedsField: string;
 };
 
 export const pdaMatchV2 = (
   pdaField: string,
-  program: PublicKey,
+  program: PublicKey | Base58PublicKey,
   seedsField: string,
 ): PdaMatchRuleV2 => ({
-  type: RuleTypeV2.PdaMatch,
+  type: 'PdaMatch',
   pdaField,
-  program,
+  program: toBase58PublicKey(program),
   seedsField,
 });
 
@@ -43,6 +44,5 @@ export const deserializePdaMatchV2 = (buffer: Buffer, offset = 0): PdaMatchRuleV
   offset += 32;
   const seedsField = deserializeString32(buffer, offset);
   offset += 32;
-
-  return { type: RuleTypeV2.PdaMatch, pdaField, program, seedsField };
+  return pdaMatchV2(pdaField, program, seedsField);
 };

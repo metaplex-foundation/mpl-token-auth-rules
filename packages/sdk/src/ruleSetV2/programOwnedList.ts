@@ -8,20 +8,21 @@ import {
 } from './helpers';
 import { serializeRuleHeaderV2 } from './rule';
 import { RuleTypeV2 } from './ruleType';
+import { Base58PublicKey, toBase58PublicKey } from './base58PublicKey';
 
 export type ProgramOwnedListRuleV2 = {
-  type: RuleTypeV2.ProgramOwnedList;
+  type: 'ProgramOwnedList';
   field: string;
-  programs: PublicKey[];
+  programs: Base58PublicKey[];
 };
 
 export const programOwnedListV2 = (
   field: string,
-  programs: PublicKey[],
+  programs: (PublicKey | Base58PublicKey)[],
 ): ProgramOwnedListRuleV2 => ({
-  type: RuleTypeV2.ProgramOwnedList,
+  type: 'ProgramOwnedList',
   field,
-  programs,
+  programs: programs.map(toBase58PublicKey),
 });
 
 export const serializeProgramOwnedListV2 = (rule: ProgramOwnedListRuleV2): Buffer => {
@@ -52,5 +53,5 @@ export const deserializeProgramOwnedListV2 = (
     offset += 32;
   }
 
-  return { type: RuleTypeV2.ProgramOwnedList, field, programs };
+  return programOwnedListV2(field, programs);
 };

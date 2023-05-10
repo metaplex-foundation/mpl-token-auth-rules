@@ -21,3 +21,17 @@ export const parseAmountOperator = (
     }[operator] ?? operator
   );
 };
+
+export const parseAmountOperatorString = (
+  operator: AmountOperator | AmountOperatorString,
+): AmountOperatorString => {
+  return (
+    {
+      [AmountOperator.Lt]: '<',
+      [AmountOperator.LtEq]: '<=',
+      [AmountOperator.Eq]: '=',
+      [AmountOperator.GtEq]: '>=',
+      [AmountOperator.Gt]: '>',
+    }[operator] ?? operator
+  );
+};
