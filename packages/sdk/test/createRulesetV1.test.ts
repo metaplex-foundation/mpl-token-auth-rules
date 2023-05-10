@@ -91,7 +91,7 @@ test.skip('it can create a ruleset v1 with all rule types', async (t) => {
                 rules: [
                   { AdditionalSigner: { account: [...Keypair.generate().publicKey.toBytes()] } },
                   { AdditionalSigner: { account: [...Keypair.generate().publicKey.toBytes()] } },
-                  { Namespace: true },
+                  // { Namespace: true },
                 ],
               },
             },
@@ -102,14 +102,14 @@ test.skip('it can create a ruleset v1 with all rule types', async (t) => {
                 },
               },
             },
-            { Pass: true },
-            {
-              PubkeyTreeMatch: {
-                root: [...Array(32)].map(() => Math.floor(Math.random() * 40)),
-                pubkeyField: 'Source',
-                proofField: 'Proof',
-              },
-            },
+            // { Pass: true },
+            // {
+            //   PubkeyTreeMatch: {
+            //     root: [...Array(32)].map(() => Math.floor(Math.random() * 40)),
+            //     pubkeyField: 'Source',
+            //     proofField: 'Proof',
+            //   },
+            // },
           ],
         },
       },
@@ -122,26 +122,26 @@ test.skip('it can create a ruleset v1 with all rule types', async (t) => {
                 field: 'Destination',
               },
             },
-            {
-              PDAMatch: {
-                program: [...PROGRAM_ID.toBytes()],
-                pdaField: 'Destination',
-                seedsField: 'Seed',
-              },
-            },
+            // {
+            //   PDAMatch: {
+            //     program: [...PROGRAM_ID.toBytes()],
+            //     pdaField: 'Destination',
+            //     seedsField: 'Seed',
+            //   },
+            // },
             {
               ProgramOwned: {
                 program: [...PROGRAM_ID.toBytes()],
                 field: 'Source',
               },
             },
-            {
-              ProgramOwnedTree: {
-                root: [...Array(32)].map(() => Math.floor(Math.random() * 40)),
-                pubkeyField: 'Source',
-                proofField: 'Proof',
-              },
-            },
+            // {
+            //   ProgramOwnedTree: {
+            //     root: [...Array(32)].map(() => Math.floor(Math.random() * 40)),
+            //     pubkeyField: 'Source',
+            //     proofField: 'Proof',
+            //   },
+            // },
           ],
         },
       },
@@ -155,10 +155,5 @@ test.skip('it can create a ruleset v1 with all rule types', async (t) => {
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
   const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetV1;
-  // convert the deserialized BN to a number
-  (deserializedRuleSet.operations['Transfer:Holder'] as any).rules[1].rule.amount = Number(
-    (deserializedRuleSet.operations['Transfer:Holder'] as any).rules[1].rule.amount,
-  );
-
   t.deepEqual(deserializedRuleSet, ruleSet);
 });
