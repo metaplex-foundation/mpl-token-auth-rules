@@ -18,5 +18,16 @@ export const serializeRuleSetV1 = (ruleSet: RuleSetV1): Buffer => {
 };
 
 export const deserializeRuleSetV1 = (buffer: Buffer, offset = 0): RuleSetV1 => {
-  return decode(buffer.subarray(offset + 1)) as RuleSetV1;
+  const ruleSet = decode(buffer.subarray(offset + 1));
+
+  if (Array.isArray(ruleSet)) {
+    return {
+      libVersion: ruleSet[0],
+      owner: ruleSet[1],
+      ruleSetName: ruleSet[2],
+      operations: ruleSet[3],
+    };
+  }
+
+  return ruleSet as RuleSetV1;
 };
