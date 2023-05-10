@@ -10,7 +10,7 @@ import {
   allV2,
   amountV2,
   anyV2,
-  getLatestRuleSet,
+  getLatestRuleSetRevision,
   namespaceV2,
   notV2,
   passV2,
@@ -52,7 +52,9 @@ test('it can create a ruleset v2', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetRevisionV2;
+  const deserializedRuleSet = getLatestRuleSetRevision(
+    rawRuleSetPdaAccount?.data,
+  ) as RuleSetRevisionV2;
   t.deepEqual(deserializedRuleSet, ruleSet);
 });
 
@@ -80,7 +82,7 @@ test('it can update a ruleset from v1 to v2', async (t) => {
 
   // Then the latest ruleset is a ruleset v1.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const latestDeserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data);
+  const latestDeserializedRuleSet = getLatestRuleSetRevision(rawRuleSetPdaAccount?.data);
   t.deepEqual(latestDeserializedRuleSet, ruleSetV1);
 
   // Additionally, Given a serialized ruleset v2 account data.
@@ -102,7 +104,9 @@ test('it can update a ruleset from v1 to v2', async (t) => {
 
   // Then the latest ruleset is a ruleset v2.
   const updatedRawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const updatedLatestDeserializedRuleSet = getLatestRuleSet(updatedRawRuleSetPdaAccount?.data);
+  const updatedLatestDeserializedRuleSet = getLatestRuleSetRevision(
+    updatedRawRuleSetPdaAccount?.data,
+  );
   t.deepEqual(updatedLatestDeserializedRuleSet, ruleSetV2);
 });
 
@@ -129,7 +133,7 @@ test('it can update a ruleset from v2 to v1', async (t) => {
 
   // Then the latest ruleset is a ruleset v2.
   const updatedRawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const updatedLatestDeserializedRuleSet = getLatestRuleSet(
+  const updatedLatestDeserializedRuleSet = getLatestRuleSetRevision(
     updatedRawRuleSetPdaAccount?.data,
   ) as RuleSetRevisionV2;
   t.deepEqual(updatedLatestDeserializedRuleSet, ruleSetV2);
@@ -156,7 +160,7 @@ test('it can update a ruleset from v2 to v1', async (t) => {
 
   // Then the latest ruleset is a ruleset v1.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const latestDeserializedRuleSet = getLatestRuleSet(
+  const latestDeserializedRuleSet = getLatestRuleSetRevision(
     rawRuleSetPdaAccount?.data,
   ) as RuleSetRevisionV1;
   t.deepEqual(latestDeserializedRuleSet, ruleSetV1);
@@ -187,7 +191,9 @@ test('it can create a ruleset v2 from a buffer account', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetRevisionV2;
+  const deserializedRuleSet = getLatestRuleSetRevision(
+    rawRuleSetPdaAccount?.data,
+  ) as RuleSetRevisionV2;
   t.deepEqual(deserializedRuleSet, ruleSet);
 });
 
@@ -213,7 +219,9 @@ test('it can create a large ruleset v2 from a buffer account', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetRevisionV2;
+  const deserializedRuleSet = getLatestRuleSetRevision(
+    rawRuleSetPdaAccount?.data,
+  ) as RuleSetRevisionV2;
   t.deepEqual(deserializedRuleSet, ruleSet);
 });
 
@@ -243,7 +251,9 @@ test('it can create a composed ruleset v2', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetRevisionV2;
+  const deserializedRuleSet = getLatestRuleSetRevision(
+    rawRuleSetPdaAccount?.data,
+  ) as RuleSetRevisionV2;
   // convert the deserialized BN to a number
   (deserializedRuleSet.operations['Transfer:Holder'] as any).rules[1].rule.amount = Number(
     (deserializedRuleSet.operations['Transfer:Holder'] as any).rules[1].rule.amount,
@@ -304,7 +314,9 @@ test('it can create a ruleset v2 with all rule types', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetRevisionV2;
+  const deserializedRuleSet = getLatestRuleSetRevision(
+    rawRuleSetPdaAccount?.data,
+  ) as RuleSetRevisionV2;
   // convert the deserialized BN to a number
   (deserializedRuleSet.operations['Transfer:Holder'] as any).rules[1].rule.amount = Number(
     (deserializedRuleSet.operations['Transfer:Holder'] as any).rules[1].rule.amount,
@@ -336,7 +348,7 @@ test('it can update a ruleset v2', async (t) => {
 
   // Then the latest ruleset is a ruleset v2.
   const updatedRawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const updatedLatestDeserializedRuleSet = getLatestRuleSet(
+  const updatedLatestDeserializedRuleSet = getLatestRuleSetRevision(
     updatedRawRuleSetPdaAccount?.data,
   ) as RuleSetRevisionV2;
   t.deepEqual(updatedLatestDeserializedRuleSet, ruleSetV2);
@@ -359,7 +371,7 @@ test('it can update a ruleset v2', async (t) => {
 
   // Then the latest ruleset is a ruleset v2.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const latestDeserializedRuleSet = getLatestRuleSet(
+  const latestDeserializedRuleSet = getLatestRuleSetRevision(
     rawRuleSetPdaAccount?.data,
   ) as RuleSetRevisionV2;
   t.deepEqual(latestDeserializedRuleSet, updatedRuleSetV2);

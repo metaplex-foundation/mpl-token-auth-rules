@@ -5,7 +5,7 @@ import {
   AmountOperator,
   PROGRAM_ID,
   RuleSetRevisionV1,
-  getLatestRuleSet,
+  getLatestRuleSetRevision,
   serializeRuleSetRevision,
 } from '../src';
 import { createOrUpdateLargeRuleset, createOrUpdateRuleset, getConnectionAndPayer } from './_setup';
@@ -36,7 +36,9 @@ test('it can create a ruleset v1', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetRevisionV1;
+  const deserializedRuleSet = getLatestRuleSetRevision(
+    rawRuleSetPdaAccount?.data,
+  ) as RuleSetRevisionV1;
   t.deepEqual(deserializedRuleSet, ruleSet);
 });
 
@@ -154,6 +156,8 @@ test('it can create a ruleset v1 with all rule types', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetRevisionV1;
+  const deserializedRuleSet = getLatestRuleSetRevision(
+    rawRuleSetPdaAccount?.data,
+  ) as RuleSetRevisionV1;
   t.deepEqual(deserializedRuleSet, ruleSet);
 });

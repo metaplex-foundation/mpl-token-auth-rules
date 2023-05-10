@@ -35,7 +35,7 @@ export const getRuleSetRevisionFromJson = (json: string): RuleSetRevision => {
   throw new Error('Unknown rule set version: ' + (ruleSet as any).libVersion);
 };
 
-export const getLatestRuleSet = (data: Buffer): RuleSetRevision => {
+export const getLatestRuleSetRevision = (data: Buffer): RuleSetRevision => {
   const header = getHeader(data);
   const revmap = getRevisionMapV1(data);
   const latestRevision = new BN(
