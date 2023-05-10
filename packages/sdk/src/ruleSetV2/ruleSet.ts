@@ -1,6 +1,6 @@
 import * as beet from '@metaplex-foundation/beet';
 import { PublicKey } from '@solana/web3.js';
-import { RuleSetV1, RuleV1 } from '../ruleSetV1';
+import { RuleSetRevisionV1, RuleV1 } from '../ruleSetV1';
 import { additionalSignerV2 } from './additionalSigner';
 import { allV2 } from './all';
 import { amountV2 } from './amount';
@@ -103,7 +103,7 @@ export const deserializeRuleSetV2 = (buffer: Buffer, offset = 0): RuleSetV2 => {
   return { libVersion: 2, name, owner, operations: Object.fromEntries(tuples) };
 };
 
-export const getRuleSetV2FromRuleSetV1 = (ruleSetV1: RuleSetV1): RuleSetV2 => {
+export const getRuleSetV2FromRuleSetV1 = (ruleSetV1: RuleSetRevisionV1): RuleSetV2 => {
   return {
     libVersion: 2,
     name: ruleSetV1.ruleSetName,

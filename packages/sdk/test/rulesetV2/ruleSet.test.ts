@@ -4,7 +4,7 @@ import {
   additionalSignerV2,
   deserializeRuleSetV2,
   getRuleSetV2FromRuleSetV1,
-  RuleSetV1,
+  RuleSetRevisionV1,
   RuleSetV2,
   serializeRuleSetV2,
 } from '../../src/mpl-token-auth-rules';
@@ -74,7 +74,7 @@ test('convert from v1', async (t) => {
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
   const name = 'My Rule Set';
-  const ruleSet: RuleSetV1 = {
+  const ruleSet: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: name,
     owner: [...payer.toBytes()],

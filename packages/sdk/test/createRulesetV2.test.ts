@@ -4,7 +4,7 @@ import { Keypair } from '@solana/web3.js';
 import test from 'ava';
 import {
   PROGRAM_ID,
-  RuleSetV1,
+  RuleSetRevisionV1,
   RuleSetV2,
   additionalSignerV2,
   allV2,
@@ -60,7 +60,7 @@ test('it can update a ruleset from v1 to v2', async (t) => {
   // Given a ruleset v1 account data.
   const { connection, payer } = await getConnectionAndPayer();
   const name = 'My Rule Set';
-  const ruleSetV1: RuleSetV1 = {
+  const ruleSetV1: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: name,
     owner: Array.from(payer.publicKey.toBytes()),
@@ -136,7 +136,7 @@ test('it can update a ruleset from v2 to v1', async (t) => {
 
   // Additionally, Given a ruleset v1 account data.
 
-  const ruleSetV1: RuleSetV1 = {
+  const ruleSetV1: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: name,
     owner: Array.from(payer.publicKey.toBytes()),
@@ -156,7 +156,9 @@ test('it can update a ruleset from v2 to v1', async (t) => {
 
   // Then the latest ruleset is a ruleset v1.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const latestDeserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetV1;
+  const latestDeserializedRuleSet = getLatestRuleSet(
+    rawRuleSetPdaAccount?.data,
+  ) as RuleSetRevisionV1;
   t.deepEqual(latestDeserializedRuleSet, ruleSetV1);
 });
 
