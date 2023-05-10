@@ -1,11 +1,6 @@
 import { Keypair } from '@solana/web3.js';
 import test from 'ava';
-import {
-  deserializeRuleV2,
-  pdaMatchV2,
-  RuleTypeV2,
-  serializeRuleV2,
-} from '../../src/mpl-token-auth-rules';
+import { deserializeRuleV2, pdaMatchV2, serializeRuleV2 } from '../../src/mpl-token-auth-rules';
 import { serializeString32 } from '../../src/ruleSetV2/helpers';
 
 test('serialize', async (t) => {
@@ -32,10 +27,5 @@ test('deserialize', async (t) => {
     serializeString32('mySeeds').toString('hex'); // Seeds Field
   const buffer = Buffer.from(hexBuffer, 'hex');
   const rule = deserializeRuleV2(buffer);
-  t.deepEqual(rule, {
-    type: RuleTypeV2.PdaMatch,
-    program,
-    pdaField: 'myAccount',
-    seedsField: 'mySeeds',
-  });
+  t.deepEqual(rule, pdaMatchV2('myAccount', program, 'mySeeds'));
 });

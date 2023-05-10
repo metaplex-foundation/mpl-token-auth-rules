@@ -2,7 +2,6 @@ import test from 'ava';
 import {
   deserializeRuleV2,
   programOwnedTreeV2,
-  RuleTypeV2,
   serializeRuleV2,
 } from '../../src/mpl-token-auth-rules';
 import { serializeString32 } from '../../src/ruleSetV2/helpers';
@@ -31,10 +30,5 @@ test('deserialize', async (t) => {
     Buffer.from(root).toString('hex'); // root
   const buffer = Buffer.from(hexBuffer, 'hex');
   const rule = deserializeRuleV2(buffer);
-  t.deepEqual(rule, {
-    type: RuleTypeV2.ProgramOwnedTree,
-    pubkeyField: 'myAccount',
-    proofField: 'myProof',
-    root,
-  });
+  t.deepEqual(rule, programOwnedTreeV2('myAccount', 'myProof', root));
 });

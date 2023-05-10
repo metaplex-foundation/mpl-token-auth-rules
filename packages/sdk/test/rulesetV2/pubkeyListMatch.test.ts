@@ -2,9 +2,8 @@ import { Keypair, PublicKey } from '@solana/web3.js';
 import test from 'ava';
 import {
   deserializeRuleV2,
-  RuleTypeV2,
-  serializeRuleV2,
   pubkeyListMatchV2,
+  serializeRuleV2,
 } from '../../src/mpl-token-auth-rules';
 import { serializeString32 } from '../../src/ruleSetV2/helpers';
 
@@ -40,9 +39,5 @@ test('deserialize', async (t) => {
     publicKeyC.toBuffer().toString('hex'); // PublicKey C
   const buffer = Buffer.from(hexBuffer, 'hex');
   const rule = deserializeRuleV2(buffer);
-  t.deepEqual(rule, {
-    type: RuleTypeV2.PubkeyListMatch,
-    field: 'myAccount',
-    publicKeys,
-  });
+  t.deepEqual(rule, pubkeyListMatchV2('myAccount', publicKeys));
 });

@@ -3,7 +3,6 @@ import test from 'ava';
 import {
   additionalSignerV2,
   deserializeRuleV2,
-  RuleTypeV2,
   serializeRuleV2,
 } from '../../src/mpl-token-auth-rules';
 
@@ -27,8 +26,5 @@ test('deserialize', async (t) => {
     publicKey.toBuffer().toString('hex'); // Rule version
   const buffer = Buffer.from(hexBuffer, 'hex');
   const rule = deserializeRuleV2(buffer);
-  t.deepEqual(rule, {
-    type: RuleTypeV2.AdditionalSigner,
-    publicKey,
-  });
+  t.deepEqual(rule, additionalSignerV2(publicKey));
 });
