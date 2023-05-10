@@ -118,6 +118,12 @@ export const getRuleSetV2FromRuleSetV1 = (ruleSetV1: RuleSetV1): RuleSetV2 => {
 };
 
 export const getRuleV2FromRuleV1 = (ruleV1: RuleV1): RuleV2 => {
+  if (ruleV1 === 'Namespace') {
+    return namespaceV2();
+  }
+  if (ruleV1 === 'Pass') {
+    return passV2();
+  }
   if ('AdditionalSigner' in ruleV1) {
     return additionalSignerV2(new PublicKey(ruleV1.AdditionalSigner.account));
   }
@@ -130,14 +136,8 @@ export const getRuleV2FromRuleV1 = (ruleV1: RuleV1): RuleV2 => {
   if ('Any' in ruleV1) {
     return anyV2(ruleV1.Any.rules.map(getRuleV2FromRuleV1));
   }
-  if ('Namespace' in ruleV1) {
-    return namespaceV2();
-  }
   if ('Not' in ruleV1) {
     return notV2(getRuleV2FromRuleV1(ruleV1.Not.rule));
-  }
-  if ('Pass' in ruleV1) {
-    return passV2();
   }
   if ('PDAMatch' in ruleV1) {
     return pdaMatchV2(

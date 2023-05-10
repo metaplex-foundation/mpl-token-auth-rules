@@ -91,7 +91,7 @@ test.skip('it can create a ruleset v1 with all rule types', async (t) => {
                 rules: [
                   { AdditionalSigner: { account: [...Keypair.generate().publicKey.toBytes()] } },
                   { AdditionalSigner: { account: [...Keypair.generate().publicKey.toBytes()] } },
-                  // { Namespace: true },
+                  'Namespace',
                 ],
               },
             },
@@ -102,7 +102,7 @@ test.skip('it can create a ruleset v1 with all rule types', async (t) => {
                 },
               },
             },
-            // { Pass: true },
+            'Pass',
             // {
             //   PubkeyTreeMatch: {
             //     root: [...Array(32)].map(() => Math.floor(Math.random() * 40)),

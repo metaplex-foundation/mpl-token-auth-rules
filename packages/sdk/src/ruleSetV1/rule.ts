@@ -43,9 +43,7 @@ export type AnyRuleV1 = {
   };
 };
 
-export type NamespaceRuleV1 = {
-  Namespace: true;
-};
+export type NamespaceRuleV1 = 'Namespace';
 
 export type NotRuleV1 = {
   Not: {
@@ -53,9 +51,7 @@ export type NotRuleV1 = {
   };
 };
 
-export type PassRuleV1 = {
-  Pass: true;
-};
+export type PassRuleV1 = 'Pass';
 
 export type PdaMatchRuleV1 = {
   PDAMatch: {
