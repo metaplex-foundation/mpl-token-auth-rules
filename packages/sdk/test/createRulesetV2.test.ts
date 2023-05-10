@@ -21,7 +21,7 @@ import {
   pubkeyListMatchV2,
   pubkeyMatchV2,
   pubkeyTreeMatchV2,
-  serializeRuleSetV2,
+  serializeRuleSetRevisionV2,
 } from '../src/mpl-token-auth-rules';
 import {
   createOrUpdateLargeRuleset,
@@ -45,7 +45,7 @@ test('it can create a ruleset v2', async (t) => {
       withdraw: additionalSignerV2(publicKeyB),
     },
   };
-  const serializedRuleSet = serializeRuleSetV2(ruleSet);
+  const serializedRuleSet = serializeRuleSetRevisionV2(ruleSet);
 
   // When we create a new ruleset account using it.
   const ruleSetPda = await createOrUpdateRuleset(connection, payer, name, serializedRuleSet);
@@ -95,7 +95,7 @@ test('it can update a ruleset from v1 to v2', async (t) => {
       withdraw: additionalSignerV2(publicKeyB),
     },
   };
-  const serializedRuleSetV2 = serializeRuleSetV2(ruleSetV2);
+  const serializedRuleSetV2 = serializeRuleSetRevisionV2(ruleSetV2);
 
   // When we update the ruleset account using the v2 data.
   await createOrUpdateRuleset(connection, payer, name, serializedRuleSetV2);
@@ -122,7 +122,7 @@ test('it can update a ruleset from v2 to v1', async (t) => {
       withdraw: additionalSignerV2(publicKeyB),
     },
   };
-  const serializedRuleSetV2 = serializeRuleSetV2(ruleSetV2);
+  const serializedRuleSetV2 = serializeRuleSetRevisionV2(ruleSetV2);
 
   // When we create a new ruleset account using the v2 data.
   const ruleSetPda = await createOrUpdateRuleset(connection, payer, name, serializedRuleSetV2);
@@ -177,7 +177,7 @@ test('it can create a ruleset v2 from a buffer account', async (t) => {
       withdraw: additionalSignerV2(publicKeyB),
     },
   };
-  const serializedRuleSet = serializeRuleSetV2(ruleSet);
+  const serializedRuleSet = serializeRuleSetRevisionV2(ruleSet);
 
   // Creating a buffer account.
   const bufferPda = await writeAndPuff(connection, payer, name, serializedRuleSet);
@@ -206,7 +206,7 @@ test('it can create a large ruleset v2 from a buffer account', async (t) => {
       ),
     },
   };
-  const serializedRuleSet = serializeRuleSetV2(ruleSet);
+  const serializedRuleSet = serializeRuleSetRevisionV2(ruleSet);
 
   // When we create a new ruleset account using it.
   const ruleSetPda = await createOrUpdateLargeRuleset(connection, payer, name, serializedRuleSet);
@@ -236,7 +236,7 @@ test('it can create a composed ruleset v2', async (t) => {
       ]),
     },
   };
-  const serializedRuleSet = serializeRuleSetV2(ruleSet);
+  const serializedRuleSet = serializeRuleSetRevisionV2(ruleSet);
 
   // When we create a new ruleset account using it.
   const ruleSetPda = await createOrUpdateRuleset(connection, payer, name, serializedRuleSet);
@@ -297,7 +297,7 @@ test('it can create a ruleset v2 with all rule types', async (t) => {
       ]),
     },
   };
-  const serializedRuleSet = serializeRuleSetV2(ruleSet);
+  const serializedRuleSet = serializeRuleSetRevisionV2(ruleSet);
 
   // When we create a new ruleset account using it.
   const ruleSetPda = await createOrUpdateLargeRuleset(connection, payer, name, serializedRuleSet);
@@ -329,7 +329,7 @@ test('it can update a ruleset v2', async (t) => {
       withdraw: additionalSignerV2(publicKeyB),
     },
   };
-  const serializedRuleSetV2 = serializeRuleSetV2(ruleSetV2);
+  const serializedRuleSetV2 = serializeRuleSetRevisionV2(ruleSetV2);
 
   // When we create a new ruleset account using the v2 data.
   const ruleSetPda = await createOrUpdateRuleset(connection, payer, name, serializedRuleSetV2);
@@ -352,7 +352,7 @@ test('it can update a ruleset v2', async (t) => {
       withdraw: pubkeyMatchV2('Source', publicKeyB),
     },
   };
-  const updatedSerializedRuleSetV2 = serializeRuleSetV2(updatedRuleSetV2);
+  const updatedSerializedRuleSetV2 = serializeRuleSetRevisionV2(updatedRuleSetV2);
 
   // When we update the ruleset account using the v2 data.
   await createOrUpdateRuleset(connection, payer, name, updatedSerializedRuleSetV2);

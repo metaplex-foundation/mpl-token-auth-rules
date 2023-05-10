@@ -13,11 +13,11 @@ export type RuleSetRevisionV1 = {
   operations: Record<string, RuleV1>;
 };
 
-export const serializeRuleSetV1 = (ruleSet: RuleSetRevisionV1): Buffer => {
+export const serializeRuleSetRevisionV1 = (ruleSet: RuleSetRevisionV1): Buffer => {
   return Buffer.from(encode(ruleSet));
 };
 
-export const deserializeRuleSetV1 = (buffer: Buffer, offset = 0): RuleSetRevisionV1 => {
+export const deserializeRuleSetRevisionV1 = (buffer: Buffer, offset = 0): RuleSetRevisionV1 => {
   const ruleSet = decode(buffer.subarray(offset + 1));
 
   if (Array.isArray(ruleSet)) {

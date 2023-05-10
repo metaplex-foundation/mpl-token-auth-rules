@@ -1,5 +1,13 @@
-import { RuleSetRevisionV1, deserializeRuleSetV1, serializeRuleSetV1 } from './ruleSetV1';
-import { RuleSetRevisionV2, deserializeRuleSetV2, serializeRuleSetV2 } from './ruleSetV2';
+import {
+  RuleSetRevisionV1,
+  deserializeRuleSetRevisionV1,
+  serializeRuleSetRevisionV1,
+} from './ruleSetV1';
+import {
+  RuleSetRevisionV2,
+  deserializeRuleSetRevisionV2,
+  serializeRuleSetRevisionV2,
+} from './ruleSetV2';
 
 export type RuleSetRevision = RuleSetRevisionV1 | RuleSetRevisionV2;
 
@@ -12,16 +20,16 @@ export const isRuleSetV2 = (ruleSet: RuleSetRevision): ruleSet is RuleSetRevisio
 };
 
 export const serializeRuleSetRevision = (ruleSet: RuleSetRevision): Buffer => {
-  if (isRuleSetV1(ruleSet)) return serializeRuleSetV1(ruleSet);
-  if (isRuleSetV2(ruleSet)) return serializeRuleSetV2(ruleSet);
+  if (isRuleSetV1(ruleSet)) return serializeRuleSetRevisionV1(ruleSet);
+  if (isRuleSetV2(ruleSet)) return serializeRuleSetRevisionV2(ruleSet);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   throw new Error('Unknown rule set version: ' + (ruleSet as any).libVersion);
 };
 
 export const deserializeRuleSetRevision = (buffer: Buffer, offset = 0): RuleSetRevision => {
   const libVersion = buffer[offset];
-  if (libVersion === 1) return deserializeRuleSetV1(buffer, offset);
-  if (libVersion === 2) return deserializeRuleSetV2(buffer, offset);
+  if (libVersion === 1) return deserializeRuleSetRevisionV1(buffer, offset);
+  if (libVersion === 2) return deserializeRuleSetRevisionV2(buffer, offset);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   throw new Error('Unknown rule set version: ' + libVersion);
 };
