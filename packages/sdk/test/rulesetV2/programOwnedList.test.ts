@@ -5,7 +5,7 @@ import {
   programOwnedListV2,
   serializeRuleV2,
 } from '../../src/mpl-token-auth-rules';
-import { serializeString32 } from '../../src/ruleSetV2/helpers';
+import { serializeString32 } from '../../src/revisions/v2/helpers';
 
 test('serialize', async (t) => {
   const programA = Keypair.generate().publicKey;

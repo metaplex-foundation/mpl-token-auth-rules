@@ -1,13 +1,5 @@
-import {
-  RuleSetRevisionV1,
-  deserializeRuleSetRevisionV1,
-  serializeRuleSetRevisionV1,
-} from './ruleSetV1';
-import {
-  RuleSetRevisionV2,
-  deserializeRuleSetRevisionV2,
-  serializeRuleSetRevisionV2,
-} from './ruleSetV2';
+import { RuleSetRevisionV1, deserializeRuleSetRevisionV1, serializeRuleSetRevisionV1 } from './v1';
+import { RuleSetRevisionV2, deserializeRuleSetRevisionV2, serializeRuleSetRevisionV2 } from './v2';
 
 export type RuleSetRevision = RuleSetRevisionV1 | RuleSetRevisionV2;
 

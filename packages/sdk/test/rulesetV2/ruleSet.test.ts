@@ -8,7 +8,7 @@ import {
   RuleSetRevisionV2,
   serializeRuleSetRevisionV2,
 } from '../../src/mpl-token-auth-rules';
-import { serializeString32 } from '../../src/ruleSetV2/helpers';
+import { serializeString32 } from '../../src/revisions/v2/helpers';
 
 test('serialize', async (t) => {
   const owner = Keypair.generate().publicKey;

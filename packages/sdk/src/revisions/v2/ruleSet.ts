@@ -1,6 +1,6 @@
 import * as beet from '@metaplex-foundation/beet';
 import { PublicKey } from '@solana/web3.js';
-import { RuleSetRevisionV1, RuleV1 } from '../ruleSetV1';
+import { RuleSetRevisionV1, RuleV1 } from '../v1';
 import { additionalSignerV2 } from './additionalSigner';
 import { allV2 } from './all';
 import { amountV2 } from './amount';

@@ -7,15 +7,12 @@ import {
 
 import type { bignum } from '@metaplex-foundation/beet';
 import { BN } from 'bn.js';
-import { deserializeRuleSetRevision, RuleSetRevision } from './ruleSetRevision';
+import { deserializeRuleSetRevision, RuleSetRevision } from './revisions/revision';
 
 export * from './errors';
 export * from './generated';
 export * from './pda';
-export * from './ruleSetRevision';
-export * from './ruleSetV1';
-export * from './ruleSetV2';
-export * from './shared';
+export * from './revisions';
 
 export const PREFIX = 'rule_set';
 
