@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Keypair } from '@solana/web3.js';
 import { encode } from '@msgpack/msgpack';
+import { Keypair } from '@solana/web3.js';
 import test from 'ava';
 import {
+  PROGRAM_ID,
+  RuleSetV1,
+  RuleSetV2,
   additionalSignerV2,
   allV2,
   amountV2,
@@ -15,13 +18,10 @@ import {
   programOwnedListV2,
   programOwnedTreeV2,
   programOwnedV2,
-  PROGRAM_ID,
   pubkeyListMatchV2,
   pubkeyMatchV2,
   pubkeyTreeMatchV2,
-  RuleSetV2,
   serializeRuleSetV2,
-  RuleSetV1,
 } from '../src/mpl-token-auth-rules';
 import {
   createOrUpdateLargeRuleset,

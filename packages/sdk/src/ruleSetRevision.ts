@@ -25,3 +25,10 @@ export const deserializeRuleSetRevision = (buffer: Buffer, offset = 0): RuleSetR
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   throw new Error('Unknown rule set version: ' + libVersion);
 };
+
+export const getRuleSetRevisionFromJson = (json: string): RuleSetRevision => {
+  const ruleSet = JSON.parse(json);
+  if (isRuleSetV1(ruleSet) || isRuleSetV2(ruleSet)) return ruleSet;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  throw new Error('Unknown rule set version: ' + (ruleSet as any).libVersion);
+};
