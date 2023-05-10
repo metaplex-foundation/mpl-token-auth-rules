@@ -4,7 +4,6 @@ import {
   additionalSignerV2,
   deserializeRuleV2,
   notV2,
-  RuleTypeV2,
   serializeRuleV2,
 } from '../../src/mpl-token-auth-rules';
 
@@ -31,8 +30,5 @@ test('deserialize', async (t) => {
     childRule;
   const buffer = Buffer.from(hexBuffer, 'hex');
   const rule = deserializeRuleV2(buffer);
-  t.deepEqual(rule, {
-    type: RuleTypeV2.Not,
-    rule: additionalSignerV2(publicKey),
-  });
+  t.deepEqual(rule, notV2(additionalSignerV2(publicKey)));
 });

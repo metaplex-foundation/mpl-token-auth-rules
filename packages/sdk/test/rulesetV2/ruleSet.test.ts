@@ -3,6 +3,8 @@ import test from 'ava';
 import {
   additionalSignerV2,
   deserializeRuleSetV2,
+  getRuleSetV2FromRuleSetV1,
+  RuleSetV1,
   RuleSetV2,
   serializeRuleSetV2,
 } from '../../src/mpl-token-auth-rules';
@@ -13,8 +15,9 @@ test('serialize', async (t) => {
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
   const ruleSet: RuleSetV2 = {
+    libVersion: 2,
     name: 'My Rule Set',
-    owner,
+    owner: owner.toBase58(),
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),
@@ -55,8 +58,44 @@ test('deserialize', async (t) => {
   const buffer = Buffer.from(hexBuffer, 'hex');
   const ruleSet = deserializeRuleSetV2(buffer);
   t.deepEqual(ruleSet, {
+    libVersion: 2,
     name: 'My Rule Set',
-    owner,
+    owner: owner.toBase58(),
+    operations: {
+      deposit: additionalSignerV2(publicKeyA),
+      withdraw: additionalSignerV2(publicKeyB),
+    },
+  });
+});
+
+test('convert from v1', async (t) => {
+  // Given a RuleSetV1.
+  const payer = Keypair.generate().publicKey;
+  const publicKeyA = Keypair.generate().publicKey;
+  const publicKeyB = Keypair.generate().publicKey;
+  const name = 'My Rule Set';
+  const ruleSet: RuleSetV1 = {
+    libVersion: 1,
+    ruleSetName: name,
+    owner: [...payer.toBytes()],
+    operations: {
+      deposit: {
+        AdditionalSigner: { account: [...publicKeyA.toBytes()] },
+      },
+      withdraw: {
+        AdditionalSigner: { account: [...publicKeyB.toBytes()] },
+      },
+    },
+  };
+
+  // When we convert it to a RuleSetV2.
+  const ruleSetV2 = getRuleSetV2FromRuleSetV1(ruleSet);
+
+  // Then we expect the following RuleSet data.
+  t.deepEqual(ruleSetV2, <RuleSetV2>{
+    libVersion: 2,
+    name,
+    owner: payer.toBase58(),
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),

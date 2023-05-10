@@ -3,14 +3,11 @@ import { serializeRuleHeaderV2 } from './rule';
 import { RuleTypeV2 } from './ruleType';
 
 export type IsWalletRuleV2 = {
-  type: RuleTypeV2.IsWallet;
+  type: 'IsWallet';
   field: string;
 };
 
-export const isWalletV2 = (field: string): IsWalletRuleV2 => ({
-  type: RuleTypeV2.IsWallet,
-  field,
-});
+export const isWalletV2 = (field: string): IsWalletRuleV2 => ({ type: 'IsWallet', field });
 
 export const serializeIsWalletV2 = (rule: IsWalletRuleV2): Buffer => {
   return Buffer.concat([
@@ -22,5 +19,5 @@ export const serializeIsWalletV2 = (rule: IsWalletRuleV2): Buffer => {
 export const deserializeIsWalletV2 = (buffer: Buffer, offset = 0): IsWalletRuleV2 => {
   offset += 8; // Skip rule header.
   const field = deserializeString32(buffer, offset);
-  return { type: RuleTypeV2.IsWallet, field };
+  return isWalletV2(field);
 };

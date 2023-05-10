@@ -1,12 +1,28 @@
 import * as beet from '@metaplex-foundation/beet';
-import * as beetSolana from '@metaplex-foundation/beet-solana';
 import { PublicKey } from '@solana/web3.js';
-import { deserializeRulesV2, RuleV2, serializeRulesV2 } from './rule';
+import { RuleSetV1, RuleV1 } from '../ruleSetV1';
+import { additionalSignerV2 } from './additionalSigner';
+import { allV2 } from './all';
+import { amountV2 } from './amount';
+import { anyV2 } from './any';
+import { Base58PublicKey, toBase58PublicKey } from './base58PublicKey';
+import { deserializePublicKey, serializePublicKey } from './helpers';
+import { namespaceV2 } from './namespace';
+import { notV2 } from './not';
+import { passV2 } from './pass';
+import { pdaMatchV2 } from './pdaMatch';
+import { programOwnedV2 } from './programOwned';
+import { programOwnedListV2 } from './programOwnedList';
+import { programOwnedTreeV2 } from './programOwnedTree';
+import { pubkeyListMatchV2 } from './pubkeyListMatch';
+import { pubkeyMatchV2 } from './pubkeyMatch';
+import { pubkeyTreeMatchV2 } from './pubkeyTreeMatch';
+import { RuleV2, deserializeRulesV2, serializeRulesV2 } from './rule';
 
 export type RuleSetV2 = {
-  // version = 2
+  libVersion: 2;
   name: string;
-  owner: PublicKey;
+  owner: Base58PublicKey;
   operations: Record<string, RuleV2>;
 };
 
@@ -22,8 +38,7 @@ export const serializeRuleSetV2 = (ruleSet: RuleSetV2): Buffer => {
   beet.u32.write(headerBuffer, 4, ruleSize);
 
   // Owner.
-  const ownerBuffer = Buffer.alloc(32);
-  beetSolana.publicKey.write(ownerBuffer, 0, ruleSet.owner);
+  const ownerBuffer = serializePublicKey(ruleSet.owner);
 
   // Name.
   const nameBuffer = Buffer.alloc(32);
@@ -56,7 +71,7 @@ export const deserializeRuleSetV2 = (buffer: Buffer, offset = 0): RuleSetV2 => {
   offset += 4;
 
   // Owner.
-  const owner = beetSolana.publicKey.read(buffer, offset);
+  const owner = deserializePublicKey(buffer, offset);
   offset += 32;
 
   // Name.
@@ -85,5 +100,83 @@ export const deserializeRuleSetV2 = (buffer: Buffer, offset = 0): RuleSetV2 => {
     rules[index],
   ]);
 
-  return { name, owner, operations: Object.fromEntries(tuples) };
+  return { libVersion: 2, name, owner, operations: Object.fromEntries(tuples) };
+};
+
+export const getRuleSetV2FromRuleSetV1 = (ruleSetV1: RuleSetV1): RuleSetV2 => {
+  return {
+    libVersion: 2,
+    name: ruleSetV1.ruleSetName,
+    owner: toBase58PublicKey(new PublicKey(ruleSetV1.owner)),
+    operations: Object.fromEntries(
+      Object.entries(ruleSetV1.operations).map(([operation, rule]) => [
+        operation,
+        getRuleV2FromRuleV1(rule),
+      ]),
+    ),
+  };
+};
+
+export const getRuleV2FromRuleV1 = (ruleV1: RuleV1): RuleV2 => {
+  if (ruleV1 === 'Namespace') {
+    return namespaceV2();
+  }
+  if (ruleV1 === 'Pass') {
+    return passV2();
+  }
+  if ('AdditionalSigner' in ruleV1) {
+    return additionalSignerV2(new PublicKey(ruleV1.AdditionalSigner.account));
+  }
+  if ('All' in ruleV1) {
+    return allV2(ruleV1.All.rules.map(getRuleV2FromRuleV1));
+  }
+  if ('Amount' in ruleV1) {
+    return amountV2(ruleV1.Amount.field, ruleV1.Amount.operator, ruleV1.Amount.amount);
+  }
+  if ('Any' in ruleV1) {
+    return anyV2(ruleV1.Any.rules.map(getRuleV2FromRuleV1));
+  }
+  if ('Not' in ruleV1) {
+    return notV2(getRuleV2FromRuleV1(ruleV1.Not.rule));
+  }
+  if ('PDAMatch' in ruleV1) {
+    return pdaMatchV2(
+      ruleV1.PDAMatch.pda_field,
+      new PublicKey(ruleV1.PDAMatch.program),
+      ruleV1.PDAMatch.seeds_field,
+    );
+  }
+  if ('ProgramOwned' in ruleV1) {
+    return programOwnedV2(ruleV1.ProgramOwned.field, new PublicKey(ruleV1.ProgramOwned.program));
+  }
+  if ('ProgramOwnedList' in ruleV1) {
+    return programOwnedListV2(
+      ruleV1.ProgramOwnedList.field,
+      ruleV1.ProgramOwnedList.programs.map((p) => new PublicKey(p)),
+    );
+  }
+  if ('ProgramOwnedTree' in ruleV1) {
+    return programOwnedTreeV2(
+      ruleV1.ProgramOwnedTree.pubkey_field,
+      ruleV1.ProgramOwnedTree.proof_field,
+      new Uint8Array(ruleV1.ProgramOwnedTree.root),
+    );
+  }
+  if ('PubkeyListMatch' in ruleV1) {
+    return pubkeyListMatchV2(
+      ruleV1.PubkeyListMatch.field,
+      ruleV1.PubkeyListMatch.pubkeys.map((p) => new PublicKey(p)),
+    );
+  }
+  if ('PubkeyMatch' in ruleV1) {
+    return pubkeyMatchV2(ruleV1.PubkeyMatch.field, new PublicKey(ruleV1.PubkeyMatch.pubkey));
+  }
+  if ('PubkeyTreeMatch' in ruleV1) {
+    return pubkeyTreeMatchV2(
+      ruleV1.PubkeyTreeMatch.pubkey_field,
+      ruleV1.PubkeyTreeMatch.proof_field,
+      new Uint8Array(ruleV1.PubkeyTreeMatch.root),
+    );
+  }
+  throw new Error('Unknown rule: ' + JSON.stringify(ruleV1));
 };

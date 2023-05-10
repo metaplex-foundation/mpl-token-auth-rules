@@ -3,7 +3,7 @@ import { serializeRuleHeaderV2 } from './rule';
 import { RuleTypeV2 } from './ruleType';
 
 export type PubkeyTreeMatchRuleV2 = {
-  type: RuleTypeV2.PubkeyTreeMatch;
+  type: 'PubkeyTreeMatch';
   pubkeyField: string;
   proofField: string;
   root: Uint8Array;
@@ -13,12 +13,7 @@ export const pubkeyTreeMatchV2 = (
   pubkeyField: string,
   proofField: string,
   root: Uint8Array,
-): PubkeyTreeMatchRuleV2 => ({
-  type: RuleTypeV2.PubkeyTreeMatch,
-  pubkeyField,
-  proofField,
-  root,
-});
+): PubkeyTreeMatchRuleV2 => ({ type: 'PubkeyTreeMatch', pubkeyField, proofField, root });
 
 export const serializePubkeyTreeMatchV2 = (rule: PubkeyTreeMatchRuleV2): Buffer => {
   return Buffer.concat([
@@ -37,5 +32,5 @@ export const deserializePubkeyTreeMatchV2 = (buffer: Buffer, offset = 0): Pubkey
   offset += 32;
   const root = new Uint8Array(buffer.subarray(offset, offset + 32));
 
-  return { type: RuleTypeV2.PubkeyTreeMatch, pubkeyField, proofField, root };
+  return pubkeyTreeMatchV2(pubkeyField, proofField, root);
 };

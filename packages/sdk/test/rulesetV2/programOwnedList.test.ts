@@ -2,9 +2,8 @@ import { Keypair, PublicKey } from '@solana/web3.js';
 import test from 'ava';
 import {
   deserializeRuleV2,
-  RuleTypeV2,
-  serializeRuleV2,
   programOwnedListV2,
+  serializeRuleV2,
 } from '../../src/mpl-token-auth-rules';
 import { serializeString32 } from '../../src/ruleSetV2/helpers';
 
@@ -36,9 +35,5 @@ test('deserialize', async (t) => {
     programB.toBuffer().toString('hex'); // Program B
   const buffer = Buffer.from(hexBuffer, 'hex');
   const rule = deserializeRuleV2(buffer);
-  t.deepEqual(rule, {
-    type: RuleTypeV2.ProgramOwnedList,
-    field: 'myAccount',
-    programs,
-  });
+  t.deepEqual(rule, programOwnedListV2('myAccount', programs));
 });

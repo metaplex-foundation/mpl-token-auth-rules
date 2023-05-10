@@ -3,7 +3,7 @@ import { serializeRuleHeaderV2 } from './rule';
 import { RuleTypeV2 } from './ruleType';
 
 export type ProgramOwnedTreeRuleV2 = {
-  type: RuleTypeV2.ProgramOwnedTree;
+  type: 'ProgramOwnedTree';
   pubkeyField: string;
   proofField: string;
   root: Uint8Array;
@@ -13,12 +13,7 @@ export const programOwnedTreeV2 = (
   pubkeyField: string,
   proofField: string,
   root: Uint8Array,
-): ProgramOwnedTreeRuleV2 => ({
-  type: RuleTypeV2.ProgramOwnedTree,
-  pubkeyField,
-  proofField,
-  root,
-});
+): ProgramOwnedTreeRuleV2 => ({ type: 'ProgramOwnedTree', pubkeyField, proofField, root });
 
 export const serializeProgramOwnedTreeV2 = (rule: ProgramOwnedTreeRuleV2): Buffer => {
   return Buffer.concat([
@@ -40,5 +35,5 @@ export const deserializeProgramOwnedTreeV2 = (
   offset += 32;
   const root = new Uint8Array(buffer.subarray(offset, offset + 32));
 
-  return { type: RuleTypeV2.ProgramOwnedTree, pubkeyField, proofField, root };
+  return programOwnedTreeV2(pubkeyField, proofField, root);
 };

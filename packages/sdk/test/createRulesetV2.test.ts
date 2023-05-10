@@ -1,7 +1,11 @@
-import { Keypair } from '@solana/web3.js';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { encode } from '@msgpack/msgpack';
+import { Keypair } from '@solana/web3.js';
 import test from 'ava';
 import {
+  PROGRAM_ID,
+  RuleSetV1,
+  RuleSetV2,
   additionalSignerV2,
   allV2,
   amountV2,
@@ -14,11 +18,9 @@ import {
   programOwnedListV2,
   programOwnedTreeV2,
   programOwnedV2,
-  PROGRAM_ID,
   pubkeyListMatchV2,
   pubkeyMatchV2,
   pubkeyTreeMatchV2,
-  RuleSetV2,
   serializeRuleSetV2,
 } from '../src/mpl-token-auth-rules';
 import {
@@ -35,8 +37,9 @@ test('it can create a ruleset v2', async (t) => {
   const publicKeyB = Keypair.generate().publicKey;
   const name = 'My Rule Set';
   const ruleSet: RuleSetV2 = {
+    libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),
@@ -57,7 +60,7 @@ test('it can update a ruleset from v1 to v2', async (t) => {
   // Given a ruleset v1 account data.
   const { connection, payer } = await getConnectionAndPayer();
   const name = 'My Rule Set';
-  const ruleSetV1 = {
+  const ruleSetV1: RuleSetV1 = {
     libVersion: 1,
     ruleSetName: name,
     owner: Array.from(payer.publicKey.toBytes()),
@@ -77,15 +80,16 @@ test('it can update a ruleset from v1 to v2', async (t) => {
 
   // Then the latest ruleset is a ruleset v1.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const latestDeserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as string;
-  t.is(latestDeserializedRuleSet, JSON.stringify(ruleSetV1, null, 2));
+  const latestDeserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data);
+  t.deepEqual(latestDeserializedRuleSet, ruleSetV1);
 
   // Additionally, Given a serialized ruleset v2 account data.
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
   const ruleSetV2: RuleSetV2 = {
+    libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),
@@ -98,9 +102,7 @@ test('it can update a ruleset from v1 to v2', async (t) => {
 
   // Then the latest ruleset is a ruleset v2.
   const updatedRawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const updatedLatestDeserializedRuleSet = getLatestRuleSet(
-    updatedRawRuleSetPdaAccount?.data,
-  ) as RuleSetV2;
+  const updatedLatestDeserializedRuleSet = getLatestRuleSet(updatedRawRuleSetPdaAccount?.data);
   t.deepEqual(updatedLatestDeserializedRuleSet, ruleSetV2);
 });
 
@@ -112,8 +114,9 @@ test('it can update a ruleset from v2 to v1', async (t) => {
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
   const ruleSetV2: RuleSetV2 = {
+    libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),
@@ -133,7 +136,7 @@ test('it can update a ruleset from v2 to v1', async (t) => {
 
   // Additionally, Given a ruleset v1 account data.
 
-  const ruleSetV1 = {
+  const ruleSetV1: RuleSetV1 = {
     libVersion: 1,
     ruleSetName: name,
     owner: Array.from(payer.publicKey.toBytes()),
@@ -153,8 +156,8 @@ test('it can update a ruleset from v2 to v1', async (t) => {
 
   // Then the latest ruleset is a ruleset v1.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const latestDeserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as string;
-  t.is(latestDeserializedRuleSet, JSON.stringify(ruleSetV1, null, 2));
+  const latestDeserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetV1;
+  t.deepEqual(latestDeserializedRuleSet, ruleSetV1);
 });
 
 test('it can create a ruleset v2 from a buffer account', async (t) => {
@@ -164,8 +167,9 @@ test('it can create a ruleset v2 from a buffer account', async (t) => {
   const publicKeyB = Keypair.generate().publicKey;
   const name = 'My Rule Set';
   const ruleSet: RuleSetV2 = {
+    libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),
@@ -190,8 +194,9 @@ test('it can create a large ruleset v2 from a buffer account', async (t) => {
   const { connection, payer } = await getConnectionAndPayer();
   const name = 'My Large Rule Set';
   const ruleSet: RuleSetV2 = {
+    libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       transfer: pubkeyListMatchV2(
         'Destination',
@@ -216,8 +221,9 @@ test('it can create a composed ruleset v2', async (t) => {
   const name = 'My Composed Rule Set';
 
   const ruleSet: RuleSetV2 = {
+    libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       'Transfer:Holder': anyV2([
         allV2([
@@ -250,8 +256,9 @@ test('it can create a ruleset v2 with all rule types', async (t) => {
   const name = 'My Composed Rule Set';
 
   const ruleSet: RuleSetV2 = {
+    libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       'Transfer:Holder': anyV2([
         allV2([
@@ -312,8 +319,9 @@ test('it can update a ruleset v2', async (t) => {
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
   const ruleSetV2: RuleSetV2 = {
+    libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),
@@ -334,8 +342,9 @@ test('it can update a ruleset v2', async (t) => {
   // Given a updated ruleset v2 account data.
 
   const updatedRuleSetV2: RuleSetV2 = {
+    libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       deposit: pubkeyListMatchV2('Source', [publicKeyA]),
       withdraw: pubkeyMatchV2('Source', publicKeyB),

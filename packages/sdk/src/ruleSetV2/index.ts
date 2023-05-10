@@ -2,6 +2,7 @@ export * from './additionalSigner';
 export * from './all';
 export * from './amount';
 export * from './any';
+export * from './base58PublicKey';
 // export * from './isWallet';
 export * from './namespace';
 export * from './not';

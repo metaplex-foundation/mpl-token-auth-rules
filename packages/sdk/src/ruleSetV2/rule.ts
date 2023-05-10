@@ -5,40 +5,40 @@ import {
   deserializeAdditionalSignerV2,
   serializeAdditionalSignerV2,
 } from './additionalSigner';
+import { AllRuleV2, deserializeAllV2, serializeAllV2 } from './all';
+import { AmountRuleV2, deserializeAmountV2, serializeAmountV2 } from './amount';
+import { AnyRuleV2, deserializeAnyV2, serializeAnyV2 } from './any';
+import { NamespaceRuleV2, deserializeNamespaceV2, serializeNamespaceV2 } from './namespace';
+import { NotRuleV2, deserializeNotV2, serializeNotV2 } from './not';
+import { PassRuleV2, deserializePassV2, serializePassV2 } from './pass';
+import { PdaMatchRuleV2, deserializePdaMatchV2, serializePdaMatchV2 } from './pdaMatch';
+import {
+  ProgramOwnedRuleV2,
+  deserializeProgramOwnedV2,
+  serializeProgramOwnedV2,
+} from './programOwned';
+import {
+  ProgramOwnedListRuleV2,
+  deserializeProgramOwnedListV2,
+  serializeProgramOwnedListV2,
+} from './programOwnedList';
+import {
+  ProgramOwnedTreeRuleV2,
+  deserializeProgramOwnedTreeV2,
+  serializeProgramOwnedTreeV2,
+} from './programOwnedTree';
+import {
+  PubkeyListMatchRuleV2,
+  deserializePubkeyListMatchV2,
+  serializePubkeyListMatchV2,
+} from './pubkeyListMatch';
+import { PubkeyMatchRuleV2, deserializePubkeyMatchV2, serializePubkeyMatchV2 } from './pubkeyMatch';
 import {
   PubkeyTreeMatchRuleV2,
   deserializePubkeyTreeMatchV2,
   serializePubkeyTreeMatchV2,
 } from './pubkeyTreeMatch';
-import { AllRuleV2, deserializeAllV2, serializeAllV2 } from './all';
-import { AnyRuleV2 as AnyRuleV2, deserializeAnyV2, serializeAnyV2 } from './any';
 import { RuleTypeV2 } from './ruleType';
-import { deserializePubkeyMatchV2, PubkeyMatchRuleV2, serializePubkeyMatchV2 } from './pubkeyMatch';
-import {
-  deserializePubkeyListMatchV2,
-  PubkeyListMatchRuleV2,
-  serializePubkeyListMatchV2,
-} from './pubkeyListMatch';
-import {
-  deserializeProgramOwnedListV2,
-  ProgramOwnedListRuleV2,
-  serializeProgramOwnedListV2,
-} from './programOwnedList';
-import {
-  ProgramOwnedRuleV2,
-  serializeProgramOwnedV2,
-  deserializeProgramOwnedV2,
-} from './programOwned';
-import {
-  deserializeProgramOwnedTreeV2,
-  ProgramOwnedTreeRuleV2,
-  serializeProgramOwnedTreeV2,
-} from './programOwnedTree';
-import { AmountRuleV2, deserializeAmountV2, serializeAmountV2 } from './amount';
-import { deserializeNamespaceV2, NamespaceRuleV2, serializeNamespaceV2 } from './namespace';
-import { deserializeNotV2, NotRuleV2, serializeNotV2 } from './not';
-import { deserializePassV2, PassRuleV2, serializePassV2 } from './pass';
-import { deserializePdaMatchV2, PdaMatchRuleV2, serializePdaMatchV2 } from './pdaMatch';
 
 export type RuleV2 =
   | AdditionalSignerRuleV2
@@ -61,37 +61,37 @@ export type RuleV2 =
 export const serializeRuleV2 = (rule: RuleV2): Buffer => {
   const type = rule.type;
   switch (type) {
-    case RuleTypeV2.AdditionalSigner:
+    case 'AdditionalSigner':
       return serializeAdditionalSignerV2(rule);
-    case RuleTypeV2.All:
+    case 'All':
       return serializeAllV2(rule);
-    case RuleTypeV2.Amount:
+    case 'Amount':
       return serializeAmountV2(rule);
-    case RuleTypeV2.Any:
+    case 'Any':
       return serializeAnyV2(rule);
-    // case RuleTypeV2.Frequency:
+    // case 'Frequency':
     //   return serializeFrequencyV2(rule);
-    // case RuleTypeV2.IsWallet:
+    // case 'IsWallet':
     //   return serializeIsWalletV2(rule);
-    case RuleTypeV2.Namespace:
+    case 'Namespace':
       return serializeNamespaceV2(rule);
-    case RuleTypeV2.Not:
+    case 'Not':
       return serializeNotV2(rule);
-    case RuleTypeV2.Pass:
+    case 'Pass':
       return serializePassV2(rule);
-    case RuleTypeV2.PdaMatch:
+    case 'PdaMatch':
       return serializePdaMatchV2(rule);
-    case RuleTypeV2.ProgramOwned:
+    case 'ProgramOwned':
       return serializeProgramOwnedV2(rule);
-    case RuleTypeV2.ProgramOwnedList:
+    case 'ProgramOwnedList':
       return serializeProgramOwnedListV2(rule);
-    case RuleTypeV2.ProgramOwnedTree:
+    case 'ProgramOwnedTree':
       return serializeProgramOwnedTreeV2(rule);
-    case RuleTypeV2.PubkeyListMatch:
+    case 'PubkeyListMatch':
       return serializePubkeyListMatchV2(rule);
-    case RuleTypeV2.PubkeyMatch:
+    case 'PubkeyMatch':
       return serializePubkeyMatchV2(rule);
-    case RuleTypeV2.PubkeyTreeMatch:
+    case 'PubkeyTreeMatch':
       return serializePubkeyTreeMatchV2(rule);
     default:
       // Ensures all cases are handled.
@@ -105,7 +105,7 @@ export const serializeRulesV2 = (rules: RuleV2[]): Buffer => {
 };
 
 export const deserializeRuleV2 = (buffer: Buffer, offset = 0): RuleV2 => {
-  const type = beet.u32.read(buffer, offset) as RuleV2['type'];
+  const type = beet.u32.read(buffer, offset) as RuleTypeV2;
   switch (type) {
     case RuleTypeV2.AdditionalSigner:
       return deserializeAdditionalSignerV2(buffer, offset);
@@ -140,9 +140,7 @@ export const deserializeRuleV2 = (buffer: Buffer, offset = 0): RuleV2 => {
     case RuleTypeV2.PubkeyTreeMatch:
       return deserializePubkeyTreeMatchV2(buffer, offset);
     default:
-      // Ensures all cases are handled.
-      const neverType: never = type;
-      throw new Error('Unknown rule type: ' + neverType);
+      throw new Error('Unknown rule type: ' + type);
   }
 };
 

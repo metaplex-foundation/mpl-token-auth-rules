@@ -31,9 +31,9 @@ export type AllRuleV1 = {
 
 export type AmountRuleV1 = {
   Amount: {
-    field: string;
-    operator: AmountOperator;
     amount: number;
+    operator: AmountOperator;
+    field: string;
   };
 };
 
@@ -43,9 +43,7 @@ export type AnyRuleV1 = {
   };
 };
 
-export type NamespaceRuleV1 = {
-  Namespace: true;
-};
+export type NamespaceRuleV1 = 'Namespace';
 
 export type NotRuleV1 = {
   Not: {
@@ -53,28 +51,26 @@ export type NotRuleV1 = {
   };
 };
 
-export type PassRuleV1 = {
-  Pass: true;
-};
+export type PassRuleV1 = 'Pass';
 
 export type PdaMatchRuleV1 = {
   PDAMatch: {
     program: PublicKeyAsArrayOfBytes;
-    pdaField: string;
-    seedsField: string;
+    pda_field: string;
+    seeds_field: string;
   };
 };
 
 export type ProgramOwnedRuleV1 = {
   ProgramOwned: {
-    publicKey: PublicKeyAsArrayOfBytes;
+    program: PublicKeyAsArrayOfBytes;
     field: string;
   };
 };
 
 export type ProgramOwnedListRuleV1 = {
   ProgramOwnedList: {
-    publicKeys: PublicKeyAsArrayOfBytes[];
+    programs: PublicKeyAsArrayOfBytes[];
     field: string;
   };
 };
@@ -82,21 +78,21 @@ export type ProgramOwnedListRuleV1 = {
 export type ProgramOwnedTreeRuleV1 = {
   ProgramOwnedTree: {
     root: number[];
-    publicKeyField: string;
-    proofField: string;
+    pubkey_field: string;
+    proof_field: string;
   };
 };
 
 export type PubkeyListMatchRuleV1 = {
   PubkeyListMatch: {
-    publicKeys: PublicKeyAsArrayOfBytes[];
+    pubkeys: PublicKeyAsArrayOfBytes[];
     field: string;
   };
 };
 
 export type PubkeyMatchRuleV1 = {
   PubkeyMatch: {
-    publicKey: PublicKeyAsArrayOfBytes;
+    pubkey: PublicKeyAsArrayOfBytes;
     field: string;
   };
 };
@@ -104,7 +100,7 @@ export type PubkeyMatchRuleV1 = {
 export type PubkeyTreeMatchRuleV1 = {
   PubkeyTreeMatch: {
     root: number[];
-    publicKeyField: string;
-    proofField: string;
+    pubkey_field: string;
+    proof_field: string;
   };
 };

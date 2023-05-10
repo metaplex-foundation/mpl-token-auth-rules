@@ -5,7 +5,6 @@ import {
   AnyRuleV2,
   anyV2,
   deserializeRuleV2,
-  RuleTypeV2,
   serializeRuleV2,
 } from '../../src/mpl-token-auth-rules';
 
@@ -40,8 +39,5 @@ test('deserialize', async (t) => {
     ruleB;
   const buffer = Buffer.from(hexBuffer, 'hex');
   const rule = deserializeRuleV2(buffer) as AnyRuleV2;
-  t.deepEqual(rule, {
-    type: RuleTypeV2.Any,
-    rules: [additionalSignerV2(publicKeyA), additionalSignerV2(publicKeyB)],
-  });
+  t.deepEqual(rule, anyV2([additionalSignerV2(publicKeyA), additionalSignerV2(publicKeyB)]));
 });

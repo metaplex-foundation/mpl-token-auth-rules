@@ -3,14 +3,11 @@ import { deserializeRulesV2, RuleV2, serializeRuleHeaderV2, serializeRulesV2 } f
 import { RuleTypeV2 } from './ruleType';
 
 export type AllRuleV2 = {
-  type: RuleTypeV2.All;
+  type: 'All';
   rules: RuleV2[];
 };
 
-export const allV2 = (rules: RuleV2[]): AllRuleV2 => ({
-  type: RuleTypeV2.All,
-  rules,
-});
+export const allV2 = (rules: RuleV2[]): AllRuleV2 => ({ type: 'All', rules });
 
 export const serializeAllV2 = (allRule: AllRuleV2): Buffer => {
   const sizeBuffer = Buffer.alloc(8);
@@ -28,5 +25,5 @@ export const deserializeAllV2 = (buffer: Buffer, offset = 0): AllRuleV2 => {
   const size: beet.bignum = beet.u64.read(buffer, offset);
   offset += 8;
   const rules = deserializeRulesV2(buffer, size, offset);
-  return { type: RuleTypeV2.All, rules };
+  return allV2(rules);
 };

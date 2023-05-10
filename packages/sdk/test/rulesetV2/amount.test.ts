@@ -1,10 +1,8 @@
 import test from 'ava';
 import {
-  AmountOperator,
   AmountRuleV2,
   amountV2,
   deserializeRuleV2,
-  RuleTypeV2,
   serializeRuleV2,
 } from '../../src/mpl-token-auth-rules';
 import { serializeString32 } from '../../src/ruleSetV2/helpers';
@@ -32,10 +30,5 @@ test('deserialize', async (t) => {
   const buffer = Buffer.from(hexBuffer, 'hex');
   const rule = deserializeRuleV2(buffer) as AmountRuleV2;
   rule.amount = Number(rule.amount);
-  t.deepEqual(rule, {
-    type: RuleTypeV2.Amount,
-    field: 'bananas',
-    operator: AmountOperator.Gt,
-    amount: 42,
-  });
+  t.deepEqual(rule, amountV2('bananas', '>', 42));
 });

@@ -1,10 +1,5 @@
 import test from 'ava';
-import {
-  deserializeRuleV2,
-  namespaceV2,
-  RuleTypeV2,
-  serializeRuleV2,
-} from '../../src/mpl-token-auth-rules';
+import { deserializeRuleV2, namespaceV2, serializeRuleV2 } from '../../src/mpl-token-auth-rules';
 
 test('serialize', async (t) => {
   const rule = namespaceV2();
@@ -22,5 +17,5 @@ test('deserialize', async (t) => {
     '00000000'; // Rule length (0 bytes)
   const buffer = Buffer.from(hexBuffer, 'hex');
   const rule = deserializeRuleV2(buffer);
-  t.deepEqual(rule, { type: RuleTypeV2.Namespace });
+  t.deepEqual(rule, namespaceV2());
 });
