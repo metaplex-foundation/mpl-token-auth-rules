@@ -40,7 +40,7 @@ test('it can create a ruleset v1', async (t) => {
   t.deepEqual(deserializedRuleSet, ruleSet);
 });
 
-test.skip('it can create a ruleset v1 with all rule types', async (t) => {
+test('it can create a ruleset v1 with all rule types', async (t) => {
   // Given a serialized ruleset v2 using all rule types account data.
   const { connection, payer } = await getConnectionAndPayer();
   const name = 'My Composed Rule Set';
@@ -103,13 +103,13 @@ test.skip('it can create a ruleset v1 with all rule types', async (t) => {
               },
             },
             'Pass',
-            // {
-            //   PubkeyTreeMatch: {
-            //     root: [...Array(32)].map(() => Math.floor(Math.random() * 40)),
-            //     pubkeyField: 'Source',
-            //     proofField: 'Proof',
-            //   },
-            // },
+            {
+              PubkeyTreeMatch: {
+                root: [...Array(32)].map(() => Math.floor(Math.random() * 40)),
+                pubkey_field: 'Source',
+                proof_field: 'Proof',
+              },
+            },
           ],
         },
       },
@@ -122,26 +122,26 @@ test.skip('it can create a ruleset v1 with all rule types', async (t) => {
                 field: 'Destination',
               },
             },
-            // {
-            //   PDAMatch: {
-            //     program: [...PROGRAM_ID.toBytes()],
-            //     pdaField: 'Destination',
-            //     seedsField: 'Seed',
-            //   },
-            // },
+            {
+              PDAMatch: {
+                program: [...PROGRAM_ID.toBytes()],
+                pda_field: 'Destination',
+                seeds_field: 'Seed',
+              },
+            },
             {
               ProgramOwned: {
                 program: [...PROGRAM_ID.toBytes()],
                 field: 'Source',
               },
             },
-            // {
-            //   ProgramOwnedTree: {
-            //     root: [...Array(32)].map(() => Math.floor(Math.random() * 40)),
-            //     pubkeyField: 'Source',
-            //     proofField: 'Proof',
-            //   },
-            // },
+            {
+              ProgramOwnedTree: {
+                root: [...Array(32)].map(() => Math.floor(Math.random() * 40)),
+                pubkey_field: 'Source',
+                proof_field: 'Proof',
+              },
+            },
           ],
         },
       },

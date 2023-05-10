@@ -141,9 +141,9 @@ export const getRuleV2FromRuleV1 = (ruleV1: RuleV1): RuleV2 => {
   }
   if ('PDAMatch' in ruleV1) {
     return pdaMatchV2(
-      ruleV1.PDAMatch.pdaField,
+      ruleV1.PDAMatch.pda_field,
       new PublicKey(ruleV1.PDAMatch.program),
-      ruleV1.PDAMatch.seedsField,
+      ruleV1.PDAMatch.seeds_field,
     );
   }
   if ('ProgramOwned' in ruleV1) {
@@ -157,8 +157,8 @@ export const getRuleV2FromRuleV1 = (ruleV1: RuleV1): RuleV2 => {
   }
   if ('ProgramOwnedTree' in ruleV1) {
     return programOwnedTreeV2(
-      ruleV1.ProgramOwnedTree.pubkeyField,
-      ruleV1.ProgramOwnedTree.proofField,
+      ruleV1.ProgramOwnedTree.pubkey_field,
+      ruleV1.ProgramOwnedTree.proof_field,
       new Uint8Array(ruleV1.ProgramOwnedTree.root),
     );
   }
@@ -173,8 +173,8 @@ export const getRuleV2FromRuleV1 = (ruleV1: RuleV1): RuleV2 => {
   }
   if ('PubkeyTreeMatch' in ruleV1) {
     return pubkeyTreeMatchV2(
-      ruleV1.PubkeyTreeMatch.pubkeyField,
-      ruleV1.PubkeyTreeMatch.proofField,
+      ruleV1.PubkeyTreeMatch.pubkey_field,
+      ruleV1.PubkeyTreeMatch.proof_field,
       new Uint8Array(ruleV1.PubkeyTreeMatch.root),
     );
   }
