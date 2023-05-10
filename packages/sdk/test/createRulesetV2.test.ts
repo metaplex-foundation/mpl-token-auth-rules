@@ -39,7 +39,7 @@ test('it can create a ruleset v2', async (t) => {
   const ruleSet: RuleSetV2 = {
     libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),
@@ -89,7 +89,7 @@ test('it can update a ruleset from v1 to v2', async (t) => {
   const ruleSetV2: RuleSetV2 = {
     libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),
@@ -116,7 +116,7 @@ test('it can update a ruleset from v2 to v1', async (t) => {
   const ruleSetV2: RuleSetV2 = {
     libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),
@@ -169,7 +169,7 @@ test('it can create a ruleset v2 from a buffer account', async (t) => {
   const ruleSet: RuleSetV2 = {
     libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),
@@ -196,7 +196,7 @@ test('it can create a large ruleset v2 from a buffer account', async (t) => {
   const ruleSet: RuleSetV2 = {
     libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       transfer: pubkeyListMatchV2(
         'Destination',
@@ -223,7 +223,7 @@ test('it can create a composed ruleset v2', async (t) => {
   const ruleSet: RuleSetV2 = {
     libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       'Transfer:Holder': anyV2([
         allV2([
@@ -258,7 +258,7 @@ test('it can create a ruleset v2 with all rule types', async (t) => {
   const ruleSet: RuleSetV2 = {
     libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       'Transfer:Holder': anyV2([
         allV2([
@@ -321,7 +321,7 @@ test('it can update a ruleset v2', async (t) => {
   const ruleSetV2: RuleSetV2 = {
     libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),
@@ -344,7 +344,7 @@ test('it can update a ruleset v2', async (t) => {
   const updatedRuleSetV2: RuleSetV2 = {
     libVersion: 2,
     name,
-    owner: payer.publicKey,
+    owner: payer.publicKey.toBase58(),
     operations: {
       deposit: pubkeyListMatchV2('Source', [publicKeyA]),
       withdraw: pubkeyMatchV2('Source', publicKeyB),

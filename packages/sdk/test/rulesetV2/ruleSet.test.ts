@@ -15,7 +15,7 @@ test('serialize', async (t) => {
   const ruleSet: RuleSetV2 = {
     libVersion: 2,
     name: 'My Rule Set',
-    owner,
+    owner: owner.toBase58(),
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),

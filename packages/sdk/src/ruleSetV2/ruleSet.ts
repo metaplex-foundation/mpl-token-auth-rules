@@ -1,15 +1,15 @@
 import * as beet from '@metaplex-foundation/beet';
-import * as beetSolana from '@metaplex-foundation/beet-solana';
 import { PublicKey } from '@solana/web3.js';
 import { RuleSetV1, RuleV1 } from '../ruleSetV1';
-import { RuleV2, deserializeRulesV2, serializeRulesV2 } from './rule';
 import { additionalSignerV2 } from './additionalSigner';
 import { allV2 } from './all';
-import { anyV2 } from './any';
 import { amountV2 } from './amount';
+import { anyV2 } from './any';
+import { Base58PublicKey, toBase58PublicKey } from './base58PublicKey';
+import { deserializePublicKey, serializePublicKey } from './helpers';
 import { namespaceV2 } from './namespace';
-import { passV2 } from './pass';
 import { notV2 } from './not';
+import { passV2 } from './pass';
 import { pdaMatchV2 } from './pdaMatch';
 import { programOwnedV2 } from './programOwned';
 import { programOwnedListV2 } from './programOwnedList';
@@ -17,11 +17,12 @@ import { programOwnedTreeV2 } from './programOwnedTree';
 import { pubkeyListMatchV2 } from './pubkeyListMatch';
 import { pubkeyMatchV2 } from './pubkeyMatch';
 import { pubkeyTreeMatchV2 } from './pubkeyTreeMatch';
+import { RuleV2, deserializeRulesV2, serializeRulesV2 } from './rule';
 
 export type RuleSetV2 = {
   libVersion: 2;
   name: string;
-  owner: PublicKey;
+  owner: Base58PublicKey;
   operations: Record<string, RuleV2>;
 };
 
@@ -37,8 +38,7 @@ export const serializeRuleSetV2 = (ruleSet: RuleSetV2): Buffer => {
   beet.u32.write(headerBuffer, 4, ruleSize);
 
   // Owner.
-  const ownerBuffer = Buffer.alloc(32);
-  beetSolana.publicKey.write(ownerBuffer, 0, ruleSet.owner);
+  const ownerBuffer = serializePublicKey(ruleSet.owner);
 
   // Name.
   const nameBuffer = Buffer.alloc(32);
@@ -71,7 +71,7 @@ export const deserializeRuleSetV2 = (buffer: Buffer, offset = 0): RuleSetV2 => {
   offset += 4;
 
   // Owner.
-  const owner = beetSolana.publicKey.read(buffer, offset);
+  const owner = deserializePublicKey(buffer, offset);
   offset += 32;
 
   // Name.
@@ -107,7 +107,7 @@ export const getRuleSetV2FromRuleSetV1 = (ruleSetV1: RuleSetV1): RuleSetV2 => {
   return {
     libVersion: 2,
     name: ruleSetV1.ruleSetName,
-    owner: new PublicKey(ruleSetV1.owner),
+    owner: toBase58PublicKey(new PublicKey(ruleSetV1.owner)),
     operations: Object.fromEntries(
       Object.entries(ruleSetV1.operations).map(([operation, rule]) => [
         operation,
