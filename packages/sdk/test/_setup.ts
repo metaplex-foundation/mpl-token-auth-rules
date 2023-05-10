@@ -7,7 +7,7 @@ import {
   findRuleSetBufferPDA,
   PROGRAM_ID,
   createPuffRuleSetInstruction,
-} from '../src/mpl-token-auth-rules';
+} from '../src';
 import { amman } from './_amman';
 
 const CHUNK_SIZE = 900;

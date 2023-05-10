@@ -1,5 +1,5 @@
 import test from 'ava';
-import { deserializeRuleV2, passV2, serializeRuleV2 } from '../../src/mpl-token-auth-rules';
+import { deserializeRuleV2, passV2, serializeRuleV2 } from '../../src';
 
 test('serialize', async (t) => {
   const rule = passV2();

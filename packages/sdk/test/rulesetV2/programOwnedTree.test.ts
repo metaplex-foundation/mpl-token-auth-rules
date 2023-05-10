@@ -1,10 +1,6 @@
 import test from 'ava';
-import {
-  deserializeRuleV2,
-  programOwnedTreeV2,
-  serializeRuleV2,
-} from '../../src/mpl-token-auth-rules';
-import { serializeString32 } from '../../src/ruleSetV2/helpers';
+import { deserializeRuleV2, programOwnedTreeV2, serializeRuleV2 } from '../../src';
+import { serializeString32 } from '../../src/revisions/v2/helpers';
 
 test('serialize', async (t) => {
   const root = new Uint8Array([...Array(32)].map(() => Math.floor(Math.random() * 40)));

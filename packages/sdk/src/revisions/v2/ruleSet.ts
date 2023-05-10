@@ -1,6 +1,6 @@
 import * as beet from '@metaplex-foundation/beet';
 import { PublicKey } from '@solana/web3.js';
-import { RuleSetV1, RuleV1 } from '../ruleSetV1';
+import { RuleSetRevisionV1, RuleV1 } from '../v1';
 import { additionalSignerV2 } from './additionalSigner';
 import { allV2 } from './all';
 import { amountV2 } from './amount';
@@ -19,14 +19,14 @@ import { pubkeyMatchV2 } from './pubkeyMatch';
 import { pubkeyTreeMatchV2 } from './pubkeyTreeMatch';
 import { RuleV2, deserializeRulesV2, serializeRulesV2 } from './rule';
 
-export type RuleSetV2 = {
+export type RuleSetRevisionV2 = {
   libVersion: 2;
   name: string;
   owner: Base58PublicKey;
   operations: Record<string, RuleV2>;
 };
 
-export const serializeRuleSetV2 = (ruleSet: RuleSetV2): Buffer => {
+export const serializeRuleSetRevisionV2 = (ruleSet: RuleSetRevisionV2): Buffer => {
   const tuples = Object.entries(ruleSet.operations);
   const operations = tuples.map(([operation]) => operation);
   const rules = tuples.map(([, rule]) => rule);
@@ -59,7 +59,7 @@ export const serializeRuleSetV2 = (ruleSet: RuleSetV2): Buffer => {
   return Buffer.concat([headerBuffer, ownerBuffer, nameBuffer, operationsBuffer, rulesBuffer]);
 };
 
-export const deserializeRuleSetV2 = (buffer: Buffer, offset = 0): RuleSetV2 => {
+export const deserializeRuleSetRevisionV2 = (buffer: Buffer, offset = 0): RuleSetRevisionV2 => {
   const libVersion = beet.u32.read(buffer, offset);
   offset += 4;
   if (libVersion !== 2) {
@@ -103,7 +103,7 @@ export const deserializeRuleSetV2 = (buffer: Buffer, offset = 0): RuleSetV2 => {
   return { libVersion: 2, name, owner, operations: Object.fromEntries(tuples) };
 };
 
-export const getRuleSetV2FromRuleSetV1 = (ruleSetV1: RuleSetV1): RuleSetV2 => {
+export const getRuleSetRevisionV2FromV1 = (ruleSetV1: RuleSetRevisionV1): RuleSetRevisionV2 => {
   return {
     libVersion: 2,
     name: ruleSetV1.ruleSetName,
@@ -111,13 +111,13 @@ export const getRuleSetV2FromRuleSetV1 = (ruleSetV1: RuleSetV1): RuleSetV2 => {
     operations: Object.fromEntries(
       Object.entries(ruleSetV1.operations).map(([operation, rule]) => [
         operation,
-        getRuleV2FromRuleV1(rule),
+        getRuleV2FromV1(rule),
       ]),
     ),
   };
 };
 
-export const getRuleV2FromRuleV1 = (ruleV1: RuleV1): RuleV2 => {
+export const getRuleV2FromV1 = (ruleV1: RuleV1): RuleV2 => {
   if (ruleV1 === 'Namespace') {
     return namespaceV2();
   }
@@ -128,16 +128,16 @@ export const getRuleV2FromRuleV1 = (ruleV1: RuleV1): RuleV2 => {
     return additionalSignerV2(new PublicKey(ruleV1.AdditionalSigner.account));
   }
   if ('All' in ruleV1) {
-    return allV2(ruleV1.All.rules.map(getRuleV2FromRuleV1));
+    return allV2(ruleV1.All.rules.map(getRuleV2FromV1));
   }
   if ('Amount' in ruleV1) {
     return amountV2(ruleV1.Amount.field, ruleV1.Amount.operator, ruleV1.Amount.amount);
   }
   if ('Any' in ruleV1) {
-    return anyV2(ruleV1.Any.rules.map(getRuleV2FromRuleV1));
+    return anyV2(ruleV1.Any.rules.map(getRuleV2FromV1));
   }
   if ('Not' in ruleV1) {
-    return notV2(getRuleV2FromRuleV1(ruleV1.Not.rule));
+    return notV2(getRuleV2FromV1(ruleV1.Not.rule));
   }
   if ('PDAMatch' in ruleV1) {
     return pdaMatchV2(

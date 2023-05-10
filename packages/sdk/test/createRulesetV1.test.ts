@@ -4,10 +4,10 @@ import test from 'ava';
 import {
   AmountOperator,
   PROGRAM_ID,
-  RuleSetV1,
-  getLatestRuleSet,
+  RuleSetRevisionV1,
+  getLatestRuleSetRevision,
   serializeRuleSetRevision,
-} from '../src/mpl-token-auth-rules';
+} from '../src';
 import { createOrUpdateLargeRuleset, createOrUpdateRuleset, getConnectionAndPayer } from './_setup';
 
 test('it can create a ruleset v1', async (t) => {
@@ -16,7 +16,7 @@ test('it can create a ruleset v1', async (t) => {
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
   const name = 'My Rule Set';
-  const ruleSet: RuleSetV1 = {
+  const ruleSet: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: name,
     owner: [...payer.publicKey.toBytes()],
@@ -36,7 +36,9 @@ test('it can create a ruleset v1', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetV1;
+  const deserializedRuleSet = getLatestRuleSetRevision(
+    rawRuleSetPdaAccount?.data,
+  ) as RuleSetRevisionV1;
   t.deepEqual(deserializedRuleSet, ruleSet);
 });
 
@@ -45,7 +47,7 @@ test('it can create a ruleset v1 with all rule types', async (t) => {
   const { connection, payer } = await getConnectionAndPayer();
   const name = 'My Composed Rule Set';
 
-  const ruleSet: RuleSetV1 = {
+  const ruleSet: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: name,
     owner: [...payer.publicKey.toBytes()],
@@ -154,6 +156,8 @@ test('it can create a ruleset v1 with all rule types', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetV1;
+  const deserializedRuleSet = getLatestRuleSetRevision(
+    rawRuleSetPdaAccount?.data,
+  ) as RuleSetRevisionV1;
   t.deepEqual(deserializedRuleSet, ruleSet);
 });

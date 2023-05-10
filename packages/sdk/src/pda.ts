@@ -1,5 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
-import { PREFIX, PROGRAM_ID } from './mpl-token-auth-rules';
+import { PREFIX } from './constants';
+import { PROGRAM_ID } from './generated';
 
 export const findRuleSetPDA = async (payer: PublicKey, name: string) => {
   return await PublicKey.findProgramAddress(

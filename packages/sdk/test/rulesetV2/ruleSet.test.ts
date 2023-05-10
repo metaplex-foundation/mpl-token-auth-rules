@@ -2,19 +2,19 @@ import { Keypair } from '@solana/web3.js';
 import test from 'ava';
 import {
   additionalSignerV2,
-  deserializeRuleSetV2,
-  getRuleSetV2FromRuleSetV1,
-  RuleSetV1,
-  RuleSetV2,
-  serializeRuleSetV2,
-} from '../../src/mpl-token-auth-rules';
-import { serializeString32 } from '../../src/ruleSetV2/helpers';
+  deserializeRuleSetRevisionV2,
+  getRuleSetRevisionV2FromV1,
+  RuleSetRevisionV1,
+  RuleSetRevisionV2,
+  serializeRuleSetRevisionV2,
+} from '../../src';
+import { serializeString32 } from '../../src/revisions/v2/helpers';
 
 test('serialize', async (t) => {
   const owner = Keypair.generate().publicKey;
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
-  const ruleSet: RuleSetV2 = {
+  const ruleSet: RuleSetRevisionV2 = {
     libVersion: 2,
     name: 'My Rule Set',
     owner: owner.toBase58(),
@@ -23,7 +23,7 @@ test('serialize', async (t) => {
       withdraw: additionalSignerV2(publicKeyB),
     },
   };
-  const serializedRuleSet = serializeRuleSetV2(ruleSet).toString('hex');
+  const serializedRuleSet = serializeRuleSetRevisionV2(ruleSet).toString('hex');
 
   const expectedRuleA = '0100000020000000' + publicKeyA.toBuffer().toString('hex');
   const expectedRuleB = '0100000020000000' + publicKeyB.toBuffer().toString('hex');
@@ -56,7 +56,7 @@ test('deserialize', async (t) => {
     ruleA +
     ruleB;
   const buffer = Buffer.from(hexBuffer, 'hex');
-  const ruleSet = deserializeRuleSetV2(buffer);
+  const ruleSet = deserializeRuleSetRevisionV2(buffer);
   t.deepEqual(ruleSet, {
     libVersion: 2,
     name: 'My Rule Set',
@@ -74,7 +74,7 @@ test('convert from v1', async (t) => {
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
   const name = 'My Rule Set';
-  const ruleSet: RuleSetV1 = {
+  const ruleSet: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: name,
     owner: [...payer.toBytes()],
@@ -89,10 +89,10 @@ test('convert from v1', async (t) => {
   };
 
   // When we convert it to a RuleSetV2.
-  const ruleSetV2 = getRuleSetV2FromRuleSetV1(ruleSet);
+  const ruleSetV2 = getRuleSetRevisionV2FromV1(ruleSet);
 
   // Then we expect the following RuleSet data.
-  t.deepEqual(ruleSetV2, <RuleSetV2>{
+  t.deepEqual(ruleSetV2, <RuleSetRevisionV2>{
     libVersion: 2,
     name,
     owner: payer.toBase58(),
