@@ -5,7 +5,7 @@ import test from 'ava';
 import {
   PROGRAM_ID,
   RuleSetRevisionV1,
-  RuleSetV2,
+  RuleSetRevisionV2,
   additionalSignerV2,
   allV2,
   amountV2,
@@ -36,7 +36,7 @@ test('it can create a ruleset v2', async (t) => {
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
   const name = 'My Rule Set';
-  const ruleSet: RuleSetV2 = {
+  const ruleSet: RuleSetRevisionV2 = {
     libVersion: 2,
     name,
     owner: payer.publicKey.toBase58(),
@@ -52,7 +52,7 @@ test('it can create a ruleset v2', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetV2;
+  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetRevisionV2;
   t.deepEqual(deserializedRuleSet, ruleSet);
 });
 
@@ -86,7 +86,7 @@ test('it can update a ruleset from v1 to v2', async (t) => {
   // Additionally, Given a serialized ruleset v2 account data.
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
-  const ruleSetV2: RuleSetV2 = {
+  const ruleSetV2: RuleSetRevisionV2 = {
     libVersion: 2,
     name,
     owner: payer.publicKey.toBase58(),
@@ -113,7 +113,7 @@ test('it can update a ruleset from v2 to v1', async (t) => {
 
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
-  const ruleSetV2: RuleSetV2 = {
+  const ruleSetV2: RuleSetRevisionV2 = {
     libVersion: 2,
     name,
     owner: payer.publicKey.toBase58(),
@@ -131,7 +131,7 @@ test('it can update a ruleset from v2 to v1', async (t) => {
   const updatedRawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
   const updatedLatestDeserializedRuleSet = getLatestRuleSet(
     updatedRawRuleSetPdaAccount?.data,
-  ) as RuleSetV2;
+  ) as RuleSetRevisionV2;
   t.deepEqual(updatedLatestDeserializedRuleSet, ruleSetV2);
 
   // Additionally, Given a ruleset v1 account data.
@@ -168,7 +168,7 @@ test('it can create a ruleset v2 from a buffer account', async (t) => {
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
   const name = 'My Rule Set';
-  const ruleSet: RuleSetV2 = {
+  const ruleSet: RuleSetRevisionV2 = {
     libVersion: 2,
     name,
     owner: payer.publicKey.toBase58(),
@@ -187,7 +187,7 @@ test('it can create a ruleset v2 from a buffer account', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetV2;
+  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetRevisionV2;
   t.deepEqual(deserializedRuleSet, ruleSet);
 });
 
@@ -195,7 +195,7 @@ test('it can create a large ruleset v2 from a buffer account', async (t) => {
   // Given a serialized ruleset v2 account data.
   const { connection, payer } = await getConnectionAndPayer();
   const name = 'My Large Rule Set';
-  const ruleSet: RuleSetV2 = {
+  const ruleSet: RuleSetRevisionV2 = {
     libVersion: 2,
     name,
     owner: payer.publicKey.toBase58(),
@@ -213,7 +213,7 @@ test('it can create a large ruleset v2 from a buffer account', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetV2;
+  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetRevisionV2;
   t.deepEqual(deserializedRuleSet, ruleSet);
 });
 
@@ -222,7 +222,7 @@ test('it can create a composed ruleset v2', async (t) => {
   const { connection, payer } = await getConnectionAndPayer();
   const name = 'My Composed Rule Set';
 
-  const ruleSet: RuleSetV2 = {
+  const ruleSet: RuleSetRevisionV2 = {
     libVersion: 2,
     name,
     owner: payer.publicKey.toBase58(),
@@ -243,7 +243,7 @@ test('it can create a composed ruleset v2', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetV2;
+  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetRevisionV2;
   // convert the deserialized BN to a number
   (deserializedRuleSet.operations['Transfer:Holder'] as any).rules[1].rule.amount = Number(
     (deserializedRuleSet.operations['Transfer:Holder'] as any).rules[1].rule.amount,
@@ -257,7 +257,7 @@ test('it can create a ruleset v2 with all rule types', async (t) => {
   const { connection, payer } = await getConnectionAndPayer();
   const name = 'My Composed Rule Set';
 
-  const ruleSet: RuleSetV2 = {
+  const ruleSet: RuleSetRevisionV2 = {
     libVersion: 2,
     name,
     owner: payer.publicKey.toBase58(),
@@ -304,7 +304,7 @@ test('it can create a ruleset v2 with all rule types', async (t) => {
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetV2;
+  const deserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetRevisionV2;
   // convert the deserialized BN to a number
   (deserializedRuleSet.operations['Transfer:Holder'] as any).rules[1].rule.amount = Number(
     (deserializedRuleSet.operations['Transfer:Holder'] as any).rules[1].rule.amount,
@@ -320,7 +320,7 @@ test('it can update a ruleset v2', async (t) => {
 
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
-  const ruleSetV2: RuleSetV2 = {
+  const ruleSetV2: RuleSetRevisionV2 = {
     libVersion: 2,
     name,
     owner: payer.publicKey.toBase58(),
@@ -338,12 +338,12 @@ test('it can update a ruleset v2', async (t) => {
   const updatedRawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
   const updatedLatestDeserializedRuleSet = getLatestRuleSet(
     updatedRawRuleSetPdaAccount?.data,
-  ) as RuleSetV2;
+  ) as RuleSetRevisionV2;
   t.deepEqual(updatedLatestDeserializedRuleSet, ruleSetV2);
 
   // Given a updated ruleset v2 account data.
 
-  const updatedRuleSetV2: RuleSetV2 = {
+  const updatedRuleSetV2: RuleSetRevisionV2 = {
     libVersion: 2,
     name,
     owner: payer.publicKey.toBase58(),
@@ -359,6 +359,8 @@ test('it can update a ruleset v2', async (t) => {
 
   // Then the latest ruleset is a ruleset v2.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);
-  const latestDeserializedRuleSet = getLatestRuleSet(rawRuleSetPdaAccount?.data) as RuleSetV2;
+  const latestDeserializedRuleSet = getLatestRuleSet(
+    rawRuleSetPdaAccount?.data,
+  ) as RuleSetRevisionV2;
   t.deepEqual(latestDeserializedRuleSet, updatedRuleSetV2);
 });

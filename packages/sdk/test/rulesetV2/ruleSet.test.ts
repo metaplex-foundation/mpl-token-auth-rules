@@ -5,7 +5,7 @@ import {
   deserializeRuleSetV2,
   getRuleSetV2FromRuleSetV1,
   RuleSetRevisionV1,
-  RuleSetV2,
+  RuleSetRevisionV2,
   serializeRuleSetV2,
 } from '../../src/mpl-token-auth-rules';
 import { serializeString32 } from '../../src/ruleSetV2/helpers';
@@ -14,7 +14,7 @@ test('serialize', async (t) => {
   const owner = Keypair.generate().publicKey;
   const publicKeyA = Keypair.generate().publicKey;
   const publicKeyB = Keypair.generate().publicKey;
-  const ruleSet: RuleSetV2 = {
+  const ruleSet: RuleSetRevisionV2 = {
     libVersion: 2,
     name: 'My Rule Set',
     owner: owner.toBase58(),
@@ -92,7 +92,7 @@ test('convert from v1', async (t) => {
   const ruleSetV2 = getRuleSetV2FromRuleSetV1(ruleSet);
 
   // Then we expect the following RuleSet data.
-  t.deepEqual(ruleSetV2, <RuleSetV2>{
+  t.deepEqual(ruleSetV2, <RuleSetRevisionV2>{
     libVersion: 2,
     name,
     owner: payer.toBase58(),

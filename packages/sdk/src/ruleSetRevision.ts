@@ -1,14 +1,14 @@
 import { RuleSetRevisionV1, deserializeRuleSetV1, serializeRuleSetV1 } from './ruleSetV1';
-import { RuleSetV2, deserializeRuleSetV2, serializeRuleSetV2 } from './ruleSetV2';
+import { RuleSetRevisionV2, deserializeRuleSetV2, serializeRuleSetV2 } from './ruleSetV2';
 
-export type RuleSetRevision = RuleSetRevisionV1 | RuleSetV2;
+export type RuleSetRevision = RuleSetRevisionV1 | RuleSetRevisionV2;
 
 export const isRuleSetV1 = (ruleSet: RuleSetRevision): ruleSet is RuleSetRevisionV1 => {
   return (ruleSet as RuleSetRevisionV1).libVersion === 1;
 };
 
-export const isRuleSetV2 = (ruleSet: RuleSetRevision): ruleSet is RuleSetV2 => {
-  return (ruleSet as RuleSetV2).libVersion === 2;
+export const isRuleSetV2 = (ruleSet: RuleSetRevision): ruleSet is RuleSetRevisionV2 => {
+  return (ruleSet as RuleSetRevisionV2).libVersion === 2;
 };
 
 export const serializeRuleSetRevision = (ruleSet: RuleSetRevision): Buffer => {
