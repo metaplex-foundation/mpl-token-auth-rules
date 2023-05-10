@@ -1,3 +1,4 @@
+import { encode, decode } from '@msgpack/msgpack';
 import type { PublicKeyAsArrayOfBytes } from './publicKey';
 import type { RuleV1 } from './rule';
 
@@ -10,4 +11,12 @@ export type RuleSetV1 = {
   owner: PublicKeyAsArrayOfBytes;
   /** The operations of the ruleset. */
   operations: Record<string, RuleV1>;
+};
+
+export const serializeRuleSetV1 = (ruleSet: RuleSetV1): Buffer => {
+  return Buffer.from(encode(ruleSet));
+};
+
+export const deserializeRuleSetV1 = (buffer: Buffer, offset = 0): RuleSetV1 => {
+  return decode(buffer.subarray(offset + 1)) as RuleSetV1;
 };
