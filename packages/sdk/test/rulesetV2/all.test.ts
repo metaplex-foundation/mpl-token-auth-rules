@@ -6,7 +6,7 @@ import {
   allV2,
   deserializeRuleV2,
   serializeRuleV2,
-} from '../../src/mpl-token-auth-rules';
+} from '../../src';
 
 test('serialize', async (t) => {
   const publicKeyA = Keypair.generate().publicKey;

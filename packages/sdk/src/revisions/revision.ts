@@ -1,3 +1,5 @@
+import { BN } from 'bn.js';
+import { getHeader, getRevisionMapV1 } from './revisionMap';
 import { RuleSetRevisionV1, deserializeRuleSetRevisionV1, serializeRuleSetRevisionV1 } from './v1';
 import { RuleSetRevisionV2, deserializeRuleSetRevisionV2, serializeRuleSetRevisionV2 } from './v2';
 
@@ -31,4 +33,14 @@ export const getRuleSetRevisionFromJson = (json: string): RuleSetRevision => {
   if (isRuleSetV1(ruleSet) || isRuleSetV2(ruleSet)) return ruleSet;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   throw new Error('Unknown rule set version: ' + (ruleSet as any).libVersion);
+};
+
+export const getLatestRuleSet = (data: Buffer): RuleSetRevision => {
+  const header = getHeader(data);
+  const revmap = getRevisionMapV1(data);
+  const latestRevision = new BN(
+    revmap.ruleSetRevisions[revmap.ruleSetRevisions.length - 1],
+  ).toNumber();
+  const endOfRuleSet = new BN(header.revMapVersionLocation).toNumber();
+  return deserializeRuleSetRevision(data.subarray(latestRevision, endOfRuleSet));
 };

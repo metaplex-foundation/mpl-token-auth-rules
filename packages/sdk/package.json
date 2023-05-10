@@ -7,8 +7,8 @@
   "repository": "https://github.com/metaplex-foundation/mpl-token-auth-rules.git",
   "author": "Metaplex Maintainers <contact@metaplex.com>",
   "license": "Apache-2.0",
-  "main": "dist/src/mpl-token-auth-rules.js",
-  "types": "dist/src/mpl-token-auth-rules.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "scripts": {
     "check:publish-ready": "yarn build && yarn test",
     "postversion": "git add package.json && git commit -m \\\"chore: update $npm_package_name to v$npm_package_version\\\" && git tag $npm_package_name@$npm_package_version",

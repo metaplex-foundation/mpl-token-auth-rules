@@ -7,7 +7,7 @@ import {
   RuleSetRevisionV1,
   RuleSetRevisionV2,
   serializeRuleSetRevisionV2,
-} from '../../src/mpl-token-auth-rules';
+} from '../../src';
 import { serializeString32 } from '../../src/revisions/v2/helpers';
 
 test('serialize', async (t) => {

@@ -22,7 +22,7 @@ import {
   pubkeyMatchV2,
   pubkeyTreeMatchV2,
   serializeRuleSetRevisionV2,
-} from '../src/mpl-token-auth-rules';
+} from '../src';
 import {
   createOrUpdateLargeRuleset,
   createOrUpdateRuleset,

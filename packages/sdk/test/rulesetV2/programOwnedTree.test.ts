@@ -1,9 +1,5 @@
 import test from 'ava';
-import {
-  deserializeRuleV2,
-  programOwnedTreeV2,
-  serializeRuleV2,
-} from '../../src/mpl-token-auth-rules';
+import { deserializeRuleV2, programOwnedTreeV2, serializeRuleV2 } from '../../src';
 import { serializeString32 } from '../../src/revisions/v2/helpers';
 
 test('serialize', async (t) => {

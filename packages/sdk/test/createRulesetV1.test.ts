@@ -7,7 +7,7 @@ import {
   RuleSetRevisionV1,
   getLatestRuleSet,
   serializeRuleSetRevision,
-} from '../src/mpl-token-auth-rules';
+} from '../src';
 import { createOrUpdateLargeRuleset, createOrUpdateRuleset, getConnectionAndPayer } from './_setup';
 
 test('it can create a ruleset v1', async (t) => {
