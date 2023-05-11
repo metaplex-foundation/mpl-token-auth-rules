@@ -752,7 +752,35 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metaplex-foundation/mpl-token-auth-rules@workspace:packages/sdk":
+"@metaplex-foundation/mpl-token-auth-rules-cli@workspace:cli":
+  version: 0.0.0-use.local
+  resolution: "@metaplex-foundation/mpl-token-auth-rules-cli@workspace:cli"
+  dependencies:
+    "@metaplex-foundation/js": ^0.15.0
+    "@metaplex-foundation/mpl-token-auth-rules": "workspace:^"
+    "@msgpack/msgpack": ^2.8.0
+    "@solana/spl-token": ^0.3.4
+    "@solana/web3.js": ^1.56.2
+    "@types/clear": ^0.1.2
+    "@types/figlet": ^1.5.5
+    "@types/node": ^18.7.14
+    chalk: 4.1.2
+    clear: ^0.1.0
+    commander: ^9.4.0
+    figlet: ^1.5.2
+    fs: ^0.0.1-security
+    json-colorizer: ^2.2.2
+    log-level: ^1.1.0
+    loglevel: ^1.8.0
+    nodemon: ^2.0.19
+    path: ^0.12.7
+    ts-node: ^10.9.1
+    typescript: ^4.8.2
+    yaml: ^2.1.3
+  languageName: unknown
+  linkType: soft
+
+"@metaplex-foundation/mpl-token-auth-rules@workspace:^, @metaplex-foundation/mpl-token-auth-rules@workspace:packages/sdk":
   version: 0.0.0-use.local
   resolution: "@metaplex-foundation/mpl-token-auth-rules@workspace:packages/sdk"
   dependencies:
@@ -1564,6 +1592,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ansi-styles@npm:^3.2.1":
+  version: 3.2.1
+  resolution: "ansi-styles@npm:3.2.1"
+  dependencies:
+    color-convert: ^1.9.0
+  checksum: d85ade01c10e5dd77b6c89f34ed7531da5830d2cb5882c645f330079975b716438cd7ebb81d0d6e6b4f9c577f19ae41ab55f07f19786b02f9dfd9e0377395665
+  languageName: node
+  linkType: hard
+
 "ansi-styles@npm:^4.0.0, ansi-styles@npm:^4.1.0":
   version: 4.3.0
   resolution: "ansi-styles@npm:4.3.0"
@@ -1750,32 +1787,6 @@ __metadata:
   checksum: 7b78c451df768adba04e2d02e63e2d0bf3b07adcd6e42b4cf665cb7ce899bedd344c69a1dcbce355b5f972d597b25aaa1c1742b52cffd9caccb22f348114f6be
   languageName: node
   linkType: hard
-
-"auth-cli@workspace:cli":
-  version: 0.0.0-use.local
-  resolution: "auth-cli@workspace:cli"
-  dependencies:
-    "@metaplex-foundation/js": ^0.15.0
-    "@msgpack/msgpack": ^2.8.0
-    "@solana/spl-token": ^0.3.4
-    "@solana/web3.js": ^1.56.2
-    "@types/clear": ^0.1.2
-    "@types/figlet": ^1.5.5
-    "@types/node": ^18.7.14
-    chalk: 4.1.2
-    clear: ^0.1.0
-    commander: ^9.4.0
-    figlet: ^1.5.2
-    fs: ^0.0.1-security
-    log-level: ^1.1.0
-    loglevel: ^1.8.0
-    nodemon: ^2.0.19
-    path: ^0.12.7
-    ts-node: ^10.9.1
-    typescript: ^4.8.2
-    yaml: ^2.1.3
-  languageName: unknown
-  linkType: soft
 
 "ava@npm:^5.1.0":
   version: 5.2.0
@@ -2250,6 +2261,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"chalk@npm:^2.4.1":
+  version: 2.4.2
+  resolution: "chalk@npm:2.4.2"
+  dependencies:
+    ansi-styles: ^3.2.1
+    escape-string-regexp: ^1.0.5
+    supports-color: ^5.3.0
+  checksum: ec3661d38fe77f681200f878edbd9448821924e0f93a9cefc0e26a33b145f1027a2084bf19967160d11e1f03bfe4eaffcabf5493b89098b2782c3fe0b03d80c2
+  languageName: node
+  linkType: hard
+
 "chalk@npm:^5.2.0":
   version: 5.2.0
   resolution: "chalk@npm:5.2.0"
@@ -2429,12 +2451,28 @@ __metadata:
   languageName: node
   linkType: hard
 
+"color-convert@npm:^1.9.0":
+  version: 1.9.3
+  resolution: "color-convert@npm:1.9.3"
+  dependencies:
+    color-name: 1.1.3
+  checksum: fd7a64a17cde98fb923b1dd05c5f2e6f7aefda1b60d67e8d449f9328b4e53b228a428fd38bfeaeb2db2ff6b6503a776a996150b80cdf224062af08a5c8a3a203
+  languageName: node
+  linkType: hard
+
 "color-convert@npm:^2.0.1":
   version: 2.0.1
   resolution: "color-convert@npm:2.0.1"
   dependencies:
     color-name: ~1.1.4
   checksum: 79e6bdb9fd479a205c71d89574fccfb22bd9053bd98c6c4d870d65c132e5e904e6034978e55b43d69fcaa7433af2016ee203ce76eeba9cfa554b373e7f7db336
+  languageName: node
+  linkType: hard
+
+"color-name@npm:1.1.3":
+  version: 1.1.3
+  resolution: "color-name@npm:1.1.3"
+  checksum: 09c5d3e33d2105850153b14466501f2bfb30324a2f76568a408763a3b7433b0e50e5b4ab1947868e65cb101bb7cb75029553f2c333b6d4b8138a73fcc133d69d
   languageName: node
   linkType: hard
 
@@ -4281,6 +4319,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"json-colorizer@npm:^2.2.2":
+  version: 2.2.2
+  resolution: "json-colorizer@npm:2.2.2"
+  dependencies:
+    chalk: ^2.4.1
+    lodash.get: ^4.4.2
+  checksum: c90e88179513893c41fb6a564fcc0061834137a8e0afbbf89835bb3993d0cf0ecbcbfb3f0597d19a40822f849916ce9462ff4e9c64bc39e53c7683e71cc49d2c
+  languageName: node
+  linkType: hard
+
 "json-schema-traverse@npm:^0.4.1":
   version: 0.4.1
   resolution: "json-schema-traverse@npm:0.4.1"
@@ -4374,6 +4422,13 @@ __metadata:
   version: 4.5.0
   resolution: "lodash.clonedeep@npm:4.5.0"
   checksum: 92c46f094b064e876a23c97f57f81fbffd5d760bf2d8a1c61d85db6d1e488c66b0384c943abee4f6af7debf5ad4e4282e74ff83177c9e63d8ff081a4837c3489
+  languageName: node
+  linkType: hard
+
+"lodash.get@npm:^4.4.2":
+  version: 4.4.2
+  resolution: "lodash.get@npm:4.4.2"
+  checksum: e403047ddb03181c9d0e92df9556570e2b67e0f0a930fcbbbd779370972368f5568e914f913e93f3b08f6d492abc71e14d4e9b7a18916c31fa04bd2306efe545
   languageName: node
   linkType: hard
 
@@ -6020,7 +6075,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"supports-color@npm:^5.5.0":
+"supports-color@npm:^5.3.0, supports-color@npm:^5.5.0":
   version: 5.5.0
   resolution: "supports-color@npm:5.5.0"
   dependencies:
