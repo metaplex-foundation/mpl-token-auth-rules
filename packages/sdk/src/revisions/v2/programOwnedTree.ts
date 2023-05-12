@@ -6,21 +6,26 @@ export type ProgramOwnedTreeRuleV2 = {
   type: 'ProgramOwnedTree';
   pubkeyField: string;
   proofField: string;
-  root: Uint8Array;
+  root: number[];
 };
 
 export const programOwnedTreeV2 = (
   pubkeyField: string,
   proofField: string,
-  root: Uint8Array,
-): ProgramOwnedTreeRuleV2 => ({ type: 'ProgramOwnedTree', pubkeyField, proofField, root });
+  root: Uint8Array | number[],
+): ProgramOwnedTreeRuleV2 => ({
+  type: 'ProgramOwnedTree',
+  pubkeyField,
+  proofField,
+  root: [...root],
+});
 
 export const serializeProgramOwnedTreeV2 = (rule: ProgramOwnedTreeRuleV2): Buffer => {
   return Buffer.concat([
     serializeRuleHeaderV2(RuleTypeV2.ProgramOwnedTree, 96),
     serializeString32(rule.pubkeyField),
     serializeString32(rule.proofField),
-    rule.root,
+    new Uint8Array(rule.root),
   ]);
 };
 

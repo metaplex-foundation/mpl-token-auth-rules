@@ -68,7 +68,7 @@ export const createOrUpdateLargeRuleset = async (
   const chunks = Math.ceil(data.length / CHUNK_SIZE);
 
   for (let i = 0; i < chunks; i++) {
-    const chunk = data.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+    const chunk = data.slice(i * CHUNK_SIZE, Math.min((i + 1) * CHUNK_SIZE, data.length));
     await writeAndPuff(connection, payer, name, chunk, i == 0);
   }
 
