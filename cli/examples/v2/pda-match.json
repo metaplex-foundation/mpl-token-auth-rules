@@ -1,0 +1,13 @@
+{
+  "libVersion": 2,
+  "name": "PDA Match Rule Set",
+  "owner": "3fQZbDAfryjoH8GyRe4VUYAixkyQVZnQu5xD2PbV8KeU",
+  "operations": {
+    "Transfer:Holder": {
+      "type": "PdaMatch",
+      "pdaField": "Destination",
+      "program": "auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg",
+      "seedsField": "Seed"
+    }
+  }
+}

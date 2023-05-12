@@ -1,0 +1,21 @@
+{
+  "libVersion": 2,
+  "name": "Any Rule Set",
+  "owner": "3fQZbDAfryjoH8GyRe4VUYAixkyQVZnQu5xD2PbV8KeU",
+  "operations": {
+    "Transfer:Holder": {
+      "type": "Any",
+      "rules": [
+        {
+          "type": "Pass"
+        },
+        {
+          "type": "Amount",
+          "field": "Amount",
+          "operator": "=",
+          "amount": "01"
+        }
+      ]
+    }
+  }
+}

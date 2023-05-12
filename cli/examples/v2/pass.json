@@ -1,0 +1,10 @@
+{
+  "libVersion": 2,
+  "name": "Pass Rule Set",
+  "owner": "3fQZbDAfryjoH8GyRe4VUYAixkyQVZnQu5xD2PbV8KeU",
+  "operations": {
+    "Transfer:Holder": {
+      "type": "Pass"
+    }
+  }
+}

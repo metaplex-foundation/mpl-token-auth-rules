@@ -1,0 +1,13 @@
+{
+  "libVersion": 2,
+  "name": "Amount Rule Set",
+  "owner": "3fQZbDAfryjoH8GyRe4VUYAixkyQVZnQu5xD2PbV8KeU",
+  "operations": {
+    "Transfer:Holder": {
+      "type": "Amount",
+      "field": "Amount",
+      "operator": "=",
+      "amount": "01"
+    }
+  }
+}

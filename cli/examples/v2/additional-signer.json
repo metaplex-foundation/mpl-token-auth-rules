@@ -1,0 +1,11 @@
+{
+  "libVersion": 2,
+  "name": "Additional Signer Rule Set",
+  "owner": "3fQZbDAfryjoH8GyRe4VUYAixkyQVZnQu5xD2PbV8KeU",
+  "operations": {
+    "Transfer:Holder": {
+      "type": "AdditionalSigner",
+      "publicKey": "D5PLyyCxNZfGy4GT9S2hxdxDapKFzqno7qKqE2SB5BgF"
+    }
+  }
+}

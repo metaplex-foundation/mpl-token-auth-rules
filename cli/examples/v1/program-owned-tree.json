@@ -1,7 +1,10 @@
 {
   "libVersion": 1,
   "ruleSetName": "Program Owned Tree Rule Set",
-  "owner": ["<OWNER PUBKEY BYTES>"],
+  "owner": [
+    39, 142, 22, 11, 170, 18, 134, 111, 146, 44, 128, 210, 236, 140, 142, 47, 215, 150, 47, 43, 149,
+    38, 231, 135, 96, 122, 54, 152, 35, 210, 207, 29
+  ],
   "operations": {
     "Transfer:Holder": {
       "ProgramOwnedTree": {

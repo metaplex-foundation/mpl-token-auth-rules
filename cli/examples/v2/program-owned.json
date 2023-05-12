@@ -1,0 +1,12 @@
+{
+  "libVersion": 2,
+  "name": "Program Owned Rule Set",
+  "owner": "3fQZbDAfryjoH8GyRe4VUYAixkyQVZnQu5xD2PbV8KeU",
+  "operations": {
+    "Transfer:Holder": {
+      "type": "ProgramOwned",
+      "program": "auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg",
+      "field": "Destination"
+    }
+  }
+}
