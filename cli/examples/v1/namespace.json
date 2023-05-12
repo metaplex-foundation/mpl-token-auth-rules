@@ -1,0 +1,8 @@
+{
+  "libVersion": 1,
+  "ruleSetName": "Namespace Rule Set",
+  "owner": ["<OWNER PUBKEY BYTES>"],
+  "operations": {
+    "Transfer:Holder": "Namespace"
+  }
+}

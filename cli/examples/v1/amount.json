@@ -1,0 +1,14 @@
+{
+  "libVersion": 1,
+  "ruleSetName": "All Rule Set",
+  "owner": ["<OWNER PUBKEY BYTES>"],
+  "operations": {
+    "Transfer:Holder": {
+      "Amount": {
+        "amount": 1,
+        "operator": "=",
+        "field": "Amount"
+      }
+    }
+  }
+}

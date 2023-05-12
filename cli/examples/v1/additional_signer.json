@@ -1,0 +1,15 @@
+{
+  "libVersion": 1,
+  "ruleSetName": "Additional Signer Rule Set",
+  "owner": ["<OWNER PUBKEY BYTES>"],
+  "operations": {
+    "Transfer:Holder": {
+      "AdditionalSigner": {
+        "account": [
+          179, 107, 212, 213, 134, 17, 73, 4, 139, 180, 99, 251, 121, 169, 251, 156, 115, 58, 2,
+          234, 234, 3, 134, 180, 39, 227, 155, 164, 150, 197, 54, 236
+        ]
+      }
+    }
+  }
+}

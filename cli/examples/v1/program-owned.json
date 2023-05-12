@@ -1,0 +1,16 @@
+{
+  "libVersion": 1,
+  "ruleSetName": "Program Owned Rule Set",
+  "owner": ["<OWNER PUBKEY BYTES>"],
+  "operations": {
+    "Transfer:Holder": {
+      "ProgramOwned": {
+        "program": [
+          8, 175, 248, 148, 195, 250, 103, 192, 22, 58, 48, 242, 52, 163, 61, 52, 103,
+          240, 58, 161, 100, 23, 49, 94, 180, 184, 20, 39, 189, 155, 166, 237
+        ],
+        "field": "Destination"
+      }
+    }
+  }
+}

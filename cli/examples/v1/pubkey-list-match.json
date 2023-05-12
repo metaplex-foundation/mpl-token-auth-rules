@@ -1,0 +1,18 @@
+{
+  "libVersion": 1,
+  "ruleSetName": "Pubkey List Match Rule Set",
+  "owner": ["<OWNER PUBKEY BYTES>"],
+  "operations": {
+    "Transfer:Holder": {
+      "PubkeyListMatch": {
+        "pubkeys": [
+          [
+            69, 69, 71, 41, 171, 159, 139, 52, 182, 243, 100, 254, 86, 104, 49, 228, 125, 106, 44,
+            138, 19, 129, 247, 246, 240, 61, 184, 228, 133, 95, 118, 23
+          ]
+        ],
+        "field": "Destination"
+      }
+    }
+  }
+}
