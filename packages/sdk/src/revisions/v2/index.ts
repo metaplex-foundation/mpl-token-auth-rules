@@ -14,6 +14,6 @@ export * from './programOwnedTree';
 export * from './pubkeyListMatch';
 export * from './pubkeyMatch';
 export * from './pubkeyTreeMatch';
+export * from './revision';
 export * from './rule';
-export * from './ruleSet';
 export * from './ruleType';
