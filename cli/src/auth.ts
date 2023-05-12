@@ -164,8 +164,7 @@ program
       console.log('   + writing revision to file');
       fs.writeFileSync(output, JSON.stringify(ruleset, null, 2));
     } else {
-      console.log('\n');
-      console.log(colorizeJson(JSON.stringify(ruleset, null, 2)));
+      console.log('\n' + colorizeJson(JSON.stringify(ruleset, null, 2)));
     }
 
     console.log(`\n✅ Revision retrieved.`);
