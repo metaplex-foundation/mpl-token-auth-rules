@@ -30,7 +30,7 @@ export const deserializePubkeyTreeMatchV2 = (buffer: Buffer, offset = 0): Pubkey
   offset += 32;
   const proofField = deserializeString32(buffer, offset);
   offset += 32;
-  const root = new Uint8Array(buffer.subarray(offset, offset + 32)) ;
+  const root = new Uint8Array(buffer.subarray(offset, offset + 32));
 
   return pubkeyTreeMatchV2(pubkeyField, proofField, root);
 };

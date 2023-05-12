@@ -13,7 +13,12 @@ export const programOwnedTreeV2 = (
   pubkeyField: string,
   proofField: string,
   root: Uint8Array | number[],
-): ProgramOwnedTreeRuleV2 => ({ type: 'ProgramOwnedTree', pubkeyField, proofField, root: [...root] });
+): ProgramOwnedTreeRuleV2 => ({
+  type: 'ProgramOwnedTree',
+  pubkeyField,
+  proofField,
+  root: [...root],
+});
 
 export const serializeProgramOwnedTreeV2 = (rule: ProgramOwnedTreeRuleV2): Buffer => {
   return Buffer.concat([
