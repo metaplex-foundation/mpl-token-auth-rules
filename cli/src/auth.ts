@@ -30,6 +30,7 @@ const LOCALNET_DEFAULT_RPC = 'http://127.0.0.1:8899';
 
 program
   .command('create')
+  .description('creates a new rule set revision')
   .option('-e, --env <string>', 'Solana cluster env name', 'devnet')
   .option('-r, --rpc <string>', 'The endpoint to connect to')
   .option('-k, --keypair <file>', 'Solana wallet file')
@@ -80,6 +81,7 @@ program
 
 program
   .command('convert')
+  .description('converts a rule set revision from V1 to V2')
   .option('-e, --env <string>', 'Solana cluster env name', 'devnet')
   .option('-r, --rpc <string>', 'The endpoint to connect to')
   .option('-k, --keypair <path>', 'Solana wallet file')
@@ -142,6 +144,7 @@ program
 
 program
   .command('print')
+  .description('prints the latest rule set revision as a JSON object')
   .option('-e, --env <string>', 'Solana cluster env name', 'devnet')
   .option('-r, --rpc <string>', 'The endpoint to connect to')
   .option('-l, --log-level <string>', 'Log level', setLogLevel)
