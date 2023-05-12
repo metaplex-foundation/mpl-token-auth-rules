@@ -9,6 +9,7 @@ import {
   getRuleSetRevisionFromJson,
   getRuleSetRevisionV2FromV1,
   isRuleSetV1,
+  isRuleSetV2,
   serializeRuleSetRevision,
 } from '@metaplex-foundation/mpl-token-auth-rules';
 import colorizeJson from 'json-colorizer';
@@ -97,38 +98,46 @@ program
     let data = rulesetData?.data as Buffer;
     let ruleset = getLatestRuleSetRevision(data);
 
-    if (isRuleSetV1(ruleset)) {
-      const ruleSetV2 = getRuleSetRevisionV2FromV1(ruleset);
-      console.log('   + updating rule set revision');
-
-      const owner = new PublicKey(ruleSetV2.owner);
-      const name = ruleSetV2.name;
-      const payer = loadKeypair(keypair);
-
-      if (!payer.publicKey.equals(owner)) {
-        throw new Error('The payer must be the owner of the rule set.');
-      }
-
-      // Airdrop some Sol if we're on localnet.
-      if (rpc == LOCALNET_DEFAULT_RPC) {
-        const airdropSignature = await connection.requestAirdrop(
-          payer.publicKey,
-          10 * LAMPORTS_PER_SOL,
-        );
-        await connection.confirmTransaction(airdropSignature);
-      }
-
-      let rulesetAddress = await createOrUpdateLargeRuleset(
-        connection,
-        payer,
-        name,
-        serializeRuleSetRevision(ruleSetV2),
-      );
-
-      console.log('\n✅ Latest rule set revision updated to V2.');
-    } else {
+    if (isRuleSetV2(ruleset)) {
       console.log('\n✅ Latest rule set revision is already V2.');
+      return;
     }
+
+    const ruleSetV2 = getRuleSetRevisionV2FromV1(ruleset);
+    console.log('   + updating rule set revision...');
+
+    const owner = new PublicKey(ruleSetV2.owner);
+    const name = ruleSetV2.name;
+    const payer = loadKeypair(keypair);
+
+    if (!payer.publicKey.equals(owner)) {
+      throw new Error('The payer must be the owner of the rule set.');
+    }
+
+    // Airdrop some Sol if we're on localnet.
+    if (rpc == LOCALNET_DEFAULT_RPC) {
+      const airdropSignature = await connection.requestAirdrop(
+        payer.publicKey,
+        10 * LAMPORTS_PER_SOL,
+      );
+      await connection.confirmTransaction(airdropSignature);
+    }
+
+    let rulesetAddress = await createOrUpdateLargeRuleset(
+      connection,
+      payer,
+      name,
+      serializeRuleSetRevision(ruleSetV2),
+    );
+
+    console.log('   + ...done.');
+    console.log(
+      '\nIf you are managing your rule set via a JSON file,' +
+        ' use the print command to get the latest revision' +
+        ' as a JSON object and update your file.',
+    );
+
+    console.log('\n✅ Your rule set was updated to V2.');
   });
 
 program
@@ -153,10 +162,10 @@ program
 
     if (output) {
       console.log('   + writing revision to file');
-      fs.writeFileSync(output, JSON.stringify(ruleset, pubkey_replacer, 2));
+      fs.writeFileSync(output, JSON.stringify(ruleset, null, 2));
     } else {
       console.log('\n');
-      console.log(colorizeJson(JSON.stringify(ruleset, pubkey_replacer, 2)));
+      console.log(colorizeJson(JSON.stringify(ruleset, null, 2)));
     }
 
     console.log(`\n✅ Revision retrieved.`);
@@ -181,13 +190,6 @@ function loadKeypair(keypairPath) {
   const decodedKey = new Uint8Array(JSON.parse(fs.readFileSync(keypairPath).toString()));
 
   return Keypair.fromSecretKey(decodedKey);
-}
-
-function pubkey_replacer(key, value) {
-  if (Array.isArray(value) && value.length == 32) {
-    return new PublicKey(value).toString();
-  }
-  return value;
 }
 
 function default_env(env) {
