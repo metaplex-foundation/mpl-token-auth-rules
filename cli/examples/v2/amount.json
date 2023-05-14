@@ -7,7 +7,7 @@
       "type": "Amount",
       "field": "Amount",
       "operator": "=",
-      "amount": "01"
+      "amount": 1
     }
   }
 }
