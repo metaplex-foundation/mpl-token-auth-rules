@@ -71,7 +71,7 @@ export const createOrUpdateLargeRuleset = async (
   for (let i = 0; i < chunks; i++) {
     const chunk = data.slice(i * CHUNK_SIZE, Math.min((i + 1) * CHUNK_SIZE, data.length));
     console.log(`   + writing data slice ${i + 1} of ${chunks}: ${chunk.length} bytes`);
-    await write(connection, payer, name, chunk, i == 0);
+    await write(connection, payer, chunk, i == 0);
   }
 
   // then puff the rule set account
@@ -90,7 +90,6 @@ export const createOrUpdateLargeRuleset = async (
 export const write = async (
   connection: Connection,
   payer: Keypair,
-  name: string,
   data: Uint8Array,
   overwrite = false,
 ) => {
@@ -118,12 +117,7 @@ export const write = async (
   return bufferAddress[0];
 };
 
-export const puff = async (
-  connection: Connection,
-  payer: Keypair,
-  name: string,
-  overwrite = false,
-) => {
+export const puff = async (connection: Connection, payer: Keypair, name: string) => {
   const ruleSetAddress = await findRuleSetPDA(payer.publicKey, name);
 
   const puffIX = createPuffRuleSetInstruction(
