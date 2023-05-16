@@ -77,10 +77,8 @@ export const createOrUpdateLargeRuleset = async (
   // then puff the rule set account
   const puffs = Math.ceil(data.length / PUFF_CHUNK_SIZE) - 1;
 
-  if (puffs > 0) {
-    for (let i = 0; i < puffs; i++) {
-      await puff(connection, payer, name);
-    }
+  for (let i = 0; i < puffs; i++) {
+    await puff(connection, payer, name);
   }
 
   const [bufferAddress] = await findRuleSetBufferPDA(payer.publicKey);
