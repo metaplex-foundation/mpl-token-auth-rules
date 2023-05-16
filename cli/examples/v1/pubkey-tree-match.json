@@ -1,0 +1,20 @@
+{
+  "libVersion": 1,
+  "ruleSetName": "Pubkey Tree Match Rule Set",
+  "owner": [
+    39, 142, 22, 11, 170, 18, 134, 111, 146, 44, 128, 210, 236, 140, 142, 47, 215, 150, 47, 43, 149,
+    38, 231, 135, 96, 122, 54, 152, 35, 210, 207, 29
+  ],
+  "operations": {
+    "Transfer:Holder": {
+      "PubkeyTreeMatch": {
+        "root": [
+          35, 27, 21, 22, 16, 8, 37, 33, 5, 20, 18, 23, 0, 2, 8, 22, 17, 17, 16, 9, 36, 7, 12,
+          7, 26, 10, 29, 3, 2, 0, 29, 21
+        ],
+        "pubkey_field": "Source",
+        "proof_field": "Proof"
+      }
+    }
+  }
+}

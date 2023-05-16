@@ -1,0 +1,24 @@
+{
+  "libVersion": 1,
+  "ruleSetName": "All Rule Set",
+  "owner": [
+    39, 142, 22, 11, 170, 18, 134, 111, 146, 44, 128, 210, 236, 140, 142, 47, 215, 150, 47, 43, 149,
+    38, 231, 135, 96, 122, 54, 152, 35, 210, 207, 29
+  ],
+  "operations": {
+    "Transfer:Holder": {
+      "All": {
+        "rules": [
+          "Pass",
+          {
+            "Amount": {
+              "amount": 1,
+              "operator": 2,
+              "field": "Amount"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

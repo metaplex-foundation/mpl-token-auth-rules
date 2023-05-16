@@ -15,39 +15,21 @@ There are **Primitive Rules** and **Composed Rules** that are created by combini
 2. Install Solana from https://docs.solana.com/cli/install-solana-cli-tools#use-solanas-install-tool
 3. Run `yarn install` to install dependencies
 
----
-
-### Build and test the Rust program
-```
-$ cd program/
-$ cargo build-bpf
-$ cargo test-bpf
-$ cd ..
-```
-
----
-
 ### Build the program, generate the JS API, and rebuild IDL (using Shank and Solita)
 ```
 $ yarn build:rust
 $ yarn solita
 ```
 
----
-
 ### Build the JS SDK only (must be generated first)
 ```
 $ yarn build:sdk
 ```
 
----
-
 ### Build the program and generate/build the IDL/SDK/docs
 ```
 $ yarn build
 ```
-
----
 
 ### Start Amman and run the test script
 Run the following command in a separate shell
@@ -59,6 +41,46 @@ Then, run the Amman script
 ```
 $ yarn amman
 ```
+
+### Build and test the Rust program
+```
+$ cd program/
+$ cargo build-bpf
+$ cargo test-bpf
+```
+
+## CLI
+
+The folder `cli` contains a typescript CLI to manage rule set revisions:
+```
+Usage: auth [options] [command]
+
+CLI for managing RuleSet revisions.
+
+Options:
+  -V, --version      output the version number
+  -h, --help         display help for command
+
+Commands:
+  create [options]   creates a new rule set revision
+  convert [options]  converts a rule set revision from V1 to V2
+  print [options]    prints the latest rule set revision as a JSON object
+  help [command]     display help for command
+```
+
+To start the CLI, navigate to the folder `./cli` and run
+```
+$ yarn install
+```
+
+Then, the CLI can be used as
+```
+$ yarn start <COMMAND>
+```
+
+The folder `./examples` contain several examples of rule sets. You will need to replace the `owner` pubkey value with the pubkey used to run the CLI.
+
+> Note that you need to first build the JS SDK.
 
 ## Examples
 
@@ -225,9 +247,13 @@ fn main() {
 ### JavaScript
 **Note: Additional JS examples can be found in the [/cli/](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/cli) source along with the example rulesets in [/cli/examples/](https://github.com/metaplex-foundation/mpl-token-auth-rules/tree/cli/examples)**
 ```js
-import { encode, decode } from '@msgpack/msgpack';
 import { createCreateInstruction, createTokenAuthorizationRules, PREFIX, PROGRAM_ID } from './helpers/mpl-token-auth-rules';
 import { Keypair, Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
+import {
+  findRuleSetPDA,
+  getRuleSetRevisionFromJson,
+  serializeRuleSetRevision,
+} from '@metaplex-foundation/mpl-token-auth-rules';
 
 export const findRuleSetPDA = async (payer: PublicKey, name: string) => {
     return await PublicKey.findProgramAddress(
@@ -265,7 +291,7 @@ export const createTokenAuthorizationRules = async (
     const { blockhash } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
     tx.feePayer = payer.publicKey;
-    const sig = await connection.sendTransaction(tx, [payer], { skipPreflight: true });
+    const sig = await connection.sendTransaction(tx, [payer]);
     await connection.confirmTransaction(sig, "finalized");
     return ruleSetAddress[0];
 }
@@ -273,8 +299,7 @@ export const createTokenAuthorizationRules = async (
 const connection = new Connection("<YOUR_RPC_HERE>", "finalized");
 let payer = Keypair.generate()
 
-// Encode the file using msgpack so the pre-encoded data can be written directly to a Solana program account
-const encoded = encode(JSON.parse(fs.readFileSync("./examples/pubkey_list_match.json")));
-// Create the ruleset
-await createTokenAuthorizationRules(connection, payer, name, encoded);
+const revision = getRuleSetRevisionFromJson(JSON.parse(fs.readFileSync("./examples/v2/pubkey-list-match.json")));
+// Create the rule set revision
+await createTokenAuthorizationRules(connection, payer, name, serializeRuleSetRevision(revision));
 ```

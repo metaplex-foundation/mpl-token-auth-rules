@@ -1,0 +1,12 @@
+{
+  "libVersion": 2,
+  "name": "Pubkey List Match Rule Set",
+  "owner": "3fQZbDAfryjoH8GyRe4VUYAixkyQVZnQu5xD2PbV8KeU",
+  "operations": {
+    "Transfer:Holder": {
+      "type": "PubkeyListMatch",
+      "field": "Destination",
+      "publicKeys": ["5fQQFma69WRZRjwXp2zcCZK4TfVAimcHoeCsCF4UgNRC"]
+    }
+  }
+}

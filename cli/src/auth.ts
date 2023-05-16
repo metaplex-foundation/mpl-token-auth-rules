@@ -1,140 +1,206 @@
-import { encode, decode } from '@msgpack/msgpack';
-import { createTokenAuthorizationRules, validateOperation } from './helpers/mpl-token-auth-rules';
+import { createOrUpdateLargeRuleset } from './helpers/mpl-token-auth-rules';
 import { Keypair, Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
-import { Command, program } from "commander";
-import log from "loglevel";
+import { program } from 'commander';
+import log from 'loglevel';
 import * as fs from 'fs';
-import { findRuleSetPDA } from './helpers/pda';
-import { Payload, RuleSetHeader, ruleSetHeaderBeet, ruleSetRevisionMapV1Beet } from '../../packages/sdk/src/generated';
-import { getLatestRuleSet } from '../../packages/sdk/src/mpl-token-auth-rules';
+import {
+  findRuleSetPDA,
+  getLatestRuleSetRevision,
+  getRuleSetRevisionFromJson,
+  getRuleSetRevisionV2FromV1,
+  isRuleSetV1,
+  isRuleSetV2,
+  serializeRuleSetRevision,
+} from '@metaplex-foundation/mpl-token-auth-rules';
+import colorizeJson from 'json-colorizer';
+
+//-----------//
+// Constants //
+//-----------//
+
+const MAINNET_DEFAULT_RPC = 'https://api.mainnet-beta.solana.com';
+
+const DEVNET_DEFAULT_RPC = 'https://api.devnet.solana.com';
+
+const LOCALNET_DEFAULT_RPC = 'http://127.0.0.1:8899';
+
+//-----------//
+// Commands  //
+//-----------//
 
 program
-    .command("create")
-    .option(
-        "-e, --env <string>",
-        "Solana cluster env name",
-        "devnet", //mainnet-beta, testnet, devnet
-    )
-    .option("-r, --rpc <string>", "The endpoint to connect to.")
-    .option("-k, --keypair <path>", `Solana wallet location`)
-    .option("-l, --log-level <string>", "log level", setLogLevel)
-    .option("-n, --name <string>", "The name of the ruleset.")
-    .option("-rs, --ruleset <string>", "The ruleset json file.")
-    .action(async (directory, cmd) => {
-        const { keypair, env, rpc, name, ruleset } = cmd.opts();
-        let payer = loadKeypair(keypair);
-        const connection = new Connection(rpc, "finalized");
+  .command('create')
+  .description('creates a new rule set revision')
+  .option('-e, --env <string>', 'Solana cluster env name', 'devnet')
+  .option('-r, --rpc <string>', 'The endpoint to connect to')
+  .option('-k, --keypair <file>', 'Solana wallet file')
+  .option('-l, --log-level <string>', 'Log level', setLogLevel)
+  .option('--revision <file>', 'The rule set revision json file')
+  .action(async (_directory, cmd) => {
+    let { keypair, env, rpc, revision } = cmd.opts();
 
-        // Airdrop some Sol if we're on localnet.
-        if (rpc == "http://localhost:8899") {
-            const airdropSignature = await connection.requestAirdrop(
-                payer.publicKey,
-                10 * LAMPORTS_PER_SOL
-            );
-            await connection.confirmTransaction(airdropSignature);
-        }
+    rpc = rpc ?? default_env(env);
 
-        const rulesetFile = JSON.parse(fs.readFileSync(ruleset, 'utf-8'));
-        rulesetFile[1] = Array.from(payer.publicKey.toBytes());
-        rulesetFile[2] = name;
+    const connection = new Connection(rpc, 'finalized');
+    const payer = loadKeypair(keypair);
 
-        const encoded = encode(rulesetFile);
-        let rulesetAddress = await createTokenAuthorizationRules(connection, payer, name, encoded);
-        let rulesetData = await connection.getAccountInfo(rulesetAddress);
-        let rulesetDecoded = decode(rulesetData?.data);
-        console.log("RuleSet Decoded: " + JSON.stringify(rulesetDecoded, null, 2));
-    });
+    // Airdrop some Sol if we're on localnet.
+    if (rpc == LOCALNET_DEFAULT_RPC) {
+      const airdropSignature = await connection.requestAirdrop(
+        payer.publicKey,
+        10 * LAMPORTS_PER_SOL,
+      );
+      await connection.confirmTransaction(airdropSignature);
+    }
+
+    const ruleSet = getRuleSetRevisionFromJson(fs.readFileSync(revision, 'utf-8'));
+
+    const owner = new PublicKey(ruleSet.owner);
+    const name = isRuleSetV1(ruleSet) ? ruleSet.ruleSetName : ruleSet.name;
+
+    if (!payer.publicKey.equals(owner)) {
+      throw new Error('The payer must be the owner of the rule set.');
+    }
+
+    const [ruleSetAddress] = await findRuleSetPDA(payer.publicKey, name);
+    console.log(`📝 Creating rule set revision for '${ruleSetAddress}'`);
+
+    let rulesetAddress = await createOrUpdateLargeRuleset(
+      connection,
+      payer,
+      name,
+      serializeRuleSetRevision(ruleSet),
+    );
+
+    let rulesetData = await connection.getAccountInfo(rulesetAddress);
+    let data = rulesetData?.data as Buffer;
+    let latest = getLatestRuleSetRevision(data);
+
+    console.log(`\n✅ Revision V${latest.libVersion} created.`);
+  });
 
 program
-    .command("validate")
-    .option(
-        "-e, --env <string>",
-        "Solana cluster env name",
-        "devnet", //mainnet-beta, testnet, devnet
-    )
-    .option("-r, --rpc <string>", "The endpoint to connect to.")
-    .option("-k, --keypair <path>", `Solana wallet location`)
-    .option("-l, --log-level <string>", "log level", setLogLevel)
-    .option("-n, --name <string>", "The name of the ruleset.")
-    .option("-op, --operation <string>", "The operation to validate.")
-    .option("-da, --destination_address <string>", "The destination address.")
-    .option("-ds, --derived_seeds <items>", "The derivation seeds as a comma-separated list.")
-    .option("-am, --amount <int>", "The amount.")
-    .option("-tl, --tree_leaf <string>", "The merkle tree leaf.")
-    .option("-tp, --tree_proof <items>", "The merkle tree proof as a comma-separated list.")
-    .action(async (directory, cmd) => {
-        const { keypair, env, rpc, name,
-            operation, destination_address, derived_seeds, amount, tree_leaf, tree_proof } = cmd.opts();
-        let payer = loadKeypair(keypair);
-        const connection = new Connection(rpc, "finalized");
+  .command('convert')
+  .description('converts a rule set revision from V1 to V2')
+  .option('-e, --env <string>', 'Solana cluster env name', 'devnet')
+  .option('-r, --rpc <string>', 'The endpoint to connect to')
+  .option('-k, --keypair <path>', 'Solana wallet file')
+  .option('-l, --log-level <string>', 'Log level', setLogLevel)
+  .option('-a, --address <string>', 'The address of the rule set')
+  .action(async (_directory, cmd) => {
+    let { keypair, env, rpc, address } = cmd.opts();
 
-        console.log("Operation: " + operation);
-        console.log("Destination Address: " + destination_address);
-        console.log("Derived Seeds: " + derived_seeds);
-        console.log("Amount: " + amount);
-        console.log("Tree Leaf: " + tree_leaf);
-        console.log("Tree Proof: " + tree_proof);
+    rpc = rpc ?? default_env(env);
+    const connection = new Connection(rpc, 'finalized');
 
-        // let payload: Payload = {
-        //     amount,
-        //     destinationKey: new PublicKey(destination_address),
-        //     derivedKeySeeds: null,
-        //     treeMatchLeaf: null,
-        // };
-        // payload.amount = amount;
-        // let result = await validateOperation(connection, payer, name, operation, payload);
-        // console.log("Result: " + result);
-    });
-    
+    console.log(`🔎 Retrieving latest rule set revision for '${address}'`);
+
+    let rulesetPDA = new PublicKey(address);
+    let rulesetData = await connection.getAccountInfo(rulesetPDA);
+    let data = rulesetData?.data as Buffer;
+    let ruleset = getLatestRuleSetRevision(data);
+
+    if (isRuleSetV2(ruleset)) {
+      console.log('\n✅ Latest rule set revision is already V2.');
+      return;
+    }
+
+    const ruleSetV2 = getRuleSetRevisionV2FromV1(ruleset);
+    console.log('   + updating rule set revision...');
+
+    const owner = new PublicKey(ruleSetV2.owner);
+    const name = ruleSetV2.name;
+    const payer = loadKeypair(keypair);
+
+    if (!payer.publicKey.equals(owner)) {
+      throw new Error('The payer must be the owner of the rule set.');
+    }
+
+    // Airdrop some Sol if we're on localnet.
+    if (rpc == LOCALNET_DEFAULT_RPC) {
+      const airdropSignature = await connection.requestAirdrop(
+        payer.publicKey,
+        10 * LAMPORTS_PER_SOL,
+      );
+      await connection.confirmTransaction(airdropSignature);
+    }
+
+    let rulesetAddress = await createOrUpdateLargeRuleset(
+      connection,
+      payer,
+      name,
+      serializeRuleSetRevision(ruleSetV2),
+    );
+
+    console.log('   + ...done.');
+    console.log(
+      '\nIf you are managing your rule set via a JSON file,' +
+        ' use the print command to get the latest revision' +
+        ' as a JSON object and update your file.',
+    );
+
+    console.log('\n✅ Your rule set was updated to V2.');
+  });
+
 program
-    .command("print")
-    .option(
-        "-e, --env <string>",
-        "Solana cluster env name",
-        "devnet", //mainnet-beta, testnet, devnet
-    )
-    .option("-r, --rpc <string>", "The endpoint to connect to.")
-    .option("-l, --log-level <string>", "log level", setLogLevel)
-    .option("-a, --address <string>", "The address of the ruleset.")
-    .action(async (directory, cmd) => {
-        const { keypair, env, rpc, address } = cmd.opts();
-        const connection = new Connection(rpc, "finalized");
+  .command('print')
+  .description('prints the latest rule set revision as a JSON object')
+  .option('-e, --env <string>', 'Solana cluster env name', 'devnet')
+  .option('-r, --rpc <string>', 'The endpoint to connect to')
+  .option('-l, --log-level <string>', 'Log level', setLogLevel)
+  .option('-a, --address <string>', 'The address of the rule set')
+  .option('-o, --output <file>', 'The file to save the output to')
+  .action(async (_directory, cmd) => {
+    let { env, rpc, address, output } = cmd.opts();
 
-        let rulesetPDA = new PublicKey(address);
-        let rulesetData = await connection.getAccountInfo(rulesetPDA);
-        let data = rulesetData?.data as Buffer;
-        let ruleset = getLatestRuleSet(data);
-        let rulesetDecoded = JSON.parse(ruleset);
-        console.log(JSON.stringify(rulesetDecoded, pubkey_replacer, 2));
-    });
+    rpc = rpc ?? default_env(env);
+    const connection = new Connection(rpc, 'finalized');
 
+    console.log(`🔎 Retrieving latest rule set revision for '${address}'`);
+
+    let rulesetPDA = new PublicKey(address);
+    let rulesetData = await connection.getAccountInfo(rulesetPDA);
+    let data = rulesetData?.data as Buffer;
+    let ruleset = getLatestRuleSetRevision(data);
+
+    if (output) {
+      console.log('   + writing revision to file');
+      fs.writeFileSync(output, JSON.stringify(ruleset, null, 2));
+    } else {
+      console.log('\n' + colorizeJson(JSON.stringify(ruleset, null, 2)));
+    }
+
+    console.log(`\n✅ Revision retrieved.`);
+  });
+
+program.version('1.0.0').description('CLI for managing RuleSet revisions.').parse(process.argv);
+
+//-----------//
+// Helpers   //
+//-----------//
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function setLogLevel(value, prev) {
-    if (value === undefined || value === null) {
-        return;
-    }
-    log.info("setting the log value to: " + value);
-    log.setLevel(value);
+  if (value === undefined || value === null) {
+    return;
+  }
+  log.info('setting the log value to: ' + value);
+  log.setLevel(value);
 }
 
 function loadKeypair(keypairPath) {
-    const decodedKey = new Uint8Array(
-        JSON.parse(
-            fs.readFileSync(keypairPath).toString()
-        ));
+  const decodedKey = new Uint8Array(JSON.parse(fs.readFileSync(keypairPath).toString()));
 
-    return Keypair.fromSecretKey(decodedKey);
+  return Keypair.fromSecretKey(decodedKey);
 }
 
-program
-    .version("0.0.1")
-    .description("CLI for controlling and managing RuleSets.")
-    .parse(process.argv);
-
-function pubkey_replacer(key, value) {
-    if (Array.isArray(value) && value.length == 32) {
-        return new PublicKey(value).toString();
-    }
-    return value;
+function default_env(env) {
+  switch (env) {
+    case 'mainnet-beta':
+      return MAINNET_DEFAULT_RPC;
+    case 'devnet':
+      return DEVNET_DEFAULT_RPC;
+    case 'localnet':
+      return LOCALNET_DEFAULT_RPC;
+  }
 }

@@ -1,0 +1,16 @@
+{
+  "libVersion": 2,
+  "name": "Not Rule Set",
+  "owner": "3fQZbDAfryjoH8GyRe4VUYAixkyQVZnQu5xD2PbV8KeU",
+  "operations": {
+    "Transfer:Holder": {
+      "type": "Not",
+      "rule": {
+        "type": "Amount",
+        "field": "Amount",
+        "operator": "=",
+        "amount": 1
+      }
+    }
+  }
+}

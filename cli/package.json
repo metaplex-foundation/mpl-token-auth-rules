@@ -1,8 +1,8 @@
 {
-    "name": "auth-cli",
-    "version": "0.0.1",
-    "main": "auth-cli.ts",
-    "description": "JavaScript CLI for MPL Token Authorization Rules.  MPL Token Authorization Rules can be used to restrict common token operations",
+    "name": "@metaplex-foundation/mpl-token-auth-rules-cli",
+    "version": "1.0.0",
+    "main": "auth.ts",
+    "description": "JavaScript CLI for MPL Token Authorization Rules.",
     "homepage": "https://metaplex.com",
     "repository": "https://github.com/metaplex-foundation/mpl-token-auth-rules.git",
     "author": "Metaplex Maintainers <contact@metaplex.com>",
@@ -16,6 +16,7 @@
     },
     "dependencies": {
         "@metaplex-foundation/js": "^0.15.0",
+        "@metaplex-foundation/mpl-token-auth-rules": "workspace:^",
         "@msgpack/msgpack": "^2.8.0",
         "@solana/spl-token": "^0.3.4",
         "@solana/web3.js": "^1.56.2",
@@ -25,6 +26,7 @@
         "commander": "^9.4.0",
         "figlet": "^1.5.2",
         "fs": "^0.0.1-security",
+        "json-colorizer": "^2.2.2",
         "log-level": "^1.1.0",
         "loglevel": "^1.8.0",
         "path": "^0.12.7",

@@ -1,0 +1,20 @@
+{
+  "libVersion": 1,
+  "ruleSetName": "Program Owned Tree Rule Set",
+  "owner": [
+    39, 142, 22, 11, 170, 18, 134, 111, 146, 44, 128, 210, 236, 140, 142, 47, 215, 150, 47, 43, 149,
+    38, 231, 135, 96, 122, 54, 152, 35, 210, 207, 29
+  ],
+  "operations": {
+    "Transfer:Holder": {
+      "ProgramOwnedTree": {
+        "root": [
+          6, 29, 3, 7, 38, 19, 30, 23, 11, 5, 31, 14, 30, 14, 4, 15, 12, 26, 23, 23, 34, 2, 2, 19,
+          21, 5, 37, 19, 29, 10, 11, 39
+        ],
+        "pubkey_field": "Source",
+        "proof_field": "Proof"
+      }
+    }
+  }
+}
