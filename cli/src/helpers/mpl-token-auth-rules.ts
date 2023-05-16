@@ -17,6 +17,7 @@ import {
   PROGRAM_ID,
 } from '@metaplex-foundation/mpl-token-auth-rules';
 
+const PUFF_CHUNK_SIZE = 10_000;
 const CHUNK_SIZE = 900;
 
 export const createOrUpdateRuleset = async (
@@ -64,19 +65,29 @@ export const createOrUpdateLargeRuleset = async (
     return createOrUpdateRuleset(connection, payer, name, data);
   }
 
+  // we first write the buffer
   const chunks = Math.ceil(data.length / CHUNK_SIZE);
 
   for (let i = 0; i < chunks; i++) {
     const chunk = data.slice(i * CHUNK_SIZE, Math.min((i + 1) * CHUNK_SIZE, data.length));
     console.log(`   + writing data slice ${i + 1} of ${chunks}: ${chunk.length} bytes`);
-    await writeAndPuff(connection, payer, name, chunk, i == 0);
+    await write(connection, payer, name, chunk, i == 0);
+  }
+
+  // then puff the rule set account
+  const puffs = Math.ceil(data.length / PUFF_CHUNK_SIZE) - 1;
+
+  if (puffs > 0) {
+    for (let i = 0; i < puffs; i++) {
+      await puff(connection, payer, name);
+    }
   }
 
   const [bufferAddress] = await findRuleSetBufferPDA(payer.publicKey);
   return createOrUpdateRuleset(connection, payer, name, bufferAddress);
 };
 
-export const writeAndPuff = async (
+export const write = async (
   connection: Connection,
   payer: Keypair,
   name: string,
@@ -97,6 +108,22 @@ export const writeAndPuff = async (
     PROGRAM_ID,
   );
 
+  const tx = new Transaction().add(writeIX);
+
+  const { blockhash } = await connection.getLatestBlockhash();
+  tx.recentBlockhash = blockhash;
+  tx.feePayer = payer.publicKey;
+  const sig = await connection.sendTransaction(tx, [payer]);
+  await connection.confirmTransaction(sig);
+  return bufferAddress[0];
+};
+
+export const puff = async (
+  connection: Connection,
+  payer: Keypair,
+  name: string,
+  overwrite = false,
+) => {
   const ruleSetAddress = await findRuleSetPDA(payer.publicKey, name);
 
   const puffIX = createPuffRuleSetInstruction(
@@ -111,49 +138,11 @@ export const writeAndPuff = async (
     PROGRAM_ID,
   );
 
-  const tx = new Transaction().add(writeIX, puffIX);
+  const tx = new Transaction().add(puffIX);
 
   const { blockhash } = await connection.getLatestBlockhash();
   tx.recentBlockhash = blockhash;
   tx.feePayer = payer.publicKey;
   const sig = await connection.sendTransaction(tx, [payer]);
   await connection.confirmTransaction(sig);
-  return bufferAddress[0];
-};
-
-export const validateOperation = async (
-  connection: Connection,
-  payer: Keypair,
-  name: string,
-  mint: PublicKey,
-  operation: string,
-  payload: Payload,
-) => {
-  const ruleSetAddress = await findRuleSetPDA(payer.publicKey, name);
-  let validateIX = createValidateInstruction(
-    {
-      payer: payer.publicKey,
-      mint,
-      ruleSetPda: ruleSetAddress[0],
-      systemProgram: SystemProgram.programId,
-    },
-    {
-      validateArgs: {
-        __kind: 'V1',
-        operation,
-        payload,
-        updateRuleState: true,
-        ruleSetRevision: 0,
-      },
-    },
-    PROGRAM_ID,
-  );
-
-  const tx = new Transaction().add(validateIX);
-
-  const { blockhash } = await connection.getLatestBlockhash();
-  tx.recentBlockhash = blockhash;
-  tx.feePayer = payer.publicKey;
-  const sig = await connection.sendTransaction(tx, [payer], { skipPreflight: true });
-  await connection.confirmTransaction(sig, 'finalized');
 };
