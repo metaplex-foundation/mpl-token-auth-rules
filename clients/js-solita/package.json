@@ -46,6 +46,7 @@
   "devDependencies": {
     "@ava/typescript": "^3.0.1",
     "@metaplex-foundation/amman": "^0.12.1",
+    "@metaplex-foundation/amman-client": "^0.2.4",
     "@types/bn.js": "^5.1.1",
     "ava": "^5.1.0",
     "eslint": "^8.27.0",

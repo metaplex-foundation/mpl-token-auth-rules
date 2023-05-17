@@ -30,6 +30,9 @@ devDependencies:
   '@metaplex-foundation/amman':
     specifier: ^0.12.1
     version: 0.12.1(supports-color@9.2.3)(typescript@4.9.3)
+  '@metaplex-foundation/amman-client':
+    specifier: ^0.2.4
+    version: 0.2.4(supports-color@9.2.3)
   '@types/bn.js':
     specifier: ^5.1.1
     version: 5.1.1
