@@ -10,18 +10,16 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "scripts": {
-    "check:publish-ready": "yarn build && yarn test",
+    "check:publish-ready": "pnpm build && pnpm test",
     "postversion": "git add package.json && git commit -m \\\"chore: update $npm_package_name to v$npm_package_version\\\" && git tag $npm_package_name@$npm_package_version",
     "build:docs": "typedoc",
     "build": "rimraf dist && tsc -p tsconfig.json",
     "test": "ava",
     "lint": "eslint \"{src,test}/**/*.ts\" --format stylish",
-    "fix:lint": "yarn lint --fix",
+    "fix:lint": "pnpm lint --fix",
     "prettier": "prettier \"{src,test}/**/*.ts\" --check",
     "fix:prettier": "prettier --write src",
-    "fix": "yarn fix:lint && yarn fix:prettier",
-    "amman:start": "amman start",
-    "amman:stop": "amman stop"
+    "fix": "pnpm fix:lint && pnpm fix:prettier"
   },
   "files": [
     "/dist/src"
@@ -64,5 +62,6 @@
         "test/": "dist/test/"
       }
     }
-  }
+  },
+  "packageManager": "pnpm@8.2.0"
 }

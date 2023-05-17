@@ -1,35 +1,21 @@
 {
-  "name": "mpl-token-auth-rules-workspace",
-  "packageManager": "yarn@3.2.0-rc.12",
-  "version": "0.0.0",
-  "description": "Workspace for MPL Token Authorization Rules.  MPL Token Authorization Rules can be used to restrict common token operations",
-  "homepage": "https://metaplex.com",
-  "repository": "https://github.com/metaplex-foundation/mpl-token-auth-rules.git",
-  "author": "Metaplex Maintainers <contact@metaplex.com>",
-  "license": "Apache-2.0",
+  "private": true,
   "scripts": {
-    "build:rust": "(cd program; cargo build-bpf)",
-    "build:sdk": "yarn workspace @metaplex-foundation/mpl-token-auth-rules build",
-    "build:docs": "yarn workspace @metaplex-foundation/mpl-token-auth-rules build:docs",
-    "build": "yarn build:rust && yarn solita && yarn fix:format && yarn build:sdk && yarn build:docs",
-    "update-sol-deps": "./scripts/update-solana-dependencies.sh",
-    "amman": "./scripts/amman.sh",
-    "fix:format": "(cd program; cargo fmt) && yarn workspace @metaplex-foundation/mpl-token-auth-rules fix:prettier",
-    "lint": "(cd program; cargo clippy) && yarn workspace @metaplex-foundation/mpl-token-auth-rules lint"
+    "generate": "pnpm generate:idls && pnpm generate:clients",
+    "generate:idls": "node ./configs/shank.cjs",
+    "generate:clients": "node ./configs/kinobi.cjs",
+    "validator": "pnpm validator:localnet",
+    "validator:localnet": "CI=1 amman start --config ./configs/validator.cjs",
+    "validator:devnet": "CI=1 amman start --config ./configs/validator.devnet.cjs",
+    "validator:mainnet": "CI=1 amman start --config ./configs/validator.mainnet.cjs",
+    "validator:logs": "CI=1 amman logs",
+    "validator:stop": "amman stop"
   },
-  "workspaces": [
-    "packages/*",
-    "cli"
-  ],
   "devDependencies": {
+    "@metaplex-foundation/kinobi": "^0.8.3",
+    "@metaplex-foundation/shank-js": "^0.1.0",
     "@metaplex-foundation/amman": "^0.12.1",
-    "@metaplex-foundation/solita": "^0.19.3",
-    "@typescript-eslint/eslint-plugin": "^5.43.0",
-    "@typescript-eslint/parser": "^5.43.0",
-    "esbuild-runner": "^2.2.2",
-    "eslint": "^8.27.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "prettier": "^2.7.1"
-  }
+    "typescript": "^4.9.4"
+  },
+  "packageManager": "pnpm@8.2.0"
 }
