@@ -19,7 +19,7 @@ import {
 } from '../errors';
 
 export const MPL_TOKEN_AUTH_RULES_PROGRAM_ID = publicKey(
-  'Br5EG6Mj6JEU7JVQEQ6WDjRBC6yoFSEQch65GqQjCA6'
+  'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
 );
 
 export function createMplTokenAuthRulesProgram(): Program {

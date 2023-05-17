@@ -94,7 +94,7 @@ export function validateV1(
   const programId = {
     ...context.programs.getPublicKey(
       'mplTokenAuthRules',
-      'Br5EG6Mj6JEU7JVQEQ6WDjRBC6yoFSEQch65GqQjCA6'
+      'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
     ),
     isWritable: false,
   };

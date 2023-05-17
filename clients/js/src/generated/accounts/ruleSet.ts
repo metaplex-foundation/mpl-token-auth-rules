@@ -86,7 +86,7 @@ export function getRuleSetGpaBuilder(
   const s = context.serializer;
   const programId = context.programs.getPublicKey(
     'mplTokenAuthRules',
-    'Br5EG6Mj6JEU7JVQEQ6WDjRBC6yoFSEQch65GqQjCA6'
+    'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
   );
   return gpaBuilder(context, programId)
     .registerFields<{
@@ -115,7 +115,7 @@ export function findRuleSetPda(
   const s = context.serializer;
   const programId = context.programs.getPublicKey(
     'mplTokenAuthRules',
-    'Br5EG6Mj6JEU7JVQEQ6WDjRBC6yoFSEQch65GqQjCA6'
+    'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
   );
   return context.eddsa.findPda(programId, [
     s.string({ size: 'variable' }).serialize('rule_set'),

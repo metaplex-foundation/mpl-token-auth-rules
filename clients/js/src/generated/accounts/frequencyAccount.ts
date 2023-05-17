@@ -110,7 +110,7 @@ export function getFrequencyAccountGpaBuilder(
   const s = context.serializer;
   const programId = context.programs.getPublicKey(
     'mplTokenAuthRules',
-    'Br5EG6Mj6JEU7JVQEQ6WDjRBC6yoFSEQch65GqQjCA6'
+    'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
   );
   return gpaBuilder(context, programId)
     .registerFields<{
