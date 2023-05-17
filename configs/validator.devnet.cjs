@@ -1,11 +1,11 @@
-const localnet = require('./validator.cjs');
+const localnet = require("./validator.cjs");
 
 module.exports = {
   ...localnet,
   validator: {
     ...localnet.validator,
     programs: [],
-    accountsCluster: 'https://metaplex.devnet.rpcpool.com/',
+    accountsCluster: "https://metaplex.devnet.rpcpool.com/",
     accounts: [
       ...localnet.validator.accounts,
       ...(localnet.validator.programs ?? []).map((program) => ({
