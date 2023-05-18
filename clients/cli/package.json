@@ -1,0 +1,41 @@
+{
+    "name": "@metaplex-foundation/mpl-token-auth-rules-cli",
+    "version": "1.0.0",
+    "main": "auth.ts",
+    "description": "JavaScript CLI for MPL Token Authorization Rules.",
+    "homepage": "https://metaplex.com",
+    "repository": "https://github.com/metaplex-foundation/mpl-token-auth-rules.git",
+    "author": "Metaplex Maintainers <contact@metaplex.com>",
+    "license": "Apache-2.0",
+    "scripts": {
+        "start": "ts-node src/auth.ts",
+        "start:windows": "nodemon --watch 'src/**/*.ts' --exec \"npx ts-node\" src/auth.ts",
+        "create": "yarn build && yarn test",
+        "build": "tsc -p .",
+        "refresh": "rm -rf ./node_modules ./package-lock.json && yarn"
+    },
+    "dependencies": {
+        "@metaplex-foundation/mpl-token-auth-rules": "file:../js-solita",
+        "@msgpack/msgpack": "^2.8.0",
+        "@solana/spl-token": "^0.3.4",
+        "@solana/web3.js": "^1.56.2",
+        "@types/node": "^18.7.14",
+        "chalk": "4.1.2",
+        "clear": "^0.1.0",
+        "commander": "^9.4.0",
+        "figlet": "^1.5.2",
+        "fs": "^0.0.1-security",
+        "json-colorizer": "^2.2.2",
+        "log-level": "^1.1.0",
+        "loglevel": "^1.8.0",
+        "path": "^0.12.7",
+        "typescript": "^4.8.2",
+        "yaml": "^2.1.3"
+    },
+    "devDependencies": {
+        "@types/clear": "^0.1.2",
+        "@types/figlet": "^1.5.5",
+        "nodemon": "^2.0.19",
+        "ts-node": "^10.9.1"
+    }
+}
