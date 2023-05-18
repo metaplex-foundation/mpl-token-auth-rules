@@ -15,8 +15,7 @@
         "refresh": "rm -rf ./node_modules ./package-lock.json && yarn"
     },
     "dependencies": {
-        "@metaplex-foundation/js": "^0.15.0",
-        "@metaplex-foundation/mpl-token-auth-rules": "workspace:^",
+        "@metaplex-foundation/mpl-token-auth-rules": "file:../js-solita",
         "@msgpack/msgpack": "^2.8.0",
         "@solana/spl-token": "^0.3.4",
         "@solana/web3.js": "^1.56.2",
