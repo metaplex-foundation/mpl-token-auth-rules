@@ -3,19 +3,15 @@ import {
   Keypair,
   PublicKey,
   SystemProgram,
-  SYSVAR_INSTRUCTIONS_PUBKEY,
   Transaction,
 } from '@solana/web3.js';
-import { findRuleSetPDA } from './pda';
+import { findRuleSetPDA, findRuleSetBufferPDA } from './pda';
 import {
   createCreateOrUpdateInstruction,
   createPuffRuleSetInstruction,
-  createValidateInstruction,
   createWriteToBufferInstruction,
-  findRuleSetBufferPDA,
-  Payload,
   PROGRAM_ID,
-} from '@metaplex-foundation/mpl-token-auth-rules';
+} from './generated';
 
 const PUFF_CHUNK_SIZE = 10_000;
 const CHUNK_SIZE = 900;

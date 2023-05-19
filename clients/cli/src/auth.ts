@@ -1,9 +1,9 @@
-import { createOrUpdateLargeRuleset } from './helpers/mpl-token-auth-rules';
 import { Keypair, Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { program } from 'commander';
 import log from 'loglevel';
 import * as fs from 'fs';
 import {
+  createOrUpdateLargeRuleset,
   findRuleSetPDA,
   getLatestRuleSetRevision,
   getRuleSetRevisionFromJson,

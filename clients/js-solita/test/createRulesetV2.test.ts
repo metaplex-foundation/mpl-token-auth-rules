@@ -10,6 +10,8 @@ import {
   allV2,
   amountV2,
   anyV2,
+  createOrUpdateLargeRuleset,
+  createOrUpdateRuleset,
   getLatestRuleSetRevision,
   namespaceV2,
   notV2,
@@ -24,10 +26,7 @@ import {
   serializeRuleSetRevisionV2,
 } from '../src';
 import {
-  createOrUpdateLargeRuleset,
-  createOrUpdateRuleset,
   getConnectionAndPayer,
-  writeAndPuff,
 } from './_setup';
 
 test('it can create a ruleset v2', async (t) => {
@@ -183,11 +182,8 @@ test('it can create a ruleset v2 from a buffer account', async (t) => {
   };
   const serializedRuleSet = serializeRuleSetRevisionV2(ruleSet);
 
-  // Creating a buffer account.
-  const bufferPda = await writeAndPuff(connection, payer, name, serializedRuleSet);
-
   // When we create a new ruleset account using it.
-  const ruleSetPda = await createOrUpdateRuleset(connection, payer, name, bufferPda);
+  const ruleSetPda = await createOrUpdateLargeRuleset(connection, payer, name, serializedRuleSet);
 
   // Then we can deserialize the account data and get the same ruleset.
   const rawRuleSetPdaAccount = await connection.getAccountInfo(ruleSetPda);

@@ -5,10 +5,12 @@ import {
   AmountOperator,
   PROGRAM_ID,
   RuleSetRevisionV1,
+  createOrUpdateLargeRuleset,
+  createOrUpdateRuleset,
   getLatestRuleSetRevision,
   serializeRuleSetRevision,
 } from '../src';
-import { createOrUpdateLargeRuleset, createOrUpdateRuleset, getConnectionAndPayer } from './_setup';
+import { getConnectionAndPayer } from './_setup';
 
 test('it can create a ruleset v1', async (t) => {
   // Given a serialized ruleset v1 account data.
