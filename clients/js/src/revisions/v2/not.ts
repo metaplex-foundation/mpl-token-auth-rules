@@ -1,7 +1,8 @@
 import { Context, Serializer } from '@metaplex-foundation/umi';
-import { RuleV2, getRuleV2Serializer } from './rule';
+import { RuleV2, getRuleV2Serializer, isRuleV2 } from './rule';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
 import { RuleTypeV2 } from './ruleType';
+import { RuleV1 } from '../v1';
 
 export type NotRuleV2 = {
   type: 'Not';
@@ -20,3 +21,6 @@ export const getNotRuleV2Serializer = (
     s.struct([['rule', getRuleV2Serializer(context)]])
   );
 };
+
+export const isNotRuleV2 = (rule: RuleV1 | RuleV2): rule is NotRuleV2 =>
+  isRuleV2(rule) && rule.type === 'Not';

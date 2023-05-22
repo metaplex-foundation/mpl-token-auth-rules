@@ -1,7 +1,8 @@
 import { Context, Serializer } from '@metaplex-foundation/umi';
-import { RuleV2, getRuleV2Serializer } from './rule';
+import { RuleV2, getRuleV2Serializer, isRuleV2 } from './rule';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
 import { RuleTypeV2 } from './ruleType';
+import { RuleV1 } from '../v1';
 
 export type AnyRuleV2 = {
   type: 'Any';
@@ -22,3 +23,6 @@ export const getAnyRuleV2Serializer = (
     ])
   );
 };
+
+export const isAnyRuleV2 = (rule: RuleV1 | RuleV2): rule is AnyRuleV2 =>
+  isRuleV2(rule) && rule.type === 'Any';

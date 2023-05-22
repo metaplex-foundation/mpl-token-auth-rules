@@ -7,6 +7,8 @@ import {
 } from '../shared';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
 import { RuleTypeV2 } from './ruleType';
+import { RuleV1 } from '../v1';
+import { RuleV2, isRuleV2 } from './rule';
 
 export type AmountRuleV2 = {
   type: 'Amount';
@@ -55,3 +57,6 @@ export const getAmountRuleV2Serializer = (
     ])
   );
 };
+
+export const isAmountRule = (rule: RuleV1 | RuleV2): rule is AmountRuleV2 =>
+  isRuleV2(rule) && rule.type === 'Amount';

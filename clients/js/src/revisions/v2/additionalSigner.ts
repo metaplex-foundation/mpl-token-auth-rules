@@ -8,6 +8,8 @@ import {
 } from '@metaplex-foundation/umi';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
 import { RuleTypeV2 } from './ruleType';
+import { RuleV1 } from '../v1';
+import { RuleV2, isRuleV2 } from './rule';
 
 export type AdditionalSignerRuleV2 = {
   type: 'AdditionalSigner';
@@ -31,3 +33,8 @@ export const getAdditionalSignerRuleV2Serializer = (
     s.struct([['publicKey', s.string({ encoding: base58, size: 32 })]])
   );
 };
+
+export const isAdditionalSignerRuleV2 = (
+  rule: RuleV1 | RuleV2
+): rule is AdditionalSignerRuleV2 =>
+  isRuleV2(rule) && rule.type === 'AdditionalSigner';

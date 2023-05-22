@@ -1,6 +1,8 @@
 import { Context, Serializer, mapSerializer } from '@metaplex-foundation/umi';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
 import { RuleTypeV2 } from './ruleType';
+import { RuleV1 } from '../v1';
+import { RuleV2, isRuleV2 } from './rule';
 
 export type ProgramOwnedTreeRuleV2 = {
   type: 'ProgramOwnedTree';
@@ -41,3 +43,9 @@ export const getProgramOwnedTreeRuleV2Serializer = (
     ])
   );
 };
+
+export const isProgramOwnedTreeRuleV2 = (
+  rule: RuleV1 | RuleV2
+): rule is ProgramOwnedTreeRuleV2 =>
+  isRuleV2(rule) && rule.type === 'ProgramOwnedTree';
+

@@ -35,6 +35,7 @@ import {
   getPubkeyTreeMatchRuleV2Serializer,
 } from './pubkeyTreeMatch';
 import { RuleTypeV2, getRuleTypeV2AsString } from './ruleType';
+import { RuleV1 } from '../v1';
 
 export type RuleV2 =
   | AdditionalSignerRuleV2
@@ -114,3 +115,6 @@ export const getRuleV2SerializerFromType = <T extends RuleV2>(
         throw new Error(`Unknown rule type: ${type}`);
     }
   })() as Serializer<T>;
+
+export const isRuleV2 = (rule: RuleV1 | RuleV2): rule is RuleV2 =>
+  'type' in (rule as object);

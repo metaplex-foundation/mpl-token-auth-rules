@@ -8,6 +8,8 @@ import {
 } from '@metaplex-foundation/umi';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
 import { RuleTypeV2 } from './ruleType';
+import { RuleV1 } from '../v1';
+import { RuleV2, isRuleV2 } from './rule';
 
 export type PubkeyListMatchRuleV2 = {
   type: 'PubkeyListMatch';
@@ -42,3 +44,8 @@ export const getPubkeyListMatchRuleV2Serializer = (
     ])
   );
 };
+
+export const isPubkeyListMatchRuleV2 = (
+  rule: RuleV1 | RuleV2
+): rule is PubkeyListMatchRuleV2 =>
+  isRuleV2(rule) && rule.type === 'PubkeyListMatch';

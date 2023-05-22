@@ -8,6 +8,8 @@ import {
 } from '@metaplex-foundation/umi';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
 import { RuleTypeV2 } from './ruleType';
+import { RuleV1 } from '../v1';
+import { RuleV2, isRuleV2 } from './rule';
 
 export type ProgramOwnedListRuleV2 = {
   type: 'ProgramOwnedList';
@@ -42,3 +44,8 @@ export const getProgramOwnedListRuleV2Serializer = (
     ])
   );
 };
+
+export const isProgramOwnedListRuleV2 = (
+  rule: RuleV1 | RuleV2
+): rule is ProgramOwnedListRuleV2 =>
+  isRuleV2(rule) && rule.type === 'ProgramOwnedList';
