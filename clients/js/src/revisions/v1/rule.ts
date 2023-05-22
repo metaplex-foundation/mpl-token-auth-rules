@@ -1,5 +1,18 @@
-import { AmountOperator } from '../shared';
-import { PublicKeyAsArrayOfBytes } from './publicKey';
+import type { RuleV2 } from '../v2';
+import { AdditionalSignerRuleV1 } from './additionalSigner';
+import { AllRuleV1 } from './all';
+import { AmountRuleV1 } from './amount';
+import { AnyRuleV1 } from './any';
+import { NamespaceRuleV1 } from './namespace';
+import { NotRuleV1 } from './not';
+import { PassRuleV1 } from './pass';
+import { PdaMatchRuleV1 } from './pdaMatch';
+import { ProgramOwnedRuleV1 } from './programOwned';
+import { ProgramOwnedListRuleV1 } from './programOwnedList';
+import { ProgramOwnedTreeRuleV1 } from './programOwnedTree';
+import { PubkeyListMatchRuleV1 } from './pubkeyListMatch';
+import { PubkeyMatchRuleV1 } from './pubkeyMatch';
+import { PubkeyTreeMatchRuleV1 } from './pubkeyTreeMatch';
 
 export type RuleV1 =
   | AdditionalSignerRuleV1
@@ -17,90 +30,6 @@ export type RuleV1 =
   | PubkeyMatchRuleV1
   | PubkeyTreeMatchRuleV1;
 
-export type AdditionalSignerRuleV1 = {
-  AdditionalSigner: {
-    account: PublicKeyAsArrayOfBytes;
-  };
-};
-
-export type AllRuleV1 = {
-  All: {
-    rules: RuleV1[];
-  };
-};
-
-export type AmountRuleV1 = {
-  Amount: {
-    amount: number;
-    operator: AmountOperator;
-    field: string;
-  };
-};
-
-export type AnyRuleV1 = {
-  Any: {
-    rules: RuleV1[];
-  };
-};
-
-export type NamespaceRuleV1 = 'Namespace';
-
-export type NotRuleV1 = {
-  Not: {
-    rule: RuleV1;
-  };
-};
-
-export type PassRuleV1 = 'Pass';
-
-export type PdaMatchRuleV1 = {
-  PDAMatch: {
-    program: PublicKeyAsArrayOfBytes;
-    pda_field: string;
-    seeds_field: string;
-  };
-};
-
-export type ProgramOwnedRuleV1 = {
-  ProgramOwned: {
-    program: PublicKeyAsArrayOfBytes;
-    field: string;
-  };
-};
-
-export type ProgramOwnedListRuleV1 = {
-  ProgramOwnedList: {
-    programs: PublicKeyAsArrayOfBytes[];
-    field: string;
-  };
-};
-
-export type ProgramOwnedTreeRuleV1 = {
-  ProgramOwnedTree: {
-    root: number[];
-    pubkey_field: string;
-    proof_field: string;
-  };
-};
-
-export type PubkeyListMatchRuleV1 = {
-  PubkeyListMatch: {
-    pubkeys: PublicKeyAsArrayOfBytes[];
-    field: string;
-  };
-};
-
-export type PubkeyMatchRuleV1 = {
-  PubkeyMatch: {
-    pubkey: PublicKeyAsArrayOfBytes;
-    field: string;
-  };
-};
-
-export type PubkeyTreeMatchRuleV1 = {
-  PubkeyTreeMatch: {
-    root: number[];
-    pubkey_field: string;
-    proof_field: string;
-  };
-};
+export const isRuleV1 = (rule: RuleV2 | RuleV1): rule is RuleV1 =>
+  (typeof rule === 'string' && (rule === 'Namespace' || rule === 'Pass')) ||
+  !('type' in (rule as object));
