@@ -1,7 +1,7 @@
 /* eslint-disable prefer-template */
-import { PublicKey, generateSigner } from '@metaplex-foundation/umi';
+import { PublicKey, generateSigner, base58PublicKey } from '@metaplex-foundation/umi';
 import test from 'ava';
-import { pubkeyListMatchV2 } from '../../../src';
+import { RuleSetRevisionV2, isPubkeyListMatchRuleV2, pubkeyListMatchV2 } from '../../../src';
 import {
   createUmiSync,
   deserializeRuleV2FromHex,
@@ -44,4 +44,28 @@ test('deserialize', async (t) => {
     toHex(publicKeyC); // PublicKey C
   const rule = deserializeRuleV2FromHex(umi, buffer);
   t.deepEqual(rule, pubkeyListMatchV2('myAccount', publicKeys));
+});
+
+
+test('isPubkeyListMatchRuleV2', async (t) => {
+  const umi = createUmiSync();
+  const owner = generateSigner(umi).publicKey;
+  const publicKeyA = generateSigner(umi).publicKey;
+  const publicKeyB = generateSigner(umi).publicKey;
+  const revision: RuleSetRevisionV2 = {
+    libVersion: 2,
+    name: 'My Rule Set',
+    owner: base58PublicKey(owner),
+    operations: {
+      deposit: {
+        type: 'PubkeyListMatch',
+        field: 'myField',
+        publicKeys: [
+          base58PublicKey(publicKeyA),
+          base58PublicKey(publicKeyB),
+        ],
+      },
+    },
+  };
+  t.is(isPubkeyListMatchRuleV2(revision.operations.deposit), true);
 });
