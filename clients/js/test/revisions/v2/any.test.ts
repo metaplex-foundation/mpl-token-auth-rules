@@ -1,7 +1,12 @@
 /* eslint-disable prefer-template */
-import { generateSigner,base58PublicKey } from '@metaplex-foundation/umi';
+import { generateSigner, base58PublicKey } from '@metaplex-foundation/umi';
 import test from 'ava';
-import { RuleSetRevisionV2, additionalSignerV2, anyV2, isAnyRuleV2 } from '../../../src';
+import {
+  RuleSetRevisionV2,
+  additionalSignerV2,
+  anyV2,
+  isAnyRuleV2,
+} from '../../../src';
 import {
   createUmiSync,
   deserializeRuleV2FromHex,

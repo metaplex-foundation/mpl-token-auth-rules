@@ -1,7 +1,15 @@
 /* eslint-disable prefer-template */
-import { PublicKey, generateSigner, base58PublicKey } from '@metaplex-foundation/umi';
+import {
+  PublicKey,
+  generateSigner,
+  base58PublicKey,
+} from '@metaplex-foundation/umi';
 import test from 'ava';
-import { RuleSetRevisionV2, isPubkeyListMatchRuleV2, pubkeyListMatchV2 } from '../../../src';
+import {
+  RuleSetRevisionV2,
+  isPubkeyListMatchRuleV2,
+  pubkeyListMatchV2,
+} from '../../../src';
 import {
   createUmiSync,
   deserializeRuleV2FromHex,
@@ -46,7 +54,6 @@ test('deserialize', async (t) => {
   t.deepEqual(rule, pubkeyListMatchV2('myAccount', publicKeys));
 });
 
-
 test('isPubkeyListMatchRuleV2', async (t) => {
   const umi = createUmiSync();
   const owner = generateSigner(umi).publicKey;
@@ -60,10 +67,7 @@ test('isPubkeyListMatchRuleV2', async (t) => {
       deposit: {
         type: 'PubkeyListMatch',
         field: 'myField',
-        publicKeys: [
-          base58PublicKey(publicKeyA),
-          base58PublicKey(publicKeyB),
-        ],
+        publicKeys: [base58PublicKey(publicKeyA), base58PublicKey(publicKeyB)],
       },
     },
   };

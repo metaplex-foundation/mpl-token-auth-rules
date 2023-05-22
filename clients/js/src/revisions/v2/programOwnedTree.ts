@@ -48,4 +48,3 @@ export const isProgramOwnedTreeRuleV2 = (
   rule: RuleV1 | RuleV2
 ): rule is ProgramOwnedTreeRuleV2 =>
   isRuleV2(rule) && rule.type === 'ProgramOwnedTree';
-
