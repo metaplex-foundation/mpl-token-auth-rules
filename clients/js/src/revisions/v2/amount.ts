@@ -58,5 +58,5 @@ export const getAmountRuleV2Serializer = (
   );
 };
 
-export const isAmountRule = (rule: RuleV1 | RuleV2): rule is AmountRuleV2 =>
+export const isAmountRuleV2 = (rule: RuleV1 | RuleV2): rule is AmountRuleV2 =>
   isRuleV2(rule) && rule.type === 'Amount';

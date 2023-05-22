@@ -24,5 +24,5 @@ export const getAllRuleV2Serializer = (
   );
 };
 
-export const isAllRule = (rule: RuleV1 | RuleV2): rule is AllRuleV2 =>
+export const isAllRuleV2 = (rule: RuleV1 | RuleV2): rule is AllRuleV2 =>
   isRuleV2(rule) && rule.type === 'All';
