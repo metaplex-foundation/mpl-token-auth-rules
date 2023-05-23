@@ -1,4 +1,4 @@
-import { RuleV2 } from '../v2';
+import type { RuleV2 } from '../v2';
 import { PublicKeyAsArrayOfBytes } from './publicKey';
 import { RuleV1, isRuleV1 } from './rule';
 

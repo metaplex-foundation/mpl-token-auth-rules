@@ -1,5 +1,5 @@
-import { AmountOperator } from '../shared';
-import { RuleV2 } from '../v2';
+import type { AmountOperator } from '../shared';
+import type { RuleV2 } from '../v2';
 import { RuleV1, isRuleV1 } from './rule';
 
 export type AmountRuleV1 = {

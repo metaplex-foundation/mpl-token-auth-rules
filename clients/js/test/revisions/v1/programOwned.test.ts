@@ -23,5 +23,5 @@ test('isProgramOwnedV1', async (t) => {
     },
   };
 
-  t.is(isProgramOwnedRuleV1(revision.operations.deposit), true);
+  t.true(isProgramOwnedRuleV1(revision.operations.deposit));
 });

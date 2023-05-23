@@ -26,7 +26,7 @@ test('isAnyRuleV1', async (t) => {
       },
     },
   };
-  t.is(isAnyRuleV1(revision.operations.deposit), true);
+  t.true(isAnyRuleV1(revision.operations.deposit));
 });
 
 test('not isAnyRuleV1', async (t) => {
@@ -52,5 +52,5 @@ test('not isAnyRuleV1', async (t) => {
     },
   };
 
-  t.is(isAnyRuleV1(revision.operations.deposit), false);
+  t.false(isAnyRuleV1(revision.operations.deposit));
 });

@@ -56,5 +56,5 @@ test('isPdaMatchRuleV2', async (t) => {
     },
   };
 
-  t.is(isPdaMatchRuleV2(revision.operations.deposit), true);
+  t.true(isPdaMatchRuleV2(revision.operations.deposit));
 });

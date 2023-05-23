@@ -1,8 +1,8 @@
 import { Context, Serializer } from '@metaplex-foundation/umi';
+import type { RuleV1 } from '../v1';
 import { RuleV2, getRuleV2Serializer, isRuleV2 } from './rule';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
 import { RuleTypeV2 } from './ruleType';
-import { RuleV1 } from '../v1';
 
 export type NotRuleV2 = {
   type: 'Not';

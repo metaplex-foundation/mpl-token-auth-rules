@@ -5,10 +5,10 @@ import {
   toAmountOperator,
   toAmountOperatorString,
 } from '../shared';
+import type { RuleV1 } from '../v1';
+import { RuleV2, isRuleV2 } from './rule';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
 import { RuleTypeV2 } from './ruleType';
-import { RuleV1 } from '../v1';
-import { RuleV2, isRuleV2 } from './rule';
 
 export type AmountRuleV2 = {
   type: 'Amount';

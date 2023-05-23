@@ -21,5 +21,5 @@ test('isAdditionalSigner', async (t) => {
     },
   };
 
-  t.is(isAdditionalSignerRuleV1(revision.operations.deposit), true);
+  t.true(isAdditionalSignerRuleV1(revision.operations.deposit));
 });

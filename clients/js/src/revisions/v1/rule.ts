@@ -1,18 +1,18 @@
 import type { RuleV2 } from '../v2';
-import { AdditionalSignerRuleV1 } from './additionalSigner';
-import { AllRuleV1 } from './all';
-import { AmountRuleV1 } from './amount';
-import { AnyRuleV1 } from './any';
-import { NamespaceRuleV1 } from './namespace';
-import { NotRuleV1 } from './not';
-import { PassRuleV1 } from './pass';
-import { PdaMatchRuleV1 } from './pdaMatch';
-import { ProgramOwnedRuleV1 } from './programOwned';
-import { ProgramOwnedListRuleV1 } from './programOwnedList';
-import { ProgramOwnedTreeRuleV1 } from './programOwnedTree';
-import { PubkeyListMatchRuleV1 } from './pubkeyListMatch';
-import { PubkeyMatchRuleV1 } from './pubkeyMatch';
-import { PubkeyTreeMatchRuleV1 } from './pubkeyTreeMatch';
+import type { AdditionalSignerRuleV1 } from './additionalSigner';
+import type { AllRuleV1 } from './all';
+import type { AmountRuleV1 } from './amount';
+import type { AnyRuleV1 } from './any';
+import type { NamespaceRuleV1 } from './namespace';
+import type { NotRuleV1 } from './not';
+import type { PassRuleV1 } from './pass';
+import type { PdaMatchRuleV1 } from './pdaMatch';
+import type { ProgramOwnedRuleV1 } from './programOwned';
+import type { ProgramOwnedListRuleV1 } from './programOwnedList';
+import type { ProgramOwnedTreeRuleV1 } from './programOwnedTree';
+import type { PubkeyListMatchRuleV1 } from './pubkeyListMatch';
+import type { PubkeyMatchRuleV1 } from './pubkeyMatch';
+import type { PubkeyTreeMatchRuleV1 } from './pubkeyTreeMatch';
 
 export type RuleV1 =
   | AdditionalSignerRuleV1

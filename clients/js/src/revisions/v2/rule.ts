@@ -1,4 +1,5 @@
 import { Context, Serializer } from '@metaplex-foundation/umi';
+import type { RuleV1 } from '../v1';
 import {
   AdditionalSignerRuleV2,
   getAdditionalSignerRuleV2Serializer,
@@ -35,7 +36,6 @@ import {
   getPubkeyTreeMatchRuleV2Serializer,
 } from './pubkeyTreeMatch';
 import { RuleTypeV2, getRuleTypeV2AsString } from './ruleType';
-import { RuleV1 } from '../v1';
 
 export type RuleV2 =
   | AdditionalSignerRuleV2

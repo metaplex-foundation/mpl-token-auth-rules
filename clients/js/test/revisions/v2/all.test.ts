@@ -72,5 +72,5 @@ test('isAllRuleV2', async (t) => {
       },
     },
   };
-  t.is(isAllRuleV2(revision.operations.deposit), true);
+  t.true(isAllRuleV2(revision.operations.deposit));
 });

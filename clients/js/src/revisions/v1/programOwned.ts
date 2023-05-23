@@ -1,6 +1,6 @@
-import { RuleV2 } from '../v2';
+import type { RuleV2 } from '../v2';
 import { RuleV1, isRuleV1 } from './rule';
-import { PublicKeyAsArrayOfBytes } from './publicKey';
+import type { PublicKeyAsArrayOfBytes } from './publicKey';
 
 export type ProgramOwnedRuleV1 = {
   ProgramOwned: {

@@ -17,5 +17,5 @@ test('isPassRuleV1', async (t) => {
     },
   };
 
-  t.is(isPassRuleV1(revision.operations.deposit), true);
+  t.true(isPassRuleV1(revision.operations.deposit));
 });

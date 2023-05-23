@@ -21,7 +21,7 @@ test('isRuleV1 with AdditionalSigner V1 rule', async (t) => {
     },
   };
 
-  t.is(isRuleV1(revision.operations.deposit), true);
+  t.true(isRuleV1(revision.operations.deposit));
 });
 
 test('isRuleV1 with Not V1 rule', async (t) => {
@@ -45,7 +45,7 @@ test('isRuleV1 with Not V1 rule', async (t) => {
     },
   };
 
-  t.is(isRuleV1(revision.operations.deposit), true);
+  t.true(isRuleV1(revision.operations.deposit));
 });
 
 test('isRuleV1 with Namespace V1 rule', async (t) => {
@@ -60,7 +60,7 @@ test('isRuleV1 with Namespace V1 rule', async (t) => {
     },
   };
 
-  t.is(isRuleV1(revision.operations.deposit), true);
+  t.true(isRuleV1(revision.operations.deposit));
 });
 
 test('isRuleV1 with a Not V2 rule', async (t) => {
@@ -82,5 +82,5 @@ test('isRuleV1 with a Not V2 rule', async (t) => {
     },
   };
 
-  t.is(isRuleV1(revision.operations.deposit), false);
+  t.false(isRuleV1(revision.operations.deposit));
 });

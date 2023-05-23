@@ -42,7 +42,7 @@ test('isRuleV2 with Not V2 rule', async (t) => {
     },
   };
 
-  t.is(isRuleV2(revision.operations.deposit), true);
+  t.true(isRuleV2(revision.operations.deposit));
 });
 
 test('isRuleV2 with Pass V2 rule', async (t) => {
@@ -59,7 +59,7 @@ test('isRuleV2 with Pass V2 rule', async (t) => {
     },
   };
 
-  t.is(isRuleV2(revision.operations.deposit), true);
+  t.true(isRuleV2(revision.operations.deposit));
 });
 
 test('isRuleV1 with a Not V2 rule', async (t) => {
@@ -83,5 +83,5 @@ test('isRuleV1 with a Not V2 rule', async (t) => {
     },
   };
 
-  t.is(isRuleV2(revision.operations.deposit), false);
+  t.false(isRuleV2(revision.operations.deposit));
 });

@@ -27,5 +27,5 @@ test('isAmountRuleV1', async (t) => {
     },
   };
 
-  t.is(isAmountRuleV1(revision.operations.deposit), true);
+  t.true(isAmountRuleV1(revision.operations.deposit));
 });

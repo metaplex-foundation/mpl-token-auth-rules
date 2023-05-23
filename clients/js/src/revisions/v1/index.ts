@@ -1,6 +1,3 @@
-export * from './publicKey';
-export * from './revision';
-export * from './rule';
 export * from './additionalSigner';
 export * from './amount';
 export * from './any';
@@ -14,3 +11,6 @@ export * from './programOwnedTree';
 export * from './pubkeyListMatch';
 export * from './pubkeyMatch';
 export * from './pubkeyTreeMatch';
+export * from './publicKey';
+export * from './revision';
+export * from './rule';

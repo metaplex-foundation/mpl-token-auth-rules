@@ -71,5 +71,5 @@ test('isPubkeyListMatchRuleV2', async (t) => {
       },
     },
   };
-  t.is(isPubkeyListMatchRuleV2(revision.operations.deposit), true);
+  t.true(isPubkeyListMatchRuleV2(revision.operations.deposit));
 });
