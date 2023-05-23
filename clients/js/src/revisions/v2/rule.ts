@@ -1,4 +1,5 @@
 import { Context, Serializer } from '@metaplex-foundation/umi';
+import type { RuleV1 } from '../v1';
 import {
   AdditionalSignerRuleV2,
   getAdditionalSignerRuleV2Serializer,
@@ -114,3 +115,6 @@ export const getRuleV2SerializerFromType = <T extends RuleV2>(
         throw new Error(`Unknown rule type: ${type}`);
     }
   })() as Serializer<T>;
+
+export const isRuleV2 = (rule: RuleV1 | RuleV2): rule is RuleV2 =>
+  'type' in (rule as object);

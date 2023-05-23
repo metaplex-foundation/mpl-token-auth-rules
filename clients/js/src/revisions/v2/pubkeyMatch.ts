@@ -6,6 +6,8 @@ import {
   base58,
   base58PublicKey,
 } from '@metaplex-foundation/umi';
+import type { RuleV1 } from '../v1';
+import { RuleV2, isRuleV2 } from './rule';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
 import { RuleTypeV2 } from './ruleType';
 
@@ -37,3 +39,7 @@ export const getPubkeyMatchRuleV2Serializer = (
     ])
   );
 };
+
+export const isPubkeyMatchRuleV2 = (
+  rule: RuleV1 | RuleV2
+): rule is PubkeyMatchRuleV2 => isRuleV2(rule) && rule.type === 'PubkeyMatch';

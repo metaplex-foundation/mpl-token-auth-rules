@@ -1,7 +1,7 @@
 /* eslint-disable prefer-template */
-import { generateSigner } from '@metaplex-foundation/umi';
+import { generateSigner, base58PublicKey } from '@metaplex-foundation/umi';
 import test from 'ava';
-import { pdaMatchV2 } from '../../../src';
+import { RuleSetRevisionV2, isPdaMatchRuleV2, pdaMatchV2 } from '../../../src';
 import {
   createUmiSync,
   deserializeRuleV2FromHex,
@@ -36,4 +36,25 @@ test('deserialize', async (t) => {
     toString32Hex(umi, 'mySeeds'); // Seeds Field
   const rule = deserializeRuleV2FromHex(umi, buffer);
   t.deepEqual(rule, pdaMatchV2('myAccount', program, 'mySeeds'));
+});
+
+test('isPdaMatchRuleV2', async (t) => {
+  const umi = createUmiSync();
+  const owner = generateSigner(umi).publicKey;
+  const program = generateSigner(umi).publicKey;
+  const revision: RuleSetRevisionV2 = {
+    libVersion: 2,
+    name: 'My Rule Set',
+    owner: base58PublicKey(owner),
+    operations: {
+      deposit: {
+        type: 'PdaMatch',
+        pdaField: 'myAccount',
+        program: base58PublicKey(program),
+        seedsField: 'mySeeds',
+      },
+    },
+  };
+
+  t.true(isPdaMatchRuleV2(revision.operations.deposit));
 });

@@ -5,6 +5,8 @@ import {
   toAmountOperator,
   toAmountOperatorString,
 } from '../shared';
+import type { RuleV1 } from '../v1';
+import { RuleV2, isRuleV2 } from './rule';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
 import { RuleTypeV2 } from './ruleType';
 
@@ -55,3 +57,6 @@ export const getAmountRuleV2Serializer = (
     ])
   );
 };
+
+export const isAmountRuleV2 = (rule: RuleV1 | RuleV2): rule is AmountRuleV2 =>
+  isRuleV2(rule) && rule.type === 'Amount';

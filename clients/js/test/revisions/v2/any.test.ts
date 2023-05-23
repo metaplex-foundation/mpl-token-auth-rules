@@ -1,7 +1,12 @@
 /* eslint-disable prefer-template */
-import { generateSigner } from '@metaplex-foundation/umi';
+import { generateSigner, base58PublicKey } from '@metaplex-foundation/umi';
 import test from 'ava';
-import { additionalSignerV2, anyV2 } from '../../../src';
+import {
+  RuleSetRevisionV2,
+  additionalSignerV2,
+  anyV2,
+  isAnyRuleV2,
+} from '../../../src';
 import {
   createUmiSync,
   deserializeRuleV2FromHex,
@@ -48,4 +53,24 @@ test('deserialize', async (t) => {
     rule,
     anyV2([additionalSignerV2(publicKeyA), additionalSignerV2(publicKeyB)])
   );
+});
+
+test('isAnyRuleV2', async (t) => {
+  const umi = createUmiSync();
+  const owner = generateSigner(umi).publicKey;
+  const publicKeyA = generateSigner(umi).publicKey;
+  const revision: RuleSetRevisionV2 = {
+    libVersion: 2,
+    name: 'My Rule Set',
+    owner: base58PublicKey(owner),
+    operations: {
+      deposit: {
+        type: 'Any',
+        rules: [
+          { type: 'AdditionalSigner', publicKey: base58PublicKey(publicKeyA) },
+        ],
+      },
+    },
+  };
+  t.true(isAnyRuleV2(revision.operations.deposit));
 });
