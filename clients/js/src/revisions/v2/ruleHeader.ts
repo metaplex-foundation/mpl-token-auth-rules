@@ -33,8 +33,11 @@ export const wrapSerializerInRuleHeaderV2 = <T extends { type: string }>(
       return mergeBytes([serializedHeader, serializedRule]);
     },
     deserialize: (buffer: Uint8Array, offset = 0): [T, number] => {
-      const [rule, ruleOffset] = serializer.deserialize(buffer, offset + 8);
-      return [{ ...rule, type: typeAsString } as T, ruleOffset];
+      const [header] = headerSerializer.deserialize(buffer, offset);
+      offset += 8;
+      const slice = buffer.slice(offset, offset + header.length);
+      const [rule] = serializer.deserialize(slice);
+      return [{ ...rule, type: typeAsString } as T, offset + header.length];
     },
   };
 };
