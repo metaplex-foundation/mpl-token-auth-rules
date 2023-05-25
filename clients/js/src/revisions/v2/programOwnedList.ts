@@ -38,7 +38,7 @@ export const getProgramOwnedListRuleV2Serializer = (
       [
         'programs',
         s.array(s.string({ encoding: base58, size: 32 }), {
-          size: 'remainder', // TODO: Ensure this works.
+          size: 'remainder',
         }),
       ],
     ])

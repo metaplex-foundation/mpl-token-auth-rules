@@ -38,7 +38,7 @@ export const getPubkeyListMatchRuleV2Serializer = (
       [
         'publicKeys',
         s.array(s.string({ encoding: base58, size: 32 }), {
-          size: 'remainder', // TODO: Ensure this works.
+          size: 'remainder',
         }),
       ],
     ])
