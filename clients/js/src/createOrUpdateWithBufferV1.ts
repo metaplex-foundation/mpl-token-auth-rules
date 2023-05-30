@@ -11,14 +11,14 @@ import {
   findRuleSetBufferPda,
   findRuleSetPda,
   puffRuleSetV1,
-  writeToBufferV1,
 } from './generated';
 import { RuleSetRevision, getRuleSetRevisionSerializer } from './revisions';
+import { writeRuleSetToBufferV1 } from './writeRuleSetToBufferV1';
 
 export const PUFF_CHUNK_SIZE = 10_000;
 
 export type CreateOrUpdateWithBufferV1Input = {
-  /** Payer and creator of the RuleSet */
+  /** Payer and creator of the RuleSet. */
   payer?: Signer;
   /** The name of the RuleSet account. */
   ruleSetName: string;
@@ -50,23 +50,11 @@ export const createOrUpdateWithBufferV1 = (
   );
 
   // Write instructions.
-  const bufferSize = serializedRevision.length;
-  const numberOfWrites = Math.ceil(bufferSize / chunkSize);
-  const writeInstructions = Array.from(
-    { length: numberOfWrites },
-    (_, index) => {
-      const slice = serializedRevision.slice(
-        index * chunkSize,
-        Math.min((index + 1) * chunkSize, serializedRevision.length)
-      );
-      return writeToBufferV1(context, {
-        payer,
-        bufferPda,
-        data: slice,
-        overwrite: index === 0,
-      });
-    }
-  );
+  const writeInstructions = writeRuleSetToBufferV1(context, {
+    payer,
+    ruleSetRevision: input.ruleSetRevision,
+    chunkSize,
+  }).merge();
 
   // Puff instructions.
   const puffSize = serializedRevision.length;
