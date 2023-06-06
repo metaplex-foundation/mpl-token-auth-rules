@@ -1,9 +1,6 @@
 lockfileVersion: '6.0'
 
 dependencies:
-  '@metaplex-foundation/mpl-essentials':
-    specifier: ^0.5.8
-    version: 0.5.8(@metaplex-foundation/umi@0.7.7)
   '@msgpack/msgpack':
     specifier: 2.8.0
     version: 2.8.0
@@ -1630,6 +1627,7 @@ packages:
       '@metaplex-foundation/umi': 0.6 - 0.7
     dependencies:
       '@metaplex-foundation/umi': 0.7.7
+    dev: true
 
   /@metaplex-foundation/mpl-token-metadata@3.0.0-alpha.18(@metaplex-foundation/umi@0.7.7):
     resolution: {integrity: sha512-8nCi4q+jmr5z8AHApKwPHtMeahQB+TZZzhrgaxI4F2J0y99pdmbYHgcN9czBEG0neF0oNpcyDT7r08kfYTaF9g==}
@@ -1741,6 +1739,7 @@ packages:
 
   /@metaplex-foundation/umi@0.7.7:
     resolution: {integrity: sha512-oqSSO3xnT4Knu2KV6XgBINsSqWGEXR/meb6+UKtVHF+0N12l+ujIN4pX0c4Dy8NoePRg1JexTg4qUQJfLgKATg==}
+    dev: true
 
   /@msgpack/msgpack@2.8.0:
     resolution: {integrity: sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==}

@@ -25,7 +25,6 @@
     "author": "Metaplex Maintainers <contact@metaplex.com>",
     "license": "Apache-2.0",
     "dependencies": {
-        "@metaplex-foundation/mpl-essentials": "^0.5.8",
         "@msgpack/msgpack": "2.8.0"
     },
     "peerDependencies": {
