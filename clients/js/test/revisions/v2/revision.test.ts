@@ -1,8 +1,8 @@
 /* eslint-disable prefer-template */
 import {
   base16,
-  base58PublicKey,
   generateSigner,
+  publicKeyBytes,
 } from '@metaplex-foundation/umi';
 import test from 'ava';
 import {
@@ -22,7 +22,7 @@ test('serialize', async (t) => {
   const revision: RuleSetRevisionV2 = {
     libVersion: 2,
     name: 'My Rule Set',
-    owner: base58PublicKey(owner),
+    owner,
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),
@@ -69,7 +69,7 @@ test('deserialize', async (t) => {
   t.deepEqual(revision, {
     libVersion: 2,
     name: 'My Rule Set',
-    owner: base58PublicKey(owner),
+    owner,
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),
@@ -87,13 +87,13 @@ test('convert from v1', async (t) => {
   const revisionV1: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: name,
-    owner: [...owner.bytes],
+    owner: [...publicKeyBytes(owner)],
     operations: {
       deposit: {
-        AdditionalSigner: { account: [...publicKeyA.bytes] },
+        AdditionalSigner: { account: [...publicKeyBytes(publicKeyA)] },
       },
       withdraw: {
-        AdditionalSigner: { account: [...publicKeyB.bytes] },
+        AdditionalSigner: { account: [...publicKeyBytes(publicKeyB)] },
       },
     },
   };
@@ -105,7 +105,7 @@ test('convert from v1', async (t) => {
   t.deepEqual(revisionV2, <RuleSetRevisionV2>{
     libVersion: 2,
     name,
-    owner: base58PublicKey(owner),
+    owner,
     operations: {
       deposit: additionalSignerV2(publicKeyA),
       withdraw: additionalSignerV2(publicKeyB),

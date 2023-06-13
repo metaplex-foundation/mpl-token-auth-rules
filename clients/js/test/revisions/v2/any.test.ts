@@ -1,5 +1,5 @@
 /* eslint-disable prefer-template */
-import { generateSigner, base58PublicKey } from '@metaplex-foundation/umi';
+import { generateSigner } from '@metaplex-foundation/umi';
 import test from 'ava';
 import {
   RuleSetRevisionV2,
@@ -62,13 +62,11 @@ test('isAnyRuleV2', async (t) => {
   const revision: RuleSetRevisionV2 = {
     libVersion: 2,
     name: 'My Rule Set',
-    owner: base58PublicKey(owner),
+    owner,
     operations: {
       deposit: {
         type: 'Any',
-        rules: [
-          { type: 'AdditionalSigner', publicKey: base58PublicKey(publicKeyA) },
-        ],
+        rules: [{ type: 'AdditionalSigner', publicKey: publicKeyA }],
       },
     },
   };

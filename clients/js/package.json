@@ -28,13 +28,13 @@
         "@msgpack/msgpack": "2.8.0"
     },
     "peerDependencies": {
-        "@metaplex-foundation/umi": "^0.7.7"
+        "@metaplex-foundation/umi": "^0.8.0"
     },
     "devDependencies": {
         "@ava/typescript": "^3.0.1",
-        "@metaplex-foundation/mpl-token-metadata": "3.0.0-alpha.18",
-        "@metaplex-foundation/umi": "^0.7.7",
-        "@metaplex-foundation/umi-bundle-tests": "^0.7.7",
+        "@metaplex-foundation/mpl-token-metadata": "3.0.0-alpha.23",
+        "@metaplex-foundation/umi": "^0.8.0",
+        "@metaplex-foundation/umi-bundle-tests": "^0.8.0",
         "@solana/web3.js": "^1.73.0",
         "@typescript-eslint/eslint-plugin": "^5.0.0",
         "@typescript-eslint/parser": "^5.46.1",

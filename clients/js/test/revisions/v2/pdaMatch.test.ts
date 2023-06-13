@@ -1,5 +1,5 @@
 /* eslint-disable prefer-template */
-import { generateSigner, base58PublicKey } from '@metaplex-foundation/umi';
+import { generateSigner } from '@metaplex-foundation/umi';
 import test from 'ava';
 import { RuleSetRevisionV2, isPdaMatchRuleV2, pdaMatchV2 } from '../../../src';
 import {
@@ -45,12 +45,12 @@ test('isPdaMatchRuleV2', async (t) => {
   const revision: RuleSetRevisionV2 = {
     libVersion: 2,
     name: 'My Rule Set',
-    owner: base58PublicKey(owner),
+    owner,
     operations: {
       deposit: {
         type: 'PdaMatch',
         pdaField: 'myAccount',
-        program: base58PublicKey(program),
+        program,
         seedsField: 'mySeeds',
       },
     },

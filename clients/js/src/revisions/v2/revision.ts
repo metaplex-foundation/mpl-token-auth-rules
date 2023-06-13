@@ -1,9 +1,7 @@
 import {
   Context,
-  PublicKeyBase58,
+  PublicKey,
   Serializer,
-  base58,
-  base58PublicKey,
   mergeBytes,
   publicKey,
 } from '@metaplex-foundation/umi';
@@ -27,7 +25,7 @@ import { RuleV2, getRuleV2Serializer } from './rule';
 export type RuleSetRevisionV2 = {
   libVersion: 2;
   name: string;
-  owner: PublicKeyBase58;
+  owner: PublicKey;
   operations: Record<string, RuleV2>;
 };
 
@@ -48,7 +46,7 @@ export const getRuleSetRevisionV2Serializer = (
       return mergeBytes([
         s.u32().serialize(2), // libVersion (0-3)
         s.u32().serialize(ruleSize), // ruleSize (4-7)
-        s.string({ encoding: base58, size: 32 }).serialize(revision.owner), // owner (8-39)
+        s.publicKey().serialize(revision.owner), // owner (8-39)
         s.string({ size: 32 }).serialize(revision.name), // name (40-71)
         s
           .array(s.string({ size: 32 }), { size: ruleSize })
@@ -58,7 +56,10 @@ export const getRuleSetRevisionV2Serializer = (
           .serialize(rules), // rules
       ]);
     },
-    deserialize: (buffer: Uint8Array, offset = 0) => {
+    deserialize: (
+      buffer: Uint8Array,
+      offset = 0
+    ): [RuleSetRevisionV2, number] => {
       const [libVersion, versionOffset] = s.u32().deserialize(buffer, offset);
       offset = versionOffset;
       if (libVersion !== 2) {
@@ -68,9 +69,7 @@ export const getRuleSetRevisionV2Serializer = (
       }
       const [ruleSize, ruleSizeOffset] = s.u32().deserialize(buffer, offset);
       offset = ruleSizeOffset;
-      const [owner, ownerOffset] = s
-        .string({ encoding: base58, size: 32 })
-        .deserialize(buffer, offset);
+      const [owner, ownerOffset] = s.publicKey().deserialize(buffer, offset);
       offset = ownerOffset;
       const [name, nameOffset] = s
         .string({ size: 32 })
@@ -101,7 +100,7 @@ export const getRuleSetRevisionV2FromV1 = (
 ): RuleSetRevisionV2 => ({
   libVersion: 2,
   name: ruleSetV1.ruleSetName,
-  owner: base58PublicKey(new Uint8Array(ruleSetV1.owner)),
+  owner: publicKey(new Uint8Array(ruleSetV1.owner)),
   operations: Object.fromEntries(
     Object.entries(ruleSetV1.operations).map(([operation, rule]) => [
       operation,

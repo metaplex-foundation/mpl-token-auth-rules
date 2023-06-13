@@ -1,5 +1,9 @@
 /* eslint-disable prefer-template */
-import { generateSigner, mergeBytes } from '@metaplex-foundation/umi';
+import {
+  generateSigner,
+  mergeBytes,
+  publicKeyBytes,
+} from '@metaplex-foundation/umi';
 import { encode } from '@msgpack/msgpack';
 import test from 'ava';
 import { RuleSetRevisionV1, getRuleSetRevisionSerializer } from '../../../src';
@@ -13,13 +17,13 @@ test('serialize', async (t) => {
   const revision: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: 'My Rule Set',
-    owner: [...owner.bytes],
+    owner: [...publicKeyBytes(owner)],
     operations: {
       deposit: {
-        AdditionalSigner: { account: [...publicKeyA.bytes] },
+        AdditionalSigner: { account: [...publicKeyBytes(publicKeyA)] },
       },
       withdraw: {
-        AdditionalSigner: { account: [...publicKeyB.bytes] },
+        AdditionalSigner: { account: [...publicKeyBytes(publicKeyB)] },
       },
     },
   };
@@ -37,13 +41,13 @@ test('deserialize', async (t) => {
   const revision: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: 'My Rule Set',
-    owner: [...owner.bytes],
+    owner: [...publicKeyBytes(owner)],
     operations: {
       deposit: {
-        AdditionalSigner: { account: [...publicKeyA.bytes] },
+        AdditionalSigner: { account: [...publicKeyBytes(publicKeyA)] },
       },
       withdraw: {
-        AdditionalSigner: { account: [...publicKeyB.bytes] },
+        AdditionalSigner: { account: [...publicKeyBytes(publicKeyB)] },
       },
     },
   };

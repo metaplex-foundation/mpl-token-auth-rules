@@ -1,5 +1,5 @@
 /* eslint-disable prefer-template */
-import { generateSigner } from '@metaplex-foundation/umi';
+import { generateSigner, publicKeyBytes } from '@metaplex-foundation/umi';
 import test from 'ava';
 import { RuleSetRevisionV1, isAnyRuleV1 } from '../../../src';
 import { createUmiSync } from '../../_setup';
@@ -12,16 +12,20 @@ test('isAnyRuleV1', async (t) => {
   const revision: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: 'My Rule Set',
-    owner: [...owner.bytes],
+    owner: [...publicKeyBytes(owner)],
     operations: {
       deposit: {
         Any: {
-          rules: [{ AdditionalSigner: { account: [...publicKeyA.bytes] } }],
+          rules: [
+            { AdditionalSigner: { account: [...publicKeyBytes(publicKeyA)] } },
+          ],
         },
       },
       withdraw: {
         Any: {
-          rules: [{ AdditionalSigner: { account: [...publicKeyB.bytes] } }],
+          rules: [
+            { AdditionalSigner: { account: [...publicKeyBytes(publicKeyB)] } },
+          ],
         },
       },
     },
@@ -37,16 +41,20 @@ test('not isAnyRuleV1', async (t) => {
   const revision: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: 'My Rule Set',
-    owner: [...owner.bytes],
+    owner: [...publicKeyBytes(owner)],
     operations: {
       deposit: {
         All: {
-          rules: [{ AdditionalSigner: { account: [...publicKeyA.bytes] } }],
+          rules: [
+            { AdditionalSigner: { account: [...publicKeyBytes(publicKeyA)] } },
+          ],
         },
       },
       withdraw: {
         Any: {
-          rules: [{ AdditionalSigner: { account: [...publicKeyB.bytes] } }],
+          rules: [
+            { AdditionalSigner: { account: [...publicKeyBytes(publicKeyB)] } },
+          ],
         },
       },
     },

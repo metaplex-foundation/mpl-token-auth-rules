@@ -1,10 +1,9 @@
 import {
   Context,
-  PublicKeyBase58,
+  PublicKey,
   PublicKeyInput,
   Serializer,
-  base58,
-  base58PublicKey,
+  publicKey as toPublicKey,
 } from '@metaplex-foundation/umi';
 import type { RuleV1 } from '../v1';
 import { RuleV2, isRuleV2 } from './rule';
@@ -14,7 +13,7 @@ import { RuleTypeV2 } from './ruleType';
 export type PdaMatchRuleV2 = {
   type: 'PdaMatch';
   pdaField: string;
-  program: PublicKeyBase58;
+  program: PublicKey;
   seedsField: string;
 };
 
@@ -25,7 +24,7 @@ export const pdaMatchV2 = (
 ): PdaMatchRuleV2 => ({
   type: 'PdaMatch',
   pdaField,
-  program: base58PublicKey(program),
+  program: toPublicKey(program),
   seedsField,
 });
 
@@ -37,7 +36,7 @@ export const getPdaMatchRuleV2Serializer = (
     context,
     RuleTypeV2.PdaMatch,
     s.struct([
-      ['program', s.string({ encoding: base58, size: 32 })],
+      ['program', s.publicKey()],
       ['pdaField', s.string({ size: 32 })],
       ['seedsField', s.string({ size: 32 })],
     ])

@@ -1,10 +1,9 @@
 import {
   Context,
-  PublicKeyBase58,
+  PublicKey,
   PublicKeyInput,
   Serializer,
-  base58,
-  base58PublicKey,
+  publicKey as toPublicKey,
 } from '@metaplex-foundation/umi';
 import type { RuleV1 } from '../v1';
 import { RuleV2, isRuleV2 } from './rule';
@@ -14,7 +13,7 @@ import { RuleTypeV2 } from './ruleType';
 export type PubkeyListMatchRuleV2 = {
   type: 'PubkeyListMatch';
   field: string;
-  publicKeys: PublicKeyBase58[];
+  publicKeys: PublicKey[];
 };
 
 export const pubkeyListMatchV2 = (
@@ -23,7 +22,7 @@ export const pubkeyListMatchV2 = (
 ): PubkeyListMatchRuleV2 => ({
   type: 'PubkeyListMatch',
   field,
-  publicKeys: publicKeys.map(base58PublicKey),
+  publicKeys: publicKeys.map((program) => toPublicKey(program)),
 });
 
 export const getPubkeyListMatchRuleV2Serializer = (
@@ -35,12 +34,7 @@ export const getPubkeyListMatchRuleV2Serializer = (
     RuleTypeV2.PubkeyListMatch,
     s.struct([
       ['field', s.string({ size: 32 })],
-      [
-        'publicKeys',
-        s.array(s.string({ encoding: base58, size: 32 }), {
-          size: 'remainder',
-        }),
-      ],
+      ['publicKeys', s.array(s.publicKey(), { size: 'remainder' })],
     ])
   );
 };

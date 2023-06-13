@@ -1,7 +1,7 @@
 import {
-  base58PublicKey,
   generateSigner,
   publicKey,
+  publicKeyBytes,
   some,
 } from '@metaplex-foundation/umi';
 import test from 'ava';
@@ -26,11 +26,11 @@ test('it can create a new rule set V1', async (t) => {
   const revision: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: name,
-    owner: [...owner.publicKey.bytes],
+    owner: [...publicKeyBytes(owner.publicKey)],
     operations: {
       Transfer: {
         ProgramOwned: {
-          program: [...program.bytes],
+          program: [...publicKeyBytes(program)],
           field: 'Destination',
         },
       },
@@ -65,7 +65,7 @@ test('it can create a new rule set V2', async (t) => {
   const revision: RuleSetRevisionV2 = {
     libVersion: 2,
     name,
-    owner: base58PublicKey(owner),
+    owner: owner.publicKey,
     operations: {
       Transfer: programOwnedV2('Destination', program),
     },

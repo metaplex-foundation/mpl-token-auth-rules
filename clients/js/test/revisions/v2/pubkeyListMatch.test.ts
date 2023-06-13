@@ -1,9 +1,5 @@
 /* eslint-disable prefer-template */
-import {
-  PublicKey,
-  generateSigner,
-  base58PublicKey,
-} from '@metaplex-foundation/umi';
+import { PublicKey, generateSigner } from '@metaplex-foundation/umi';
 import test from 'ava';
 import {
   RuleSetRevisionV2,
@@ -62,12 +58,12 @@ test('isPubkeyListMatchRuleV2', async (t) => {
   const revision: RuleSetRevisionV2 = {
     libVersion: 2,
     name: 'My Rule Set',
-    owner: base58PublicKey(owner),
+    owner,
     operations: {
       deposit: {
         type: 'PubkeyListMatch',
         field: 'myField',
-        publicKeys: [base58PublicKey(publicKeyA), base58PublicKey(publicKeyB)],
+        publicKeys: [publicKeyA, publicKeyB],
       },
     },
   };

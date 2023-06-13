@@ -1,5 +1,5 @@
 /* eslint-disable prefer-template */
-import { generateSigner } from '@metaplex-foundation/umi';
+import { generateSigner, publicKeyBytes } from '@metaplex-foundation/umi';
 import test from 'ava';
 import { RuleSetRevisionV1, isProgramOwnedRuleV1 } from '../../../src';
 import { createUmiSync } from '../../_setup';
@@ -12,12 +12,12 @@ test('isProgramOwnedV1', async (t) => {
   const revision: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: 'My Rule Set',
-    owner: [...owner.bytes],
+    owner: [...publicKeyBytes(owner)],
     operations: {
       deposit: {
         ProgramOwned: {
           field: 'myField',
-          program: [...publicKeyA.bytes],
+          program: [...publicKeyBytes(publicKeyA)],
         },
       },
     },

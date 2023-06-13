@@ -1,10 +1,9 @@
 import {
   Context,
-  PublicKeyBase58,
+  PublicKey,
   PublicKeyInput,
   Serializer,
-  base58,
-  base58PublicKey,
+  publicKey as toPublicKey,
 } from '@metaplex-foundation/umi';
 import type { RuleV1 } from '../v1';
 import { RuleV2, isRuleV2 } from './rule';
@@ -14,7 +13,7 @@ import { RuleTypeV2 } from './ruleType';
 export type ProgramOwnedRuleV2 = {
   type: 'ProgramOwned';
   field: string;
-  program: PublicKeyBase58;
+  program: PublicKey;
 };
 
 export const programOwnedV2 = (
@@ -22,7 +21,7 @@ export const programOwnedV2 = (
   program: PublicKeyInput
 ): ProgramOwnedRuleV2 => ({
   type: 'ProgramOwned',
-  program: base58PublicKey(program),
+  program: toPublicKey(program),
   field,
 });
 
@@ -34,7 +33,7 @@ export const getProgramOwnedRuleV2Serializer = (
     context,
     RuleTypeV2.ProgramOwned,
     s.struct([
-      ['program', s.string({ encoding: base58, size: 32 })],
+      ['program', s.publicKey()],
       ['field', s.string({ size: 32 })],
     ])
   );

@@ -1,8 +1,4 @@
-import {
-  base58PublicKey,
-  generateSigner,
-  some,
-} from '@metaplex-foundation/umi';
+import { generateSigner, some } from '@metaplex-foundation/umi';
 import test from 'ava';
 import {
   createOrUpdateV1,
@@ -25,7 +21,7 @@ test('it can update the account size of a rule set by 10 000 bytes', async (t) =
     ruleSetRevision: some({
       libVersion: 2,
       name,
-      owner: base58PublicKey(owner),
+      owner: owner.publicKey,
       operations: { Transfer: programOwnedV2('Destination', program) },
     }),
   }).sendAndConfirm(umi);

@@ -1,7 +1,7 @@
 import {
-  base58PublicKey,
   generateSigner,
   publicKey,
+  publicKeyBytes,
 } from '@metaplex-foundation/umi';
 import test from 'ava';
 import {
@@ -39,14 +39,14 @@ test('it can create a new rule set V1 using a buffer', async (t) => {
   const name = 'transfer_test';
   const anyRules = Array.from({ length: 50 }, () => ({
     ProgramOwned: {
-      program: [...generateSigner(umi).publicKey.bytes],
+      program: [...publicKeyBytes(generateSigner(umi).publicKey)],
       field: 'Destination',
     },
   }));
   const revision: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: name,
-    owner: [...owner.publicKey.bytes],
+    owner: [...publicKeyBytes(owner.publicKey)],
     operations: { Transfer: { Any: { rules: anyRules } } },
   };
 
@@ -90,7 +90,7 @@ test('it can create a new rule set V1 with all rule types using a buffer', async
   const revision: RuleSetRevisionV1 = {
     libVersion: 1,
     ruleSetName: name,
-    owner: [...owner.publicKey.bytes],
+    owner: [...publicKeyBytes(owner.publicKey)],
     operations: {
       'Transfer:Holder': {
         Any: {
@@ -100,12 +100,16 @@ test('it can create a new rule set V1 with all rule types using a buffer', async
                 rules: [
                   {
                     AdditionalSigner: {
-                      account: [...generateSigner(umi).publicKey.bytes],
+                      account: [
+                        ...publicKeyBytes(generateSigner(umi).publicKey),
+                      ],
                     },
                   },
                   {
                     AdditionalSigner: {
-                      account: [...generateSigner(umi).publicKey.bytes],
+                      account: [
+                        ...publicKeyBytes(generateSigner(umi).publicKey),
+                      ],
                     },
                   },
                 ],
@@ -124,13 +128,15 @@ test('it can create a new rule set V1 with all rule types using a buffer', async
             },
             {
               PubkeyMatch: {
-                pubkey: [...generateSigner(umi).publicKey.bytes],
+                pubkey: [...publicKeyBytes(generateSigner(umi).publicKey)],
                 field: 'Destination',
               },
             },
             {
               ProgramOwnedList: {
-                programs: [[...MPL_TOKEN_AUTH_RULES_PROGRAM_ID.bytes]],
+                programs: [
+                  [...publicKeyBytes(MPL_TOKEN_AUTH_RULES_PROGRAM_ID)],
+                ],
                 field: 'Source',
               },
             },
@@ -145,12 +151,16 @@ test('it can create a new rule set V1 with all rule types using a buffer', async
                 rules: [
                   {
                     AdditionalSigner: {
-                      account: [...generateSigner(umi).publicKey.bytes],
+                      account: [
+                        ...publicKeyBytes(generateSigner(umi).publicKey),
+                      ],
                     },
                   },
                   {
                     AdditionalSigner: {
-                      account: [...generateSigner(umi).publicKey.bytes],
+                      account: [
+                        ...publicKeyBytes(generateSigner(umi).publicKey),
+                      ],
                     },
                   },
                   'Namespace',
@@ -161,7 +171,9 @@ test('it can create a new rule set V1 with all rule types using a buffer', async
               Not: {
                 rule: {
                   ProgramOwned: {
-                    program: [...MPL_TOKEN_AUTH_RULES_PROGRAM_ID.bytes],
+                    program: [
+                      ...publicKeyBytes(MPL_TOKEN_AUTH_RULES_PROGRAM_ID),
+                    ],
                     field: 'Destination',
                   },
                 },
@@ -183,20 +195,20 @@ test('it can create a new rule set V1 with all rule types using a buffer', async
           rules: [
             {
               PubkeyListMatch: {
-                pubkeys: [[...generateSigner(umi).publicKey.bytes]],
+                pubkeys: [[...publicKeyBytes(generateSigner(umi).publicKey)]],
                 field: 'Destination',
               },
             },
             {
               PDAMatch: {
-                program: [...MPL_TOKEN_AUTH_RULES_PROGRAM_ID.bytes],
+                program: [...publicKeyBytes(MPL_TOKEN_AUTH_RULES_PROGRAM_ID)],
                 pda_field: 'Destination',
                 seeds_field: 'Seed',
               },
             },
             {
               ProgramOwned: {
-                program: [...MPL_TOKEN_AUTH_RULES_PROGRAM_ID.bytes],
+                program: [...publicKeyBytes(MPL_TOKEN_AUTH_RULES_PROGRAM_ID)],
                 field: 'Source',
               },
             },
@@ -243,7 +255,7 @@ test('it can create a new rule set V2 using a buffer', async (t) => {
   const revision: RuleSetRevisionV2 = {
     libVersion: 2,
     name,
-    owner: base58PublicKey(owner),
+    owner: owner.publicKey,
     operations: { Transfer: anyV2(anyRules) },
   };
 
@@ -287,7 +299,7 @@ test('it can create a new rule set V2 with all rule types using a buffer', async
   const revision: RuleSetRevisionV2 = {
     libVersion: 2,
     name,
-    owner: base58PublicKey(owner),
+    owner: owner.publicKey,
     operations: {
       'Transfer:Holder': anyV2([
         allV2([

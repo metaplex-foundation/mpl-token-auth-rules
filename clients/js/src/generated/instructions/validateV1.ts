@@ -10,32 +10,31 @@ import {
   AccountMeta,
   Context,
   Option,
+  Pda,
   PublicKey,
   Serializer,
   Signer,
   TransactionBuilder,
-  isSigner,
   mapSerializer,
-  publicKey,
   transactionBuilder,
 } from '@metaplex-foundation/umi';
-import { addObjectProperty, isWritable } from '../shared';
+import { addAccountMeta, addObjectProperty } from '../shared';
 import { Payload, PayloadArgs, getPayloadSerializer } from '../types';
 
 // Accounts.
 export type ValidateV1InstructionAccounts = {
   /** The PDA account where the RuleSet is stored */
-  ruleSetPda: PublicKey;
+  ruleSetPda: PublicKey | Pda;
   /** Mint of token asset */
-  mint: PublicKey;
+  mint: PublicKey | Pda;
   /** System program */
-  systemProgram?: PublicKey;
+  systemProgram?: PublicKey | Pda;
   /** Payer for RuleSet state PDA account */
   payer?: Signer;
   /** Signing authority for any Rule state updates */
   ruleAuthority?: Signer;
   /** The PDA account where any RuleSet state is stored */
-  ruleSetStatePda?: PublicKey;
+  ruleSetStatePda?: PublicKey | Pda;
 };
 
 // Data.
@@ -91,89 +90,57 @@ export function validateV1(
   const keys: AccountMeta[] = [];
 
   // Program ID.
-  const programId = {
-    ...context.programs.getPublicKey(
-      'mplTokenAuthRules',
-      'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
-    ),
-    isWritable: false,
-  };
+  const programId = context.programs.getPublicKey(
+    'mplTokenAuthRules',
+    'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
+  );
 
   // Resolved inputs.
-  const resolvingAccounts = {};
+  const resolvedAccounts = {
+    ruleSetPda: [input.ruleSetPda, false] as const,
+    mint: [input.mint, false] as const,
+  };
   const resolvingArgs = {};
   addObjectProperty(
-    resolvingAccounts,
+    resolvedAccounts,
     'systemProgram',
-    input.systemProgram ?? {
-      ...context.programs.getPublicKey(
-        'splSystem',
-        '11111111111111111111111111111111'
-      ),
-      isWritable: false,
-    }
+    input.systemProgram
+      ? ([input.systemProgram, false] as const)
+      : ([
+          context.programs.getPublicKey(
+            'splSystem',
+            '11111111111111111111111111111111'
+          ),
+          false,
+        ] as const)
   );
-  addObjectProperty(resolvingAccounts, 'payer', input.payer ?? programId);
   addObjectProperty(
-    resolvingAccounts,
+    resolvedAccounts,
+    'payer',
+    input.payer ? ([input.payer, true] as const) : ([programId, false] as const)
+  );
+  addObjectProperty(
+    resolvedAccounts,
     'ruleAuthority',
-    input.ruleAuthority ?? programId
+    input.ruleAuthority
+      ? ([input.ruleAuthority, false] as const)
+      : ([programId, false] as const)
   );
   addObjectProperty(
-    resolvingAccounts,
+    resolvedAccounts,
     'ruleSetStatePda',
-    input.ruleSetStatePda ?? programId
+    input.ruleSetStatePda
+      ? ([input.ruleSetStatePda, true] as const)
+      : ([programId, false] as const)
   );
-  const resolvedAccounts = { ...input, ...resolvingAccounts };
   const resolvedArgs = { ...input, ...resolvingArgs };
 
-  // Rule Set Pda.
-  keys.push({
-    pubkey: resolvedAccounts.ruleSetPda,
-    isSigner: false,
-    isWritable: isWritable(resolvedAccounts.ruleSetPda, false),
-  });
-
-  // Mint.
-  keys.push({
-    pubkey: resolvedAccounts.mint,
-    isSigner: false,
-    isWritable: isWritable(resolvedAccounts.mint, false),
-  });
-
-  // System Program.
-  keys.push({
-    pubkey: resolvedAccounts.systemProgram,
-    isSigner: false,
-    isWritable: isWritable(resolvedAccounts.systemProgram, false),
-  });
-
-  // Payer.
-  if (isSigner(resolvedAccounts.payer)) {
-    signers.push(resolvedAccounts.payer);
-  }
-  keys.push({
-    pubkey: publicKey(resolvedAccounts.payer),
-    isSigner: isSigner(resolvedAccounts.payer),
-    isWritable: isWritable(resolvedAccounts.payer, true),
-  });
-
-  // Rule Authority.
-  if (isSigner(resolvedAccounts.ruleAuthority)) {
-    signers.push(resolvedAccounts.ruleAuthority);
-  }
-  keys.push({
-    pubkey: publicKey(resolvedAccounts.ruleAuthority),
-    isSigner: isSigner(resolvedAccounts.ruleAuthority),
-    isWritable: isWritable(resolvedAccounts.ruleAuthority, false),
-  });
-
-  // Rule Set State Pda.
-  keys.push({
-    pubkey: resolvedAccounts.ruleSetStatePda,
-    isSigner: false,
-    isWritable: isWritable(resolvedAccounts.ruleSetStatePda, true),
-  });
+  addAccountMeta(keys, signers, resolvedAccounts.ruleSetPda, false);
+  addAccountMeta(keys, signers, resolvedAccounts.mint, false);
+  addAccountMeta(keys, signers, resolvedAccounts.systemProgram, false);
+  addAccountMeta(keys, signers, resolvedAccounts.payer, false);
+  addAccountMeta(keys, signers, resolvedAccounts.ruleAuthority, false);
+  addAccountMeta(keys, signers, resolvedAccounts.ruleSetStatePda, false);
 
   // Data.
   const data =

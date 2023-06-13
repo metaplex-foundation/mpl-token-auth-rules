@@ -6,11 +6,13 @@ import {
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import {
   Context,
+  Pda,
   PublicKey,
   assertAccountExists,
   base16,
   createUmi as baseCreateUmi,
-  isPublicKey,
+  publicKey,
+  publicKeyBytes,
 } from '@metaplex-foundation/umi';
 import { mplTokenAuthRules, RuleV2, getRuleV2Serializer } from '../src';
 
@@ -40,7 +42,7 @@ export const deserializeRuleV2FromHex = (
 };
 
 export const toHex = (buffer: Uint8Array | PublicKey): string => {
-  if (isPublicKey(buffer)) buffer = buffer.bytes;
+  if (typeof buffer === 'string') buffer = publicKeyBytes(buffer);
   return base16.deserialize(buffer)[0];
 };
 
@@ -54,9 +56,9 @@ export const toString32Hex = (
 
 export const fetchRuleSetSize = async (
   context: Pick<Context, 'rpc'>,
-  ruleSetPda: PublicKey
+  ruleSetPda: PublicKey | Pda
 ) => {
-  const rawAccount = await context.rpc.getAccount(ruleSetPda);
+  const rawAccount = await context.rpc.getAccount(publicKey(ruleSetPda, false));
   assertAccountExists(rawAccount);
   return rawAccount.data.length;
 };
