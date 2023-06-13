@@ -86,6 +86,33 @@ jobs:
             echo RPC=${{ secrets.MAINNET_RPC }} >> $GITHUB_ENV
           fi
 
+      - name: Bump Program Version
+        run: |
+          IDL_NAME="mpl_`echo "${{ inputs.program }}" | tr - _`"
+          VERSION=`jq '.version' ./idls/${IDL_NAME}.json | sed 's/"//g'`
+          MAJOR=`echo ${VERSION} | cut -d. -f1`
+          MINOR=`echo ${VERSION} | cut -d. -f2`
+          PATCH=`echo ${VERSION} | cut -d. -f3`
+          
+          if [ "${{ inputs.bump }}" == "major" ]; then
+             MAJOR=$((MAJOR + 1))
+             MINOR=0
+             PATCH=0
+          elif [ "${{ inputs.bump }}" == "minor" ]; then
+             MINOR=$((MINOR + 1))
+             PATCH=0
+          else
+             PATCH=$((PATCH + 1))
+          fi
+          
+          PROGRAM_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+
+          cp ./idls/${IDL_NAME}.json ./idls/${IDL_NAME}-previous.json
+          jq ".version = \"${PROGRAM_VERSION}\"" ./idls/${IDL_NAME}-previous.json > ./idls/${IDL_NAME}.json
+          rm ./idls/${IDL_NAME}-previous.json
+
+          echo PROGRAM_VERSION="${PROGRAM_VERSION}" >> $GITHUB_ENV
+
       - name: Download program builds
         uses: actions/download-artifact@v3
         with:
@@ -103,11 +130,22 @@ jobs:
             -k ./deploy-key.json
 
       - name: Publish crate
-        working-directory: ./programs/${{ inputs.program }}/program
+        working-directory: ./programs/${{ inputs.program }}
         if: github.event.inputs.publish_crate == 'true' && github.event.inputs.cluster == 'mainnet-beta'
         run: |
+          git stash
           git config user.name "${{ env.COMMIT_USER_NAME }}"
           git config user.email "${{ env.COMMIT_USER_EMAIL }}"
-
+          
           cargo login ${{ secrets.CRATES_TOKEN }}
-          cargo release ${{ inputs.bump }} --execute
+          cargo release ${{ inputs.bump }} --no-confirm --no-push --no-tag --execute
+
+          git reset --soft HEAD~1
+          git stash pop
+          
+      - name: Commit and tag new version
+        uses: stefanzweifel/git-auto-commit-action@v4
+        if: github.event.inputs.publish_crate == 'true' && github.event.inputs.cluster == 'mainnet-beta'
+        with:
+          commit_message: Deploy mpl-${{ inputs.program }} program v${{ env.PROGRAM_VERSION }}
+          tagging_message: mpl-${{ inputs.program }}@v${{ env.PROGRAM_VERSION }}
