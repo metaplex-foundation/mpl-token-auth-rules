@@ -9,7 +9,7 @@ env:
 jobs:
   test:
     name: Test
-    runs-on: buildjet-16vcpu-ubuntu-2004
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         node: ["16.14", "18.x", "20.x"]
@@ -44,7 +44,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: buildjet-16vcpu-ubuntu-2004
+    runs-on: ubuntu-latest
     steps:
       - name: Git checkout
         uses: actions/checkout@v3

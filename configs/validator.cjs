@@ -15,7 +15,6 @@ module.exports = {
         deployPath: getProgram("token-auth-rules", "mpl_token_auth_rules.so"),
       },
     ],
-    accountsCluster: "https://api.devnet.solana.com",
     accounts: [
       {
         label: "Metaplex Default RuleSet",
