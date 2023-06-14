@@ -44,7 +44,7 @@ jobs:
 
   deploy_js:
     name: JS client / Deploy
-    runs-on: ubuntu-latest
+    runs-on: buildjet-16vcpu-ubuntu-2004
     needs: test_js
     permissions:
       contents: write
@@ -108,7 +108,7 @@ jobs:
 
   deploy_js_docs:
     name: JS client / Deploy docs
-    runs-on: ubuntu-latest
+    runs-on: buildjet-16vcpu-ubuntu-2004
     needs: deploy_js
     environment:
       name: js-client-documentation

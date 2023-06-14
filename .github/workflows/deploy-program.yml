@@ -50,7 +50,7 @@ jobs:
 
   deploy_program:
     name: Program / Deploy
-    runs-on: ubuntu-latest
+    runs-on: buildjet-16vcpu-ubuntu-2004
     needs: test_js
     permissions:
       contents: write
