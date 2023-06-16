@@ -42,6 +42,14 @@ jobs:
     uses: ./.github/workflows/build-programs.yml
     secrets: inherit
 
+  test_programs:
+    name: Programs
+    needs: build_programs
+    uses: ./.github/workflows/test-programs.yml
+    secrets: inherit
+    with:
+      program_matrix: ${{ env.PROGRAMS }}
+
   test_js:
     name: JS client
     needs: build_programs
