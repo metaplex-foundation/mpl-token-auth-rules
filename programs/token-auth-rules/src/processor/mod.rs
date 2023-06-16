@@ -19,8 +19,9 @@ use crate::{
         create_or_update::create_or_update, puff_rule_set::puff_rule_set, validate::validate,
         write_to_buffer::write_to_buffer,
     },
-    utils::cmp_pubkeys,
 };
+
+pub use crate::utils::cmp_pubkeys;
 
 /// The generic processor struct.
 pub struct Processor;
