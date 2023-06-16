@@ -8,6 +8,7 @@ function getProgram(dir, programName) {
 module.exports = {
   validator: {
     commitment: "processed",
+    accountsCluster: "https://api.mainnet-beta.solana.com/",
     programs: [
       {
         label: "Token Auth Rules",
