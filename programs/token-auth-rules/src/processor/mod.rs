@@ -9,12 +9,8 @@ mod write_to_buffer;
 
 use borsh::BorshDeserialize;
 use solana_program::{
-    account_info::AccountInfo,
-    entrypoint::ProgramResult,
-    msg,
-    program_error::ProgramError,
-    program_memory::sol_memcmp,
-    pubkey::{Pubkey, PUBKEY_BYTES},
+    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey,
 };
 
 use crate::{
@@ -25,10 +21,7 @@ use crate::{
     },
 };
 
-/// Convenience function for comparing two [`Pubkey`]s.
-pub fn cmp_pubkeys(a: &Pubkey, b: &Pubkey) -> bool {
-    sol_memcmp(a.as_ref(), b.as_ref(), PUBKEY_BYTES) == 0
-}
+pub use crate::utils::cmp_pubkeys;
 
 /// The generic processor struct.
 pub struct Processor;
