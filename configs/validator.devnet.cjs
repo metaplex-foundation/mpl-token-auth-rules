@@ -5,7 +5,7 @@ module.exports = {
   validator: {
     ...localnet.validator,
     programs: [],
-    accountsCluster: "https://metaplex.devnet.rpcpool.com/",
+    accountsCluster: "https://api.devnet.solana.com/",
     accounts: [
       ...localnet.validator.accounts,
       ...(localnet.validator.programs ?? []).map((program) => ({
