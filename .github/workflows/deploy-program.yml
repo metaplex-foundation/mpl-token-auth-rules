@@ -50,7 +50,7 @@ jobs:
 
   deploy_program:
     name: Program / Deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-16-cores
     needs: test_js
     permissions:
       contents: write
@@ -95,7 +95,7 @@ jobs:
           MAJOR=`echo ${VERSION} | cut -d. -f1`
           MINOR=`echo ${VERSION} | cut -d. -f2`
           PATCH=`echo ${VERSION} | cut -d. -f3`
-          
+
           if [ "${{ inputs.bump }}" == "major" ]; then
              MAJOR=$((MAJOR + 1))
              MINOR=0
@@ -106,7 +106,7 @@ jobs:
           else
              PATCH=$((PATCH + 1))
           fi
-          
+
           PROGRAM_VERSION="${MAJOR}.${MINOR}.${PATCH}"
 
           cp ./idls/${IDL_NAME}.json ./idls/${IDL_NAME}-previous.json
@@ -140,13 +140,13 @@ jobs:
           git stash
           git config user.name "${{ env.COMMIT_USER_NAME }}"
           git config user.email "${{ env.COMMIT_USER_EMAIL }}"
-          
+
           cargo login ${{ secrets.CRATES_TOKEN }}
           cargo release ${{ inputs.bump }} --no-confirm --no-push --no-tag --execute
 
           git reset --soft HEAD~1
           git stash pop
-          
+
       - name: Commit and tag new version
         uses: stefanzweifel/git-auto-commit-action@v4
         if: github.event.inputs.publish_crate == 'true' && github.event.inputs.cluster == 'mainnet-beta'

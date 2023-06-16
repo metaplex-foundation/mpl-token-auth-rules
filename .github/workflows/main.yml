@@ -12,7 +12,7 @@ env:
 jobs:
   changes:
     name: Detect changes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-16-cores
     outputs:
       any: ${{ steps.changes.outputs.any }}
       programs: ${{ steps.changes.outputs.programs }}
@@ -58,7 +58,7 @@ jobs:
     name: Generate clients
     if: ${{ needs.changes.outputs.any == 'true' }}
     needs: build_programs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-16-cores
     outputs:
       js_changed: ${{ steps.changes.outputs.js_client }}
     permissions:
