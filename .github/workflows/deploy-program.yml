@@ -48,11 +48,11 @@ jobs:
     uses: ./.github/workflows/test-programs.yml
     secrets: inherit
     with:
-      program_matrix: ${{ inputs.program }}
+      program_matrix: '["${{ inputs.program }}"]'
 
   test_js:
     name: JS client
-    needs: build_programs
+    needs: test_programs
     uses: ./.github/workflows/test-js.yml
     secrets: inherit
 
