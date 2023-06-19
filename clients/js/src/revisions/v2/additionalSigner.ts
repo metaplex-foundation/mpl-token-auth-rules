@@ -1,10 +1,13 @@
 import {
-  Context,
   PublicKey,
   PublicKeyInput,
-  Serializer,
   publicKey as toPublicKey,
 } from '@metaplex-foundation/umi';
+import {
+  Serializer,
+  publicKey as publicKeySerializer,
+  struct,
+} from '@metaplex-foundation/umi/serializers';
 import type { RuleV1 } from '../v1';
 import { RuleV2, isRuleV2 } from './rule';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
@@ -22,16 +25,12 @@ export const additionalSignerV2 = (
   publicKey: toPublicKey(publicKey),
 });
 
-export const getAdditionalSignerRuleV2Serializer = (
-  context: Pick<Context, 'serializer'>
-): Serializer<AdditionalSignerRuleV2> => {
-  const s = context.serializer;
-  return wrapSerializerInRuleHeaderV2(
-    context,
-    RuleTypeV2.AdditionalSigner,
-    s.struct([['publicKey', s.publicKey()]])
-  );
-};
+export const getAdditionalSignerRuleV2Serializer =
+  (): Serializer<AdditionalSignerRuleV2> =>
+    wrapSerializerInRuleHeaderV2(
+      RuleTypeV2.AdditionalSigner,
+      struct([['publicKey', publicKeySerializer()]])
+    );
 
 export const isAdditionalSignerRuleV2 = (
   rule: RuleV1 | RuleV2

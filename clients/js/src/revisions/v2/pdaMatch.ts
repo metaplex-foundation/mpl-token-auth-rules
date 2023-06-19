@@ -1,10 +1,14 @@
 import {
-  Context,
   PublicKey,
   PublicKeyInput,
-  Serializer,
   publicKey as toPublicKey,
 } from '@metaplex-foundation/umi';
+import {
+  Serializer,
+  publicKey as publicKeySerializer,
+  string,
+  struct,
+} from '@metaplex-foundation/umi/serializers';
 import type { RuleV1 } from '../v1';
 import { RuleV2, isRuleV2 } from './rule';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
@@ -28,20 +32,15 @@ export const pdaMatchV2 = (
   seedsField,
 });
 
-export const getPdaMatchRuleV2Serializer = (
-  context: Pick<Context, 'serializer'>
-): Serializer<PdaMatchRuleV2> => {
-  const s = context.serializer;
-  return wrapSerializerInRuleHeaderV2(
-    context,
+export const getPdaMatchRuleV2Serializer = (): Serializer<PdaMatchRuleV2> =>
+  wrapSerializerInRuleHeaderV2(
     RuleTypeV2.PdaMatch,
-    s.struct([
-      ['program', s.publicKey()],
-      ['pdaField', s.string({ size: 32 })],
-      ['seedsField', s.string({ size: 32 })],
+    struct([
+      ['program', publicKeySerializer()],
+      ['pdaField', string({ size: 32 })],
+      ['seedsField', string({ size: 32 })],
     ])
   );
-};
 
 export const isPdaMatchRuleV2 = (
   rule: RuleV1 | RuleV2

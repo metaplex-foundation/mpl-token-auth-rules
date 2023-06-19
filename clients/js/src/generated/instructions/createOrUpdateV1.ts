@@ -11,13 +11,17 @@ import {
   Context,
   Pda,
   PublicKey,
-  Serializer,
   Signer,
   TransactionBuilder,
-  mapSerializer,
   none,
   transactionBuilder,
 } from '@metaplex-foundation/umi';
+import {
+  Serializer,
+  mapSerializer,
+  struct,
+  u8,
+} from '@metaplex-foundation/umi/serializers';
 import {
   RuleSetRevisionInput,
   RuleSetRevisionInputArgs,
@@ -48,23 +52,33 @@ export type CreateOrUpdateV1InstructionDataArgs = {
   ruleSetRevision?: RuleSetRevisionInputArgs;
 };
 
+/** @deprecated Use `getCreateOrUpdateV1InstructionDataSerializer()` without any argument instead. */
 export function getCreateOrUpdateV1InstructionDataSerializer(
-  context: Pick<Context, 'serializer'>
+  _context: object
+): Serializer<
+  CreateOrUpdateV1InstructionDataArgs,
+  CreateOrUpdateV1InstructionData
+>;
+export function getCreateOrUpdateV1InstructionDataSerializer(): Serializer<
+  CreateOrUpdateV1InstructionDataArgs,
+  CreateOrUpdateV1InstructionData
+>;
+export function getCreateOrUpdateV1InstructionDataSerializer(
+  _context: object = {}
 ): Serializer<
   CreateOrUpdateV1InstructionDataArgs,
   CreateOrUpdateV1InstructionData
 > {
-  const s = context.serializer;
   return mapSerializer<
     CreateOrUpdateV1InstructionDataArgs,
     any,
     CreateOrUpdateV1InstructionData
   >(
-    s.struct<CreateOrUpdateV1InstructionData>(
+    struct<CreateOrUpdateV1InstructionData>(
       [
-        ['discriminator', s.u8()],
-        ['createOrUpdateV1Discriminator', s.u8()],
-        ['ruleSetRevision', getRuleSetRevisionInputSerializer(context)],
+        ['discriminator', u8()],
+        ['createOrUpdateV1Discriminator', u8()],
+        ['ruleSetRevision', getRuleSetRevisionInputSerializer()],
       ],
       { description: 'CreateOrUpdateV1InstructionData' }
     ),
@@ -86,7 +100,7 @@ export type CreateOrUpdateV1InstructionArgs =
 
 // Instruction.
 export function createOrUpdateV1(
-  context: Pick<Context, 'serializer' | 'programs' | 'payer'>,
+  context: Pick<Context, 'programs' | 'payer'>,
   input: CreateOrUpdateV1InstructionAccounts & CreateOrUpdateV1InstructionArgs
 ): TransactionBuilder {
   const signers: Signer[] = [];
@@ -139,9 +153,7 @@ export function createOrUpdateV1(
 
   // Data.
   const data =
-    getCreateOrUpdateV1InstructionDataSerializer(context).serialize(
-      resolvedArgs
-    );
+    getCreateOrUpdateV1InstructionDataSerializer().serialize(resolvedArgs);
 
   // Bytes Created On Chain.
   const bytesCreatedOnChain = 0;

@@ -6,13 +6,18 @@
  * @see https://github.com/metaplex-foundation/kinobi
  */
 
+import { Option, OptionOrNullable } from '@metaplex-foundation/umi';
 import {
-  Context,
   GetDataEnumKind,
   GetDataEnumKindContent,
-  Option,
   Serializer,
-} from '@metaplex-foundation/umi';
+  bool,
+  dataEnum,
+  option,
+  string,
+  struct,
+  u64,
+} from '@metaplex-foundation/umi/serializers';
 import { Payload, PayloadArgs, getPayloadSerializer } from '.';
 
 export type ValidateArgs = {
@@ -28,22 +33,29 @@ export type ValidateArgsArgs = {
   operation: string;
   payload: PayloadArgs;
   updateRuleState: boolean;
-  ruleSetRevision: Option<number | bigint>;
+  ruleSetRevision: OptionOrNullable<number | bigint>;
 };
 
+/** @deprecated Use `getValidateArgsSerializer()` without any argument instead. */
 export function getValidateArgsSerializer(
-  context: Pick<Context, 'serializer'>
+  _context: object
+): Serializer<ValidateArgsArgs, ValidateArgs>;
+export function getValidateArgsSerializer(): Serializer<
+  ValidateArgsArgs,
+  ValidateArgs
+>;
+export function getValidateArgsSerializer(
+  _context: object = {}
 ): Serializer<ValidateArgsArgs, ValidateArgs> {
-  const s = context.serializer;
-  return s.dataEnum<ValidateArgs>(
+  return dataEnum<ValidateArgs>(
     [
       [
         'V1',
-        s.struct<GetDataEnumKindContent<ValidateArgs, 'V1'>>([
-          ['operation', s.string()],
-          ['payload', getPayloadSerializer(context)],
-          ['updateRuleState', s.bool()],
-          ['ruleSetRevision', s.option(s.u64())],
+        struct<GetDataEnumKindContent<ValidateArgs, 'V1'>>([
+          ['operation', string()],
+          ['payload', getPayloadSerializer()],
+          ['updateRuleState', bool()],
+          ['ruleSetRevision', option(u64())],
         ]),
       ],
     ],

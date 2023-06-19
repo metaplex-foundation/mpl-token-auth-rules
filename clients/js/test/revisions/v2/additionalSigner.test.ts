@@ -13,7 +13,7 @@ test('serialize', async (t) => {
   const umi = createUmiSync();
   const { publicKey } = generateSigner(umi);
   const rule = additionalSignerV2(publicKey);
-  const serializedRule = serializeRuleV2AsHex(umi, rule);
+  const serializedRule = serializeRuleV2AsHex(rule);
   t.is(
     serializedRule,
     '01000000' + // Rule type
@@ -29,6 +29,6 @@ test('deserialize', async (t) => {
     '01000000' + // Rule type
     '20000000' + // Rule length
     toHex(publicKey); // Additional signer
-  const rule = deserializeRuleV2FromHex(umi, buffer);
+  const rule = deserializeRuleV2FromHex(buffer);
   t.deepEqual(rule, additionalSignerV2(publicKey));
 });

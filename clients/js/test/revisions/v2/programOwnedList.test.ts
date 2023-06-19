@@ -16,12 +16,12 @@ test('serialize', async (t) => {
   const programB = generateSigner(umi).publicKey;
   const programs: PublicKey[] = [programA, programB];
   const rule = programOwnedListV2('myAccount', programs);
-  const serializedRule = serializeRuleV2AsHex(umi, rule);
+  const serializedRule = serializeRuleV2AsHex(rule);
   t.is(
     serializedRule,
     '0c000000' + // Rule type
       '60000000' + // Rule length
-      toString32Hex(umi, 'myAccount') + // Field
+      toString32Hex('myAccount') + // Field
       toHex(programA) + // Program A
       toHex(programB) // Program B
   );
@@ -35,9 +35,9 @@ test('deserialize', async (t) => {
   const buffer =
     '0c000000' + // Rule type
     '60000000' + // Rule length
-    toString32Hex(umi, 'myAccount') + // Field
+    toString32Hex('myAccount') + // Field
     toHex(programA) + // Program A
     toHex(programB); // Program B
-  const rule = deserializeRuleV2FromHex(umi, buffer);
+  const rule = deserializeRuleV2FromHex(buffer);
   t.deepEqual(rule, programOwnedListV2('myAccount', programs));
 });

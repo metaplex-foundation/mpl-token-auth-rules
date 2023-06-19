@@ -6,14 +6,15 @@
  * @see https://github.com/metaplex-foundation/kinobi
  */
 
+import { none } from '@metaplex-foundation/umi';
 import {
-  Context,
   GetDataEnumKind,
   GetDataEnumKindContent,
   Serializer,
+  dataEnum,
   mapSerializer,
-  none,
-} from '@metaplex-foundation/umi';
+  struct,
+} from '@metaplex-foundation/umi/serializers';
 import {
   RuleSetRevisionInput,
   RuleSetRevisionInputArgs,
@@ -30,11 +31,18 @@ export type CreateOrUpdateArgsArgs = {
   ruleSetRevision?: RuleSetRevisionInputArgs;
 };
 
+/** @deprecated Use `getCreateOrUpdateArgsSerializer()` without any argument instead. */
 export function getCreateOrUpdateArgsSerializer(
-  context: Pick<Context, 'serializer'>
+  _context: object
+): Serializer<CreateOrUpdateArgsArgs, CreateOrUpdateArgs>;
+export function getCreateOrUpdateArgsSerializer(): Serializer<
+  CreateOrUpdateArgsArgs,
+  CreateOrUpdateArgs
+>;
+export function getCreateOrUpdateArgsSerializer(
+  _context: object = {}
 ): Serializer<CreateOrUpdateArgsArgs, CreateOrUpdateArgs> {
-  const s = context.serializer;
-  return s.dataEnum<CreateOrUpdateArgs>(
+  return dataEnum<CreateOrUpdateArgs>(
     [
       [
         'V1',
@@ -43,8 +51,8 @@ export function getCreateOrUpdateArgsSerializer(
           any,
           GetDataEnumKindContent<CreateOrUpdateArgs, 'V1'>
         >(
-          s.struct<GetDataEnumKindContent<CreateOrUpdateArgs, 'V1'>>([
-            ['ruleSetRevision', getRuleSetRevisionInputSerializer(context)],
+          struct<GetDataEnumKindContent<CreateOrUpdateArgs, 'V1'>>([
+            ['ruleSetRevision', getRuleSetRevisionInputSerializer()],
           ]),
           (value) => ({
             ...value,

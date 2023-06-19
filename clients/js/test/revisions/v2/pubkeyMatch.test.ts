@@ -14,13 +14,13 @@ test('serialize', async (t) => {
   const umi = createUmiSync();
   const { publicKey } = generateSigner(umi);
   const rule = pubkeyMatchV2('myAccount', publicKey);
-  const serializedRule = serializeRuleV2AsHex(umi, rule);
+  const serializedRule = serializeRuleV2AsHex(rule);
   t.is(
     serializedRule,
     '0f000000' + // Rule type
       '40000000' + // Rule length
       toHex(publicKey) + // PublicKey
-      toString32Hex(umi, 'myAccount') // Field
+      toString32Hex('myAccount') // Field
   );
 });
 
@@ -31,7 +31,7 @@ test('deserialize', async (t) => {
     '0f000000' + // Rule type
     '40000000' + // Rule length
     toHex(publicKey) + // PublicKey
-    toString32Hex(umi, 'myAccount'); // Field
-  const rule = deserializeRuleV2FromHex(umi, buffer);
+    toString32Hex('myAccount'); // Field
+  const rule = deserializeRuleV2FromHex(buffer);
   t.deepEqual(rule, pubkeyMatchV2('myAccount', publicKey));
 });

@@ -7,26 +7,35 @@
  */
 
 import {
-  Context,
   GetDataEnumKind,
   GetDataEnumKindContent,
   Serializer,
-} from '@metaplex-foundation/umi';
+  dataEnum,
+  string,
+  struct,
+} from '@metaplex-foundation/umi/serializers';
 
 export type PuffRuleSetArgs = { __kind: 'V1'; ruleSetName: string };
 
 export type PuffRuleSetArgsArgs = PuffRuleSetArgs;
 
+/** @deprecated Use `getPuffRuleSetArgsSerializer()` without any argument instead. */
 export function getPuffRuleSetArgsSerializer(
-  context: Pick<Context, 'serializer'>
+  _context: object
+): Serializer<PuffRuleSetArgsArgs, PuffRuleSetArgs>;
+export function getPuffRuleSetArgsSerializer(): Serializer<
+  PuffRuleSetArgsArgs,
+  PuffRuleSetArgs
+>;
+export function getPuffRuleSetArgsSerializer(
+  _context: object = {}
 ): Serializer<PuffRuleSetArgsArgs, PuffRuleSetArgs> {
-  const s = context.serializer;
-  return s.dataEnum<PuffRuleSetArgs>(
+  return dataEnum<PuffRuleSetArgs>(
     [
       [
         'V1',
-        s.struct<GetDataEnumKindContent<PuffRuleSetArgs, 'V1'>>([
-          ['ruleSetName', s.string()],
+        struct<GetDataEnumKindContent<PuffRuleSetArgs, 'V1'>>([
+          ['ruleSetName', string()],
         ]),
       ],
     ],

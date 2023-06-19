@@ -1,10 +1,14 @@
 import {
-  Context,
   PublicKey,
   PublicKeyInput,
-  Serializer,
   publicKey as toPublicKey,
 } from '@metaplex-foundation/umi';
+import {
+  Serializer,
+  publicKey as publicKeySerializer,
+  string,
+  struct,
+} from '@metaplex-foundation/umi/serializers';
 import type { RuleV1 } from '../v1';
 import { RuleV2, isRuleV2 } from './rule';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
@@ -25,19 +29,15 @@ export const programOwnedV2 = (
   field,
 });
 
-export const getProgramOwnedRuleV2Serializer = (
-  context: Pick<Context, 'serializer'>
-): Serializer<ProgramOwnedRuleV2> => {
-  const s = context.serializer;
-  return wrapSerializerInRuleHeaderV2(
-    context,
-    RuleTypeV2.ProgramOwned,
-    s.struct([
-      ['program', s.publicKey()],
-      ['field', s.string({ size: 32 })],
-    ])
-  );
-};
+export const getProgramOwnedRuleV2Serializer =
+  (): Serializer<ProgramOwnedRuleV2> =>
+    wrapSerializerInRuleHeaderV2(
+      RuleTypeV2.ProgramOwned,
+      struct([
+        ['program', publicKeySerializer()],
+        ['field', string({ size: 32 })],
+      ])
+    );
 
 export const isProgramOwnedRuleV2 = (
   rule: RuleV1 | RuleV2

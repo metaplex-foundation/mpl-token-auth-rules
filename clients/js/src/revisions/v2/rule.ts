@@ -1,4 +1,4 @@
-import { Context, Serializer } from '@metaplex-foundation/umi';
+import { Serializer } from '@metaplex-foundation/umi/serializers';
 import type { RuleV1 } from '../v1';
 import {
   AdditionalSignerRuleV2,
@@ -55,18 +55,16 @@ export type RuleV2 =
   | PubkeyMatchRuleV2
   | PubkeyTreeMatchRuleV2;
 
-export const getRuleV2Serializer = (
-  context: Pick<Context, 'serializer'>
-): Serializer<RuleV2> => ({
+export const getRuleV2Serializer = (): Serializer<RuleV2> => ({
   description: 'RuleV2',
   fixedSize: null,
   maxSize: null,
   serialize: (rule: RuleV2) =>
-    getRuleV2SerializerFromType(context, rule.type).serialize(rule),
+    getRuleV2SerializerFromType(rule.type).serialize(rule),
   deserialize: (buffer, offset = 0) => {
     const type = buffer[offset] as RuleTypeV2;
     const typeAsString = getRuleTypeV2AsString(type);
-    return getRuleV2SerializerFromType(context, typeAsString).deserialize(
+    return getRuleV2SerializerFromType(typeAsString).deserialize(
       buffer,
       offset
     );
@@ -74,43 +72,42 @@ export const getRuleV2Serializer = (
 });
 
 export const getRuleV2SerializerFromType = <T extends RuleV2>(
-  context: Pick<Context, 'serializer'>,
   type: T['type']
 ): Serializer<T> =>
   ((): Serializer<any> => {
     switch (type) {
       case 'AdditionalSigner':
-        return getAdditionalSignerRuleV2Serializer(context);
+        return getAdditionalSignerRuleV2Serializer();
       case 'All':
-        return getAllRuleV2Serializer(context);
+        return getAllRuleV2Serializer();
       case 'Amount':
-        return getAmountRuleV2Serializer(context);
+        return getAmountRuleV2Serializer();
       case 'Any':
-        return getAnyRuleV2Serializer(context);
+        return getAnyRuleV2Serializer();
       // case 'Frequency':
-      //   return getFrequencyRuleV2Serializer(context);
+      //   return getFrequencyRuleV2Serializer();
       // case 'IsWallet':
-      //   return getIsWalletRuleV2Serializer(context);
+      //   return getIsWalletRuleV2Serializer();
       case 'Namespace':
-        return getNamespaceRuleV2Serializer(context);
+        return getNamespaceRuleV2Serializer();
       case 'Not':
-        return getNotRuleV2Serializer(context);
+        return getNotRuleV2Serializer();
       case 'Pass':
-        return getPassRuleV2Serializer(context);
+        return getPassRuleV2Serializer();
       case 'PdaMatch':
-        return getPdaMatchRuleV2Serializer(context);
+        return getPdaMatchRuleV2Serializer();
       case 'ProgramOwned':
-        return getProgramOwnedRuleV2Serializer(context);
+        return getProgramOwnedRuleV2Serializer();
       case 'ProgramOwnedList':
-        return getProgramOwnedListRuleV2Serializer(context);
+        return getProgramOwnedListRuleV2Serializer();
       case 'ProgramOwnedTree':
-        return getProgramOwnedTreeRuleV2Serializer(context);
+        return getProgramOwnedTreeRuleV2Serializer();
       case 'PubkeyListMatch':
-        return getPubkeyListMatchRuleV2Serializer(context);
+        return getPubkeyListMatchRuleV2Serializer();
       case 'PubkeyMatch':
-        return getPubkeyMatchRuleV2Serializer(context);
+        return getPubkeyMatchRuleV2Serializer();
       case 'PubkeyTreeMatch':
-        return getPubkeyTreeMatchRuleV2Serializer(context);
+        return getPubkeyTreeMatchRuleV2Serializer();
       default:
         throw new Error(`Unknown rule type: ${type}`);
     }

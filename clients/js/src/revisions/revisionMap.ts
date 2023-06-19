@@ -1,4 +1,4 @@
-import { Context, Serializer, mergeBytes } from '@metaplex-foundation/umi';
+import { Serializer, mergeBytes } from '@metaplex-foundation/umi/serializers';
 import {
   getRuleSetHeaderSerializer,
   getRuleSetRevisionMapV1Serializer,
@@ -11,7 +11,6 @@ export type RuleSetRevisionMap = {
 };
 
 export const getRuleSetRevisionMapSerializer = (
-  context: Pick<Context, 'serializer'>,
   location: number
 ): Serializer<RuleSetRevisionMap> => ({
   description: 'RuleSetRevisionMap',
@@ -23,7 +22,7 @@ export const getRuleSetRevisionMapSerializer = (
         `Unsupported revision map version: ${revisionMap.version}`
       );
     }
-    const revisionMapV1 = getRuleSetRevisionMapV1Serializer(context).serialize({
+    const revisionMapV1 = getRuleSetRevisionMapV1Serializer().serialize({
       ruleSetRevisions: revisionMap.revisionLocations.map((n) => BigInt(n)),
     });
     return mergeBytes([new Uint8Array([revisionMap.version]), revisionMapV1]);
@@ -33,9 +32,8 @@ export const getRuleSetRevisionMapSerializer = (
     if (version !== 1) {
       throw new Error(`Unsupported revision map version: ${version}`);
     }
-    const [revisionMapV1, newOffset] = getRuleSetRevisionMapV1Serializer(
-      context
-    ).deserialize(buffer, offset + 1);
+    const [revisionMapV1, newOffset] =
+      getRuleSetRevisionMapV1Serializer().deserialize(buffer, offset + 1);
     const revisionLocations = revisionMapV1.ruleSetRevisions.map((n) =>
       Number(n)
     );
@@ -44,14 +42,13 @@ export const getRuleSetRevisionMapSerializer = (
 });
 
 export const getRuleSetRevisionMapFromAccountData = (
-  context: Pick<Context, 'serializer'>,
   accountData: Uint8Array
 ): RuleSetRevisionMap => {
-  const [header] = getRuleSetHeaderSerializer(context).deserialize(accountData);
+  const [header] = getRuleSetHeaderSerializer().deserialize(accountData);
   const location = Number(header.revMapVersionLocation);
-  const [revisionMap] = getRuleSetRevisionMapSerializer(
-    context,
+  const [revisionMap] = getRuleSetRevisionMapSerializer(location).deserialize(
+    accountData,
     location
-  ).deserialize(accountData, location);
+  );
   return revisionMap;
 };

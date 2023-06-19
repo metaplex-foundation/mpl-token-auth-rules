@@ -14,12 +14,18 @@ import {
   RpcAccount,
   RpcGetAccountOptions,
   RpcGetAccountsOptions,
-  Serializer,
   assertAccountExists,
   deserializeAccount,
   gpaBuilder,
   publicKey as toPublicKey,
 } from '@metaplex-foundation/umi';
+import {
+  Serializer,
+  bytes,
+  publicKey as publicKeySerializer,
+  string,
+  struct,
+} from '@metaplex-foundation/umi/serializers';
 
 export type RuleSetBuffer = Account<RuleSetBufferAccountData>;
 
@@ -27,28 +33,40 @@ export type RuleSetBufferAccountData = { serializedRuleSet: Uint8Array };
 
 export type RuleSetBufferAccountDataArgs = RuleSetBufferAccountData;
 
+/** @deprecated Use `getRuleSetBufferAccountDataSerializer()` without any argument instead. */
 export function getRuleSetBufferAccountDataSerializer(
-  context: Pick<Context, 'serializer'>
+  _context: object
+): Serializer<RuleSetBufferAccountDataArgs, RuleSetBufferAccountData>;
+export function getRuleSetBufferAccountDataSerializer(): Serializer<
+  RuleSetBufferAccountDataArgs,
+  RuleSetBufferAccountData
+>;
+export function getRuleSetBufferAccountDataSerializer(
+  _context: object = {}
 ): Serializer<RuleSetBufferAccountDataArgs, RuleSetBufferAccountData> {
-  const s = context.serializer;
-  return s.struct<RuleSetBufferAccountData>(
-    [['serializedRuleSet', s.bytes()]],
-    { description: 'RuleSetBufferAccountData' }
-  ) as Serializer<RuleSetBufferAccountDataArgs, RuleSetBufferAccountData>;
+  return struct<RuleSetBufferAccountData>([['serializedRuleSet', bytes()]], {
+    description: 'RuleSetBufferAccountData',
+  }) as Serializer<RuleSetBufferAccountDataArgs, RuleSetBufferAccountData>;
 }
 
+/** @deprecated Use `deserializeRuleSetBuffer(rawAccount)` without any context instead. */
 export function deserializeRuleSetBuffer(
-  context: Pick<Context, 'serializer'>,
+  context: object,
   rawAccount: RpcAccount
+): RuleSetBuffer;
+export function deserializeRuleSetBuffer(rawAccount: RpcAccount): RuleSetBuffer;
+export function deserializeRuleSetBuffer(
+  context: RpcAccount | object,
+  rawAccount?: RpcAccount
 ): RuleSetBuffer {
   return deserializeAccount(
-    rawAccount,
-    getRuleSetBufferAccountDataSerializer(context)
+    rawAccount ?? (context as RpcAccount),
+    getRuleSetBufferAccountDataSerializer()
   );
 }
 
 export async function fetchRuleSetBuffer(
-  context: Pick<Context, 'rpc' | 'serializer'>,
+  context: Pick<Context, 'rpc'>,
   publicKey: PublicKey | Pda,
   options?: RpcGetAccountOptions
 ): Promise<RuleSetBuffer> {
@@ -57,11 +75,11 @@ export async function fetchRuleSetBuffer(
     options
   );
   assertAccountExists(maybeAccount, 'RuleSetBuffer');
-  return deserializeRuleSetBuffer(context, maybeAccount);
+  return deserializeRuleSetBuffer(maybeAccount);
 }
 
 export async function safeFetchRuleSetBuffer(
-  context: Pick<Context, 'rpc' | 'serializer'>,
+  context: Pick<Context, 'rpc'>,
   publicKey: PublicKey | Pda,
   options?: RpcGetAccountOptions
 ): Promise<RuleSetBuffer | null> {
@@ -69,13 +87,11 @@ export async function safeFetchRuleSetBuffer(
     toPublicKey(publicKey, false),
     options
   );
-  return maybeAccount.exists
-    ? deserializeRuleSetBuffer(context, maybeAccount)
-    : null;
+  return maybeAccount.exists ? deserializeRuleSetBuffer(maybeAccount) : null;
 }
 
 export async function fetchAllRuleSetBuffer(
-  context: Pick<Context, 'rpc' | 'serializer'>,
+  context: Pick<Context, 'rpc'>,
   publicKeys: Array<PublicKey | Pda>,
   options?: RpcGetAccountsOptions
 ): Promise<RuleSetBuffer[]> {
@@ -85,12 +101,12 @@ export async function fetchAllRuleSetBuffer(
   );
   return maybeAccounts.map((maybeAccount) => {
     assertAccountExists(maybeAccount, 'RuleSetBuffer');
-    return deserializeRuleSetBuffer(context, maybeAccount);
+    return deserializeRuleSetBuffer(maybeAccount);
   });
 }
 
 export async function safeFetchAllRuleSetBuffer(
-  context: Pick<Context, 'rpc' | 'serializer'>,
+  context: Pick<Context, 'rpc'>,
   publicKeys: Array<PublicKey | Pda>,
   options?: RpcGetAccountsOptions
 ): Promise<RuleSetBuffer[]> {
@@ -101,47 +117,45 @@ export async function safeFetchAllRuleSetBuffer(
   return maybeAccounts
     .filter((maybeAccount) => maybeAccount.exists)
     .map((maybeAccount) =>
-      deserializeRuleSetBuffer(context, maybeAccount as RpcAccount)
+      deserializeRuleSetBuffer(maybeAccount as RpcAccount)
     );
 }
 
 export function getRuleSetBufferGpaBuilder(
-  context: Pick<Context, 'rpc' | 'serializer' | 'programs'>
+  context: Pick<Context, 'rpc' | 'programs'>
 ) {
-  const s = context.serializer;
   const programId = context.programs.getPublicKey(
     'mplTokenAuthRules',
     'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
   );
   return gpaBuilder(context, programId)
     .registerFields<{ serializedRuleSet: Uint8Array }>({
-      serializedRuleSet: [0, s.bytes()],
+      serializedRuleSet: [0, bytes()],
     })
     .deserializeUsing<RuleSetBuffer>((account) =>
-      deserializeRuleSetBuffer(context, account)
+      deserializeRuleSetBuffer(account)
     );
 }
 
 export function findRuleSetBufferPda(
-  context: Pick<Context, 'eddsa' | 'programs' | 'serializer'>,
+  context: Pick<Context, 'eddsa' | 'programs'>,
   seeds: {
     /** The owner of the rule set. */
     owner: PublicKey;
   }
 ): Pda {
-  const s = context.serializer;
   const programId = context.programs.getPublicKey(
     'mplTokenAuthRules',
     'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
   );
   return context.eddsa.findPda(programId, [
-    s.string({ size: 'variable' }).serialize('rule_set'),
-    s.publicKey().serialize(seeds.owner),
+    string({ size: 'variable' }).serialize('rule_set'),
+    publicKeySerializer().serialize(seeds.owner),
   ]);
 }
 
 export async function fetchRuleSetBufferFromSeeds(
-  context: Pick<Context, 'eddsa' | 'programs' | 'rpc' | 'serializer'>,
+  context: Pick<Context, 'eddsa' | 'programs' | 'rpc'>,
   seeds: Parameters<typeof findRuleSetBufferPda>[1],
   options?: RpcGetAccountOptions
 ): Promise<RuleSetBuffer> {
@@ -153,7 +167,7 @@ export async function fetchRuleSetBufferFromSeeds(
 }
 
 export async function safeFetchRuleSetBufferFromSeeds(
-  context: Pick<Context, 'eddsa' | 'programs' | 'rpc' | 'serializer'>,
+  context: Pick<Context, 'eddsa' | 'programs' | 'rpc'>,
   seeds: Parameters<typeof findRuleSetBufferPda>[1],
   options?: RpcGetAccountOptions
 ): Promise<RuleSetBuffer | null> {

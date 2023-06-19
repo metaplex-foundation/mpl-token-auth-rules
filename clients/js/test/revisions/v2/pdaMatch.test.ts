@@ -14,14 +14,14 @@ test('serialize', async (t) => {
   const umi = createUmiSync();
   const program = generateSigner(umi).publicKey;
   const rule = pdaMatchV2('myAccount', program, 'mySeeds');
-  const serializedRule = serializeRuleV2AsHex(umi, rule);
+  const serializedRule = serializeRuleV2AsHex(rule);
   t.is(
     serializedRule,
     '0a000000' + // Rule type (10)
       '60000000' + // Rule length (96 bytes)
       toHex(program) + // PublicKey
-      toString32Hex(umi, 'myAccount') + // Pda Field
-      toString32Hex(umi, 'mySeeds') // Seeds Field
+      toString32Hex('myAccount') + // Pda Field
+      toString32Hex('mySeeds') // Seeds Field
   );
 });
 
@@ -32,9 +32,9 @@ test('deserialize', async (t) => {
     '0a000000' + // Rule type (10)
     '60000000' + // Rule length (96 bytes)
     toHex(program) + // PublicKey
-    toString32Hex(umi, 'myAccount') + // Pda Field
-    toString32Hex(umi, 'mySeeds'); // Seeds Field
-  const rule = deserializeRuleV2FromHex(umi, buffer);
+    toString32Hex('myAccount') + // Pda Field
+    toString32Hex('mySeeds'); // Seeds Field
+  const rule = deserializeRuleV2FromHex(buffer);
   t.deepEqual(rule, pdaMatchV2('myAccount', program, 'mySeeds'));
 });
 

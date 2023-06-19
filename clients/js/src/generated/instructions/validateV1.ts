@@ -10,14 +10,23 @@ import {
   AccountMeta,
   Context,
   Option,
+  OptionOrNullable,
   Pda,
   PublicKey,
-  Serializer,
   Signer,
   TransactionBuilder,
-  mapSerializer,
   transactionBuilder,
 } from '@metaplex-foundation/umi';
+import {
+  Serializer,
+  bool,
+  mapSerializer,
+  option,
+  string,
+  struct,
+  u64,
+  u8,
+} from '@metaplex-foundation/umi/serializers';
 import { addAccountMeta, addObjectProperty } from '../shared';
 import { Payload, PayloadArgs, getPayloadSerializer } from '../types';
 
@@ -51,26 +60,33 @@ export type ValidateV1InstructionDataArgs = {
   operation: string;
   payload: PayloadArgs;
   updateRuleState: boolean;
-  ruleSetRevision: Option<number | bigint>;
+  ruleSetRevision: OptionOrNullable<number | bigint>;
 };
 
+/** @deprecated Use `getValidateV1InstructionDataSerializer()` without any argument instead. */
 export function getValidateV1InstructionDataSerializer(
-  context: Pick<Context, 'serializer'>
+  _context: object
+): Serializer<ValidateV1InstructionDataArgs, ValidateV1InstructionData>;
+export function getValidateV1InstructionDataSerializer(): Serializer<
+  ValidateV1InstructionDataArgs,
+  ValidateV1InstructionData
+>;
+export function getValidateV1InstructionDataSerializer(
+  _context: object = {}
 ): Serializer<ValidateV1InstructionDataArgs, ValidateV1InstructionData> {
-  const s = context.serializer;
   return mapSerializer<
     ValidateV1InstructionDataArgs,
     any,
     ValidateV1InstructionData
   >(
-    s.struct<ValidateV1InstructionData>(
+    struct<ValidateV1InstructionData>(
       [
-        ['discriminator', s.u8()],
-        ['validateV1Discriminator', s.u8()],
-        ['operation', s.string()],
-        ['payload', getPayloadSerializer(context)],
-        ['updateRuleState', s.bool()],
-        ['ruleSetRevision', s.option(s.u64())],
+        ['discriminator', u8()],
+        ['validateV1Discriminator', u8()],
+        ['operation', string()],
+        ['payload', getPayloadSerializer()],
+        ['updateRuleState', bool()],
+        ['ruleSetRevision', option(u64())],
       ],
       { description: 'ValidateV1InstructionData' }
     ),
@@ -83,7 +99,7 @@ export type ValidateV1InstructionArgs = ValidateV1InstructionDataArgs;
 
 // Instruction.
 export function validateV1(
-  context: Pick<Context, 'serializer' | 'programs'>,
+  context: Pick<Context, 'programs'>,
   input: ValidateV1InstructionAccounts & ValidateV1InstructionArgs
 ): TransactionBuilder {
   const signers: Signer[] = [];
@@ -143,8 +159,7 @@ export function validateV1(
   addAccountMeta(keys, signers, resolvedAccounts.ruleSetStatePda, false);
 
   // Data.
-  const data =
-    getValidateV1InstructionDataSerializer(context).serialize(resolvedArgs);
+  const data = getValidateV1InstructionDataSerializer().serialize(resolvedArgs);
 
   // Bytes Created On Chain.
   const bytesCreatedOnChain = 0;

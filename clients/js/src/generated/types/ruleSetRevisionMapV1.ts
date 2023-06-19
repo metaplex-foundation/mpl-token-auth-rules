@@ -6,7 +6,12 @@
  * @see https://github.com/metaplex-foundation/kinobi
  */
 
-import { Context, Serializer } from '@metaplex-foundation/umi';
+import {
+  Serializer,
+  array,
+  struct,
+  u64,
+} from '@metaplex-foundation/umi/serializers';
 
 export type RuleSetRevisionMapV1 = { ruleSetRevisions: Array<bigint> };
 
@@ -14,12 +19,18 @@ export type RuleSetRevisionMapV1Args = {
   ruleSetRevisions: Array<number | bigint>;
 };
 
+/** @deprecated Use `getRuleSetRevisionMapV1Serializer()` without any argument instead. */
 export function getRuleSetRevisionMapV1Serializer(
-  context: Pick<Context, 'serializer'>
+  _context: object
+): Serializer<RuleSetRevisionMapV1Args, RuleSetRevisionMapV1>;
+export function getRuleSetRevisionMapV1Serializer(): Serializer<
+  RuleSetRevisionMapV1Args,
+  RuleSetRevisionMapV1
+>;
+export function getRuleSetRevisionMapV1Serializer(
+  _context: object = {}
 ): Serializer<RuleSetRevisionMapV1Args, RuleSetRevisionMapV1> {
-  const s = context.serializer;
-  return s.struct<RuleSetRevisionMapV1>(
-    [['ruleSetRevisions', s.array(s.u64())]],
-    { description: 'RuleSetRevisionMapV1' }
-  ) as Serializer<RuleSetRevisionMapV1Args, RuleSetRevisionMapV1>;
+  return struct<RuleSetRevisionMapV1>([['ruleSetRevisions', array(u64())]], {
+    description: 'RuleSetRevisionMapV1',
+  }) as Serializer<RuleSetRevisionMapV1Args, RuleSetRevisionMapV1>;
 }

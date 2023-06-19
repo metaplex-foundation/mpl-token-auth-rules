@@ -6,17 +6,26 @@
  * @see https://github.com/metaplex-foundation/kinobi
  */
 
-import { Context, Serializer } from '@metaplex-foundation/umi';
+import {
+  Serializer,
+  array,
+  bytes,
+  struct,
+} from '@metaplex-foundation/umi/serializers';
 
 export type ProofInfo = { proof: Array<Uint8Array> };
 
 export type ProofInfoArgs = ProofInfo;
 
+/** @deprecated Use `getProofInfoSerializer()` without any argument instead. */
 export function getProofInfoSerializer(
-  context: Pick<Context, 'serializer'>
+  _context: object
+): Serializer<ProofInfoArgs, ProofInfo>;
+export function getProofInfoSerializer(): Serializer<ProofInfoArgs, ProofInfo>;
+export function getProofInfoSerializer(
+  _context: object = {}
 ): Serializer<ProofInfoArgs, ProofInfo> {
-  const s = context.serializer;
-  return s.struct<ProofInfo>([['proof', s.array(s.bytes({ size: 32 }))]], {
+  return struct<ProofInfo>([['proof', array(bytes({ size: 32 }))]], {
     description: 'ProofInfo',
   }) as Serializer<ProofInfoArgs, ProofInfo>;
 }

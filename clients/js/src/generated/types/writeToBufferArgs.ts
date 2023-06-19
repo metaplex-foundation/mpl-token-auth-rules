@@ -7,11 +7,15 @@
  */
 
 import {
-  Context,
   GetDataEnumKind,
   GetDataEnumKindContent,
   Serializer,
-} from '@metaplex-foundation/umi';
+  bool,
+  bytes,
+  dataEnum,
+  struct,
+  u32,
+} from '@metaplex-foundation/umi/serializers';
 
 export type WriteToBufferArgs = {
   __kind: 'V1';
@@ -21,17 +25,24 @@ export type WriteToBufferArgs = {
 
 export type WriteToBufferArgsArgs = WriteToBufferArgs;
 
+/** @deprecated Use `getWriteToBufferArgsSerializer()` without any argument instead. */
 export function getWriteToBufferArgsSerializer(
-  context: Pick<Context, 'serializer'>
+  _context: object
+): Serializer<WriteToBufferArgsArgs, WriteToBufferArgs>;
+export function getWriteToBufferArgsSerializer(): Serializer<
+  WriteToBufferArgsArgs,
+  WriteToBufferArgs
+>;
+export function getWriteToBufferArgsSerializer(
+  _context: object = {}
 ): Serializer<WriteToBufferArgsArgs, WriteToBufferArgs> {
-  const s = context.serializer;
-  return s.dataEnum<WriteToBufferArgs>(
+  return dataEnum<WriteToBufferArgs>(
     [
       [
         'V1',
-        s.struct<GetDataEnumKindContent<WriteToBufferArgs, 'V1'>>([
-          ['data', s.bytes({ size: s.u32() })],
-          ['overwrite', s.bool()],
+        struct<GetDataEnumKindContent<WriteToBufferArgs, 'V1'>>([
+          ['data', bytes({ size: u32() })],
+          ['overwrite', bool()],
         ]),
       ],
     ],

@@ -32,10 +32,7 @@ export type CreateOrUpdateWithBufferV1Input = {
 };
 
 export const createOrUpdateWithBufferV1 = (
-  context: Pick<
-    Context,
-    'eddsa' | 'programs' | 'serializer' | 'payer' | 'transactions'
-  >,
+  context: Pick<Context, 'eddsa' | 'programs' | 'payer' | 'transactions'>,
   input: CreateOrUpdateWithBufferV1Input
 ): TransactionBuilderGroup => {
   const payer = input.payer ?? context.payer;
@@ -45,7 +42,7 @@ export const createOrUpdateWithBufferV1 = (
     owner: payer.publicKey,
     name: input.ruleSetName,
   });
-  const serializedRevision = getRuleSetRevisionSerializer(context).serialize(
+  const serializedRevision = getRuleSetRevisionSerializer().serialize(
     input.ruleSetRevision
   );
 

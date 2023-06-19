@@ -1,4 +1,4 @@
-import { Context, Serializer } from '@metaplex-foundation/umi';
+import { Serializer } from '@metaplex-foundation/umi/serializers';
 import { Key, getRuleSetHeaderSerializer } from '../generated';
 import {
   RuleSetRevision,
@@ -16,9 +16,10 @@ export type RuleSetAccountData = {
 
 export type RuleSetAccountDataArgs = RuleSetAccountData;
 
-export const getRuleSetAccountDataSerializer = (
-  context: Pick<Context, 'serializer'>
-): Serializer<RuleSetAccountDataArgs, RuleSetAccountData> => ({
+export const getRuleSetAccountDataSerializer = (): Serializer<
+  RuleSetAccountDataArgs,
+  RuleSetAccountData
+> => ({
   description: 'RuleSetAccountData',
   fixedSize: null,
   maxSize: null,
@@ -30,10 +31,7 @@ export const getRuleSetAccountDataSerializer = (
     offset = 0
   ): [RuleSetAccountData, number] => {
     // Header and revision map.
-    const [header] = getRuleSetHeaderSerializer(context).deserialize(
-      buffer,
-      offset
-    );
+    const [header] = getRuleSetHeaderSerializer().deserialize(buffer, offset);
     if (header.key !== Key.RuleSet) {
       throw new Error(
         `Expected a RuleSet account, got account data key: ${header.key}`
@@ -41,7 +39,6 @@ export const getRuleSetAccountDataSerializer = (
     }
     const revisionMapLocation = Number(header.revMapVersionLocation);
     const [revisionMap, finalOffset] = getRuleSetRevisionMapSerializer(
-      context,
       revisionMapLocation
     ).deserialize(buffer, offset + revisionMapLocation);
 
@@ -52,9 +49,7 @@ export const getRuleSetAccountDataSerializer = (
         offset +
         (revisionMap.revisionLocations[index + 1] ?? revisionMapLocation);
       const revisionSlice = buffer.slice(revisionStart, revisionEnd);
-      return getRuleSetRevisionSerializer(context).deserialize(
-        revisionSlice
-      )[0];
+      return getRuleSetRevisionSerializer().deserialize(revisionSlice)[0];
     });
 
     return [

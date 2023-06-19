@@ -11,12 +11,19 @@ import {
   Context,
   Pda,
   PublicKey,
-  Serializer,
   Signer,
   TransactionBuilder,
-  mapSerializer,
   transactionBuilder,
 } from '@metaplex-foundation/umi';
+import {
+  Serializer,
+  bool,
+  bytes,
+  mapSerializer,
+  struct,
+  u32,
+  u8,
+} from '@metaplex-foundation/umi/serializers';
 import { addAccountMeta, addObjectProperty } from '../shared';
 
 // Accounts.
@@ -42,24 +49,34 @@ export type WriteToBufferV1InstructionDataArgs = {
   overwrite: boolean;
 };
 
+/** @deprecated Use `getWriteToBufferV1InstructionDataSerializer()` without any argument instead. */
 export function getWriteToBufferV1InstructionDataSerializer(
-  context: Pick<Context, 'serializer'>
+  _context: object
+): Serializer<
+  WriteToBufferV1InstructionDataArgs,
+  WriteToBufferV1InstructionData
+>;
+export function getWriteToBufferV1InstructionDataSerializer(): Serializer<
+  WriteToBufferV1InstructionDataArgs,
+  WriteToBufferV1InstructionData
+>;
+export function getWriteToBufferV1InstructionDataSerializer(
+  _context: object = {}
 ): Serializer<
   WriteToBufferV1InstructionDataArgs,
   WriteToBufferV1InstructionData
 > {
-  const s = context.serializer;
   return mapSerializer<
     WriteToBufferV1InstructionDataArgs,
     any,
     WriteToBufferV1InstructionData
   >(
-    s.struct<WriteToBufferV1InstructionData>(
+    struct<WriteToBufferV1InstructionData>(
       [
-        ['discriminator', s.u8()],
-        ['writeToBufferV1Discriminator', s.u8()],
-        ['data', s.bytes({ size: s.u32() })],
-        ['overwrite', s.bool()],
+        ['discriminator', u8()],
+        ['writeToBufferV1Discriminator', u8()],
+        ['data', bytes({ size: u32() })],
+        ['overwrite', bool()],
       ],
       { description: 'WriteToBufferV1InstructionData' }
     ),
@@ -75,7 +92,7 @@ export type WriteToBufferV1InstructionArgs = WriteToBufferV1InstructionDataArgs;
 
 // Instruction.
 export function writeToBufferV1(
-  context: Pick<Context, 'serializer' | 'programs' | 'payer'>,
+  context: Pick<Context, 'programs' | 'payer'>,
   input: WriteToBufferV1InstructionAccounts & WriteToBufferV1InstructionArgs
 ): TransactionBuilder {
   const signers: Signer[] = [];
@@ -120,9 +137,7 @@ export function writeToBufferV1(
 
   // Data.
   const data =
-    getWriteToBufferV1InstructionDataSerializer(context).serialize(
-      resolvedArgs
-    );
+    getWriteToBufferV1InstructionDataSerializer().serialize(resolvedArgs);
 
   // Bytes Created On Chain.
   const bytesCreatedOnChain = 0;

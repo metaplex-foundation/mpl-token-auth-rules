@@ -14,12 +14,12 @@ import {
   RpcAccount,
   RpcGetAccountOptions,
   RpcGetAccountsOptions,
-  Serializer,
   assertAccountExists,
   deserializeAccount,
   gpaBuilder,
   publicKey as toPublicKey,
 } from '@metaplex-foundation/umi';
+import { Serializer, i64, struct } from '@metaplex-foundation/umi/serializers';
 import { Key, KeyArgs, getKeySerializer } from '../types';
 
 export type FrequencyAccount = Account<FrequencyAccountAccountData>;
@@ -36,32 +36,47 @@ export type FrequencyAccountAccountDataArgs = {
   period: number | bigint;
 };
 
+/** @deprecated Use `getFrequencyAccountAccountDataSerializer()` without any argument instead. */
 export function getFrequencyAccountAccountDataSerializer(
-  context: Pick<Context, 'serializer'>
+  _context: object
+): Serializer<FrequencyAccountAccountDataArgs, FrequencyAccountAccountData>;
+export function getFrequencyAccountAccountDataSerializer(): Serializer<
+  FrequencyAccountAccountDataArgs,
+  FrequencyAccountAccountData
+>;
+export function getFrequencyAccountAccountDataSerializer(
+  _context: object = {}
 ): Serializer<FrequencyAccountAccountDataArgs, FrequencyAccountAccountData> {
-  const s = context.serializer;
-  return s.struct<FrequencyAccountAccountData>(
+  return struct<FrequencyAccountAccountData>(
     [
-      ['key', getKeySerializer(context)],
-      ['lastUpdate', s.i64()],
-      ['period', s.i64()],
+      ['key', getKeySerializer()],
+      ['lastUpdate', i64()],
+      ['period', i64()],
     ],
     { description: 'FrequencyAccountAccountData' }
   ) as Serializer<FrequencyAccountAccountDataArgs, FrequencyAccountAccountData>;
 }
 
+/** @deprecated Use `deserializeFrequencyAccount(rawAccount)` without any context instead. */
 export function deserializeFrequencyAccount(
-  context: Pick<Context, 'serializer'>,
+  context: object,
   rawAccount: RpcAccount
+): FrequencyAccount;
+export function deserializeFrequencyAccount(
+  rawAccount: RpcAccount
+): FrequencyAccount;
+export function deserializeFrequencyAccount(
+  context: RpcAccount | object,
+  rawAccount?: RpcAccount
 ): FrequencyAccount {
   return deserializeAccount(
-    rawAccount,
-    getFrequencyAccountAccountDataSerializer(context)
+    rawAccount ?? (context as RpcAccount),
+    getFrequencyAccountAccountDataSerializer()
   );
 }
 
 export async function fetchFrequencyAccount(
-  context: Pick<Context, 'rpc' | 'serializer'>,
+  context: Pick<Context, 'rpc'>,
   publicKey: PublicKey | Pda,
   options?: RpcGetAccountOptions
 ): Promise<FrequencyAccount> {
@@ -70,11 +85,11 @@ export async function fetchFrequencyAccount(
     options
   );
   assertAccountExists(maybeAccount, 'FrequencyAccount');
-  return deserializeFrequencyAccount(context, maybeAccount);
+  return deserializeFrequencyAccount(maybeAccount);
 }
 
 export async function safeFetchFrequencyAccount(
-  context: Pick<Context, 'rpc' | 'serializer'>,
+  context: Pick<Context, 'rpc'>,
   publicKey: PublicKey | Pda,
   options?: RpcGetAccountOptions
 ): Promise<FrequencyAccount | null> {
@@ -82,13 +97,11 @@ export async function safeFetchFrequencyAccount(
     toPublicKey(publicKey, false),
     options
   );
-  return maybeAccount.exists
-    ? deserializeFrequencyAccount(context, maybeAccount)
-    : null;
+  return maybeAccount.exists ? deserializeFrequencyAccount(maybeAccount) : null;
 }
 
 export async function fetchAllFrequencyAccount(
-  context: Pick<Context, 'rpc' | 'serializer'>,
+  context: Pick<Context, 'rpc'>,
   publicKeys: Array<PublicKey | Pda>,
   options?: RpcGetAccountsOptions
 ): Promise<FrequencyAccount[]> {
@@ -98,12 +111,12 @@ export async function fetchAllFrequencyAccount(
   );
   return maybeAccounts.map((maybeAccount) => {
     assertAccountExists(maybeAccount, 'FrequencyAccount');
-    return deserializeFrequencyAccount(context, maybeAccount);
+    return deserializeFrequencyAccount(maybeAccount);
   });
 }
 
 export async function safeFetchAllFrequencyAccount(
-  context: Pick<Context, 'rpc' | 'serializer'>,
+  context: Pick<Context, 'rpc'>,
   publicKeys: Array<PublicKey | Pda>,
   options?: RpcGetAccountsOptions
 ): Promise<FrequencyAccount[]> {
@@ -114,14 +127,13 @@ export async function safeFetchAllFrequencyAccount(
   return maybeAccounts
     .filter((maybeAccount) => maybeAccount.exists)
     .map((maybeAccount) =>
-      deserializeFrequencyAccount(context, maybeAccount as RpcAccount)
+      deserializeFrequencyAccount(maybeAccount as RpcAccount)
     );
 }
 
 export function getFrequencyAccountGpaBuilder(
-  context: Pick<Context, 'rpc' | 'serializer' | 'programs'>
+  context: Pick<Context, 'rpc' | 'programs'>
 ) {
-  const s = context.serializer;
   const programId = context.programs.getPublicKey(
     'mplTokenAuthRules',
     'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
@@ -132,12 +144,12 @@ export function getFrequencyAccountGpaBuilder(
       lastUpdate: number | bigint;
       period: number | bigint;
     }>({
-      key: [0, getKeySerializer(context)],
-      lastUpdate: [1, s.i64()],
-      period: [9, s.i64()],
+      key: [0, getKeySerializer()],
+      lastUpdate: [1, i64()],
+      period: [9, i64()],
     })
     .deserializeUsing<FrequencyAccount>((account) =>
-      deserializeFrequencyAccount(context, account)
+      deserializeFrequencyAccount(account)
     );
 }
 

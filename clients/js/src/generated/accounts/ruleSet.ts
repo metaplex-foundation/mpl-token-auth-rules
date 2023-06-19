@@ -20,6 +20,12 @@ import {
   publicKey as toPublicKey,
 } from '@metaplex-foundation/umi';
 import {
+  bytes,
+  publicKey as publicKeySerializer,
+  string,
+  u64,
+} from '@metaplex-foundation/umi/serializers';
+import {
   RuleSetAccountData,
   getRuleSetAccountDataSerializer,
 } from '../../hooked';
@@ -27,18 +33,24 @@ import { KeyArgs, getKeySerializer } from '../types';
 
 export type RuleSet = Account<RuleSetAccountData>;
 
+/** @deprecated Use `deserializeRuleSet(rawAccount)` without any context instead. */
 export function deserializeRuleSet(
-  context: Pick<Context, 'serializer'>,
+  context: object,
   rawAccount: RpcAccount
+): RuleSet;
+export function deserializeRuleSet(rawAccount: RpcAccount): RuleSet;
+export function deserializeRuleSet(
+  context: RpcAccount | object,
+  rawAccount?: RpcAccount
 ): RuleSet {
   return deserializeAccount(
-    rawAccount,
-    getRuleSetAccountDataSerializer(context)
+    rawAccount ?? (context as RpcAccount),
+    getRuleSetAccountDataSerializer()
   );
 }
 
 export async function fetchRuleSet(
-  context: Pick<Context, 'rpc' | 'serializer'>,
+  context: Pick<Context, 'rpc'>,
   publicKey: PublicKey | Pda,
   options?: RpcGetAccountOptions
 ): Promise<RuleSet> {
@@ -47,11 +59,11 @@ export async function fetchRuleSet(
     options
   );
   assertAccountExists(maybeAccount, 'RuleSet');
-  return deserializeRuleSet(context, maybeAccount);
+  return deserializeRuleSet(maybeAccount);
 }
 
 export async function safeFetchRuleSet(
-  context: Pick<Context, 'rpc' | 'serializer'>,
+  context: Pick<Context, 'rpc'>,
   publicKey: PublicKey | Pda,
   options?: RpcGetAccountOptions
 ): Promise<RuleSet | null> {
@@ -59,11 +71,11 @@ export async function safeFetchRuleSet(
     toPublicKey(publicKey, false),
     options
   );
-  return maybeAccount.exists ? deserializeRuleSet(context, maybeAccount) : null;
+  return maybeAccount.exists ? deserializeRuleSet(maybeAccount) : null;
 }
 
 export async function fetchAllRuleSet(
-  context: Pick<Context, 'rpc' | 'serializer'>,
+  context: Pick<Context, 'rpc'>,
   publicKeys: Array<PublicKey | Pda>,
   options?: RpcGetAccountsOptions
 ): Promise<RuleSet[]> {
@@ -73,12 +85,12 @@ export async function fetchAllRuleSet(
   );
   return maybeAccounts.map((maybeAccount) => {
     assertAccountExists(maybeAccount, 'RuleSet');
-    return deserializeRuleSet(context, maybeAccount);
+    return deserializeRuleSet(maybeAccount);
   });
 }
 
 export async function safeFetchAllRuleSet(
-  context: Pick<Context, 'rpc' | 'serializer'>,
+  context: Pick<Context, 'rpc'>,
   publicKeys: Array<PublicKey | Pda>,
   options?: RpcGetAccountsOptions
 ): Promise<RuleSet[]> {
@@ -88,15 +100,12 @@ export async function safeFetchAllRuleSet(
   );
   return maybeAccounts
     .filter((maybeAccount) => maybeAccount.exists)
-    .map((maybeAccount) =>
-      deserializeRuleSet(context, maybeAccount as RpcAccount)
-    );
+    .map((maybeAccount) => deserializeRuleSet(maybeAccount as RpcAccount));
 }
 
 export function getRuleSetGpaBuilder(
-  context: Pick<Context, 'rpc' | 'serializer' | 'programs'>
+  context: Pick<Context, 'rpc' | 'programs'>
 ) {
-  const s = context.serializer;
   const programId = context.programs.getPublicKey(
     'mplTokenAuthRules',
     'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
@@ -107,17 +116,15 @@ export function getRuleSetGpaBuilder(
       revisionMapLocation: number | bigint;
       revisions: Uint8Array;
     }>({
-      key: [0, getKeySerializer(context)],
-      revisionMapLocation: [1, s.u64()],
-      revisions: [9, s.bytes()],
+      key: [0, getKeySerializer()],
+      revisionMapLocation: [1, u64()],
+      revisions: [9, bytes()],
     })
-    .deserializeUsing<RuleSet>((account) =>
-      deserializeRuleSet(context, account)
-    );
+    .deserializeUsing<RuleSet>((account) => deserializeRuleSet(account));
 }
 
 export function findRuleSetPda(
-  context: Pick<Context, 'eddsa' | 'programs' | 'serializer'>,
+  context: Pick<Context, 'eddsa' | 'programs'>,
   seeds: {
     /** The owner of the rule set. */
     owner: PublicKey;
@@ -125,20 +132,19 @@ export function findRuleSetPda(
     name: string;
   }
 ): Pda {
-  const s = context.serializer;
   const programId = context.programs.getPublicKey(
     'mplTokenAuthRules',
     'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
   );
   return context.eddsa.findPda(programId, [
-    s.string({ size: 'variable' }).serialize('rule_set'),
-    s.publicKey().serialize(seeds.owner),
-    s.string({ size: 'variable' }).serialize(seeds.name),
+    string({ size: 'variable' }).serialize('rule_set'),
+    publicKeySerializer().serialize(seeds.owner),
+    string({ size: 'variable' }).serialize(seeds.name),
   ]);
 }
 
 export async function fetchRuleSetFromSeeds(
-  context: Pick<Context, 'eddsa' | 'programs' | 'rpc' | 'serializer'>,
+  context: Pick<Context, 'eddsa' | 'programs' | 'rpc'>,
   seeds: Parameters<typeof findRuleSetPda>[1],
   options?: RpcGetAccountOptions
 ): Promise<RuleSet> {
@@ -146,7 +152,7 @@ export async function fetchRuleSetFromSeeds(
 }
 
 export async function safeFetchRuleSetFromSeeds(
-  context: Pick<Context, 'eddsa' | 'programs' | 'rpc' | 'serializer'>,
+  context: Pick<Context, 'eddsa' | 'programs' | 'rpc'>,
   seeds: Parameters<typeof findRuleSetPda>[1],
   options?: RpcGetAccountOptions
 ): Promise<RuleSet | null> {

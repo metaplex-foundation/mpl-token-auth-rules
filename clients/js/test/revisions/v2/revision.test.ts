@@ -1,16 +1,13 @@
 /* eslint-disable prefer-template */
-import {
-  base16,
-  generateSigner,
-  publicKeyBytes,
-} from '@metaplex-foundation/umi';
+import { generateSigner, publicKeyBytes } from '@metaplex-foundation/umi';
+import { base16 } from '@metaplex-foundation/umi/serializers';
 import test from 'ava';
 import {
   RuleSetRevisionV1,
   RuleSetRevisionV2,
   additionalSignerV2,
-  getRuleSetRevisionV2FromV1,
   getRuleSetRevisionSerializer,
+  getRuleSetRevisionV2FromV1,
 } from '../../../src';
 import { createUmiSync, toHex, toString32Hex } from '../../_setup';
 
@@ -29,7 +26,7 @@ test('serialize', async (t) => {
     },
   };
   const serializedRevision = toHex(
-    getRuleSetRevisionSerializer(umi).serialize(revision)
+    getRuleSetRevisionSerializer().serialize(revision)
   );
 
   const expectedRuleA = '0100000020000000' + toHex(publicKeyA);
@@ -39,9 +36,9 @@ test('serialize', async (t) => {
     '02000000' + // Rule Set Version
       '02000000' + // Number of operations/rules
       toHex(owner) + // Owner
-      toString32Hex(umi, 'My Rule Set') + // Name
-      toString32Hex(umi, 'deposit') + // Deposit operation
-      toString32Hex(umi, 'withdraw') + // Withdraw operation
+      toString32Hex('My Rule Set') + // Name
+      toString32Hex('deposit') + // Deposit operation
+      toString32Hex('withdraw') + // Withdraw operation
       expectedRuleA +
       expectedRuleB
   );
@@ -58,12 +55,12 @@ test('deserialize', async (t) => {
     '02000000' + // Rule Set Version
     '02000000' + // Number of operations/rules
     toHex(owner) + // Owner
-    toString32Hex(umi, 'My Rule Set') + // Name
-    toString32Hex(umi, 'deposit') + // Deposit operation
-    toString32Hex(umi, 'withdraw') + // Withdraw operation
+    toString32Hex('My Rule Set') + // Name
+    toString32Hex('deposit') + // Deposit operation
+    toString32Hex('withdraw') + // Withdraw operation
     ruleA +
     ruleB;
-  const revision = getRuleSetRevisionSerializer(umi).deserialize(
+  const revision = getRuleSetRevisionSerializer().deserialize(
     base16.serialize(buffer)
   )[0];
   t.deepEqual(revision, {

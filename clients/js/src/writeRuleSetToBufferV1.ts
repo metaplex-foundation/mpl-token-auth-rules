@@ -21,16 +21,13 @@ export type WriteRuleSetToBufferV1 = {
 };
 
 export const writeRuleSetToBufferV1 = (
-  context: Pick<
-    Context,
-    'eddsa' | 'programs' | 'serializer' | 'payer' | 'transactions'
-  >,
+  context: Pick<Context, 'eddsa' | 'programs' | 'payer' | 'transactions'>,
   input: WriteRuleSetToBufferV1
 ): TransactionBuilderGroup => {
   const payer = input.payer ?? context.payer;
   const chunkSize = input.chunkSize ?? 900;
   const bufferPda = findRuleSetBufferPda(context, { owner: payer.publicKey });
-  const serializedRevision = getRuleSetRevisionSerializer(context).serialize(
+  const serializedRevision = getRuleSetRevisionSerializer().serialize(
     input.ruleSetRevision
   );
 

@@ -22,7 +22,7 @@ test('serialize', async (t) => {
     additionalSignerV2(publicKeyA),
     additionalSignerV2(publicKeyB),
   ]);
-  const serializedRule = serializeRuleV2AsHex(umi, rule);
+  const serializedRule = serializeRuleV2AsHex(rule);
 
   const expectedRuleA = `0100000020000000${toHex(publicKeyA)}`;
   const expectedRuleB = `0100000020000000${toHex(publicKeyB)}`;
@@ -48,7 +48,7 @@ test('deserialize', async (t) => {
     '0200000000000000' + // Number of rules
     ruleA +
     ruleB;
-  const rule = deserializeRuleV2FromHex(umi, buffer);
+  const rule = deserializeRuleV2FromHex(buffer);
   t.deepEqual(
     rule,
     allV2([additionalSignerV2(publicKeyA), additionalSignerV2(publicKeyB)])

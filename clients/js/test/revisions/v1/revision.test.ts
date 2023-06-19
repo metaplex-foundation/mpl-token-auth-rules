@@ -27,8 +27,7 @@ test('serialize', async (t) => {
       },
     },
   };
-  const serializedRevision =
-    getRuleSetRevisionSerializer(umi).serialize(revision);
+  const serializedRevision = getRuleSetRevisionSerializer().serialize(revision);
 
   t.deepEqual(serializedRevision, encode(revision));
 });
@@ -53,6 +52,6 @@ test('deserialize', async (t) => {
   };
   const buffer = mergeBytes([new Uint8Array([1]), encode(revision)]);
   const deserializedRevision =
-    getRuleSetRevisionSerializer(umi).deserialize(buffer)[0];
+    getRuleSetRevisionSerializer().deserialize(buffer)[0];
   t.deepEqual(deserializedRevision, revision);
 });

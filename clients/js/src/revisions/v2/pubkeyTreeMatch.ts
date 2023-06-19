@@ -1,4 +1,10 @@
-import { Context, Serializer, mapSerializer } from '@metaplex-foundation/umi';
+import {
+  Serializer,
+  bytes,
+  mapSerializer,
+  string,
+  struct,
+} from '@metaplex-foundation/umi/serializers';
 import type { RuleV1 } from '../v1';
 import { RuleV2, isRuleV2 } from './rule';
 import { wrapSerializerInRuleHeaderV2 } from './ruleHeader';
@@ -22,27 +28,23 @@ export const pubkeyTreeMatchV2 = (
   root: [...root],
 });
 
-export const getPubkeyTreeMatchRuleV2Serializer = (
-  context: Pick<Context, 'serializer'>
-): Serializer<PubkeyTreeMatchRuleV2> => {
-  const s = context.serializer;
-  return wrapSerializerInRuleHeaderV2(
-    context,
-    RuleTypeV2.PubkeyTreeMatch,
-    s.struct([
-      ['pubkeyField', s.string({ size: 32 })],
-      ['proofField', s.string({ size: 32 })],
-      [
-        'root',
-        mapSerializer(
-          s.bytes({ size: 32 }),
-          (v: number[]): Uint8Array => new Uint8Array(v),
-          (v: Uint8Array): number[] => [...v]
-        ),
-      ],
-    ])
-  );
-};
+export const getPubkeyTreeMatchRuleV2Serializer =
+  (): Serializer<PubkeyTreeMatchRuleV2> =>
+    wrapSerializerInRuleHeaderV2(
+      RuleTypeV2.PubkeyTreeMatch,
+      struct([
+        ['pubkeyField', string({ size: 32 })],
+        ['proofField', string({ size: 32 })],
+        [
+          'root',
+          mapSerializer(
+            bytes({ size: 32 }),
+            (v: number[]): Uint8Array => new Uint8Array(v),
+            (v: Uint8Array): number[] => [...v]
+          ),
+        ],
+      ])
+    );
 
 export const isPubkeyTreeMatchRuleV2 = (
   rule: RuleV1 | RuleV2

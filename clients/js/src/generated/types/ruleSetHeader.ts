@@ -6,7 +6,7 @@
  * @see https://github.com/metaplex-foundation/kinobi
  */
 
-import { Context, Serializer } from '@metaplex-foundation/umi';
+import { Serializer, struct, u64 } from '@metaplex-foundation/umi/serializers';
 import { Key, KeyArgs, getKeySerializer } from '.';
 
 export type RuleSetHeader = { key: Key; revMapVersionLocation: bigint };
@@ -16,14 +16,21 @@ export type RuleSetHeaderArgs = {
   revMapVersionLocation: number | bigint;
 };
 
+/** @deprecated Use `getRuleSetHeaderSerializer()` without any argument instead. */
 export function getRuleSetHeaderSerializer(
-  context: Pick<Context, 'serializer'>
+  _context: object
+): Serializer<RuleSetHeaderArgs, RuleSetHeader>;
+export function getRuleSetHeaderSerializer(): Serializer<
+  RuleSetHeaderArgs,
+  RuleSetHeader
+>;
+export function getRuleSetHeaderSerializer(
+  _context: object = {}
 ): Serializer<RuleSetHeaderArgs, RuleSetHeader> {
-  const s = context.serializer;
-  return s.struct<RuleSetHeader>(
+  return struct<RuleSetHeader>(
     [
-      ['key', getKeySerializer(context)],
-      ['revMapVersionLocation', s.u64()],
+      ['key', getKeySerializer()],
+      ['revMapVersionLocation', u64()],
     ],
     { description: 'RuleSetHeader' }
   ) as Serializer<RuleSetHeaderArgs, RuleSetHeader>;

@@ -71,7 +71,7 @@ test('it can create a new rule set V1 using a buffer', async (t) => {
   // And the rule set account is exactly the size it should be.
   const ruleSetAccountSize = await fetchRuleSetSize(umi, ruleSetPda);
   const serializedRevisionSize =
-    getRuleSetRevisionSerializer(umi).serialize(revision).length;
+    getRuleSetRevisionSerializer().serialize(revision).length;
   const expectedRuleSetAccountSize =
     serializedRevisionSize + // Revision.
     1 + // Revision version (extra byte for V1).
@@ -280,7 +280,7 @@ test('it can create a new rule set V2 using a buffer', async (t) => {
   // And the rule set account is exactly the size it should be.
   const ruleSetAccountSize = await fetchRuleSetSize(umi, ruleSetPda);
   const serializedRevisionSize =
-    getRuleSetRevisionSerializer(umi).serialize(revision).length;
+    getRuleSetRevisionSerializer().serialize(revision).length;
   const expectedRuleSetAccountSize =
     serializedRevisionSize + // Revision.
     9 + // Header.

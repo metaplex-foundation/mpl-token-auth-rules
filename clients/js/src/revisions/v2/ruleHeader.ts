@@ -1,25 +1,25 @@
-import { Context, Serializer, mergeBytes } from '@metaplex-foundation/umi';
+import {
+  Serializer,
+  mergeBytes,
+  struct,
+  u32,
+} from '@metaplex-foundation/umi/serializers';
 import { RuleTypeV2, getRuleTypeV2AsString } from './ruleType';
 
 export type RuleHeaderV2 = { type: number; length: number };
 
-export const getRuleHeaderV2Serializer = (
-  context: Pick<Context, 'serializer'>
-): Serializer<RuleHeaderV2> => {
-  const s = context.serializer;
-  return s.struct([
-    ['type', s.u32()],
-    ['length', s.u32()],
+export const getRuleHeaderV2Serializer = (): Serializer<RuleHeaderV2> =>
+  struct([
+    ['type', u32()],
+    ['length', u32()],
   ]);
-};
 
 export const wrapSerializerInRuleHeaderV2 = <T extends { type: string }>(
-  context: Pick<Context, 'serializer'>,
   type: RuleTypeV2,
   serializer: Serializer<Omit<T, 'type'>>
 ): Serializer<T> => {
   const typeAsString = getRuleTypeV2AsString(type);
-  const headerSerializer = getRuleHeaderV2Serializer(context);
+  const headerSerializer = getRuleHeaderV2Serializer();
   return {
     description: typeAsString,
     fixedSize: serializer.fixedSize === null ? null : serializer.fixedSize + 8,

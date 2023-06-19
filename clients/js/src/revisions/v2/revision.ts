@@ -1,10 +1,12 @@
+import { PublicKey, publicKey } from '@metaplex-foundation/umi';
 import {
-  Context,
-  PublicKey,
   Serializer,
+  array,
   mergeBytes,
-  publicKey,
-} from '@metaplex-foundation/umi';
+  publicKey as publicKeySerializer,
+  string,
+  u32,
+} from '@metaplex-foundation/umi/serializers';
 import { RuleSetRevisionV1, RuleV1 } from '../v1';
 import { additionalSignerV2 } from './additionalSigner';
 import { allV2 } from './all';
@@ -29,11 +31,8 @@ export type RuleSetRevisionV2 = {
   operations: Record<string, RuleV2>;
 };
 
-export const getRuleSetRevisionV2Serializer = (
-  context: Pick<Context, 'serializer'>
-): Serializer<RuleSetRevisionV2> => {
-  const s = context.serializer;
-  return {
+export const getRuleSetRevisionV2Serializer =
+  (): Serializer<RuleSetRevisionV2> => ({
     description: 'RuleSetRevisionV2',
     fixedSize: null,
     maxSize: null,
@@ -44,56 +43,60 @@ export const getRuleSetRevisionV2Serializer = (
       const ruleSize = operations.length;
 
       return mergeBytes([
-        s.u32().serialize(2), // libVersion (0-3)
-        s.u32().serialize(ruleSize), // ruleSize (4-7)
-        s.publicKey().serialize(revision.owner), // owner (8-39)
-        s.string({ size: 32 }).serialize(revision.name), // name (40-71)
-        s
-          .array(s.string({ size: 32 }), { size: ruleSize })
-          .serialize(operations), // operations (72-...)
-        s
-          .array(getRuleV2Serializer(context), { size: ruleSize })
-          .serialize(rules), // rules
+        u32().serialize(2), // libVersion (0-3)
+        u32().serialize(ruleSize), // ruleSize (4-7)
+        publicKeySerializer().serialize(revision.owner), // owner (8-39)
+        string({ size: 32 }).serialize(revision.name), // name (40-71)
+        array(string({ size: 32 }), { size: ruleSize }).serialize(operations), // operations (72-...)
+        array(getRuleV2Serializer(), { size: ruleSize }).serialize(rules), // rules
       ]);
     },
     deserialize: (
       buffer: Uint8Array,
       offset = 0
     ): [RuleSetRevisionV2, number] => {
-      const [libVersion, versionOffset] = s.u32().deserialize(buffer, offset);
+      const [libVersion, versionOffset] = u32().deserialize(buffer, offset);
       offset = versionOffset;
       if (libVersion !== 2) {
         throw new Error(
           `Expected a rule set version 2, got version ${libVersion}`
         );
       }
-      const [ruleSize, ruleSizeOffset] = s.u32().deserialize(buffer, offset);
+      const [ruleSize, ruleSizeOffset] = u32().deserialize(buffer, offset);
       offset = ruleSizeOffset;
-      const [owner, ownerOffset] = s.publicKey().deserialize(buffer, offset);
+      const [owner, ownerOffset] = publicKeySerializer().deserialize(
+        buffer,
+        offset
+      );
       offset = ownerOffset;
-      const [name, nameOffset] = s
-        .string({ size: 32 })
-        .deserialize(buffer, offset);
+      const [name, nameOffset] = string({ size: 32 }).deserialize(
+        buffer,
+        offset
+      );
       offset = nameOffset;
-      const [operations, operationsOffset] = s
-        .array(s.string({ size: 32 }), { size: ruleSize })
-        .deserialize(buffer, offset);
+      const [operations, operationsOffset] = array(string({ size: 32 }), {
+        size: ruleSize,
+      }).deserialize(buffer, offset);
       offset = operationsOffset;
-      const [rules, rulesOffset] = s
-        .array(getRuleV2Serializer(context), { size: ruleSize })
-        .deserialize(buffer, offset);
+      const [rules, rulesOffset] = array(getRuleV2Serializer(), {
+        size: ruleSize,
+      }).deserialize(buffer, offset);
       offset = rulesOffset;
       const tuples: [string, RuleV2][] = operations.map((operation, index) => [
         operation,
         rules[index],
       ]);
       return [
-        { libVersion: 2, name, owner, operations: Object.fromEntries(tuples) },
+        {
+          libVersion: 2,
+          name,
+          owner,
+          operations: Object.fromEntries(tuples),
+        },
         offset,
       ];
     },
-  };
-};
+  });
 
 export const getRuleSetRevisionV2FromV1 = (
   ruleSetV1: RuleSetRevisionV1

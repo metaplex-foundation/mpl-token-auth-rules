@@ -1,4 +1,10 @@
-import { Context, Serializer, mapSerializer } from '@metaplex-foundation/umi';
+import {
+  Serializer,
+  mapSerializer,
+  string,
+  struct,
+  u64,
+} from '@metaplex-foundation/umi/serializers';
 import {
   AmountOperator,
   AmountOperatorString,
@@ -28,18 +34,14 @@ export const amountV2 = (
   amount,
 });
 
-export const getAmountRuleV2Serializer = (
-  context: Pick<Context, 'serializer'>
-): Serializer<AmountRuleV2> => {
-  const s = context.serializer;
-  return wrapSerializerInRuleHeaderV2(
-    context,
+export const getAmountRuleV2Serializer = (): Serializer<AmountRuleV2> =>
+  wrapSerializerInRuleHeaderV2(
     RuleTypeV2.Amount,
-    s.struct([
+    struct([
       [
         'amount',
         mapSerializer(
-          s.u64(),
+          u64(),
           (v: number): number | bigint => v,
           (v: number | bigint): number => Number(v)
         ),
@@ -47,16 +49,15 @@ export const getAmountRuleV2Serializer = (
       [
         'operator',
         mapSerializer(
-          s.u64(),
+          u64(),
           (v: AmountOperatorString): number | bigint => toAmountOperator(v),
           (v: number | bigint): AmountOperatorString =>
             toAmountOperatorString(Number(v))
         ),
       ],
-      ['field', s.string({ size: 32 })],
+      ['field', string({ size: 32 })],
     ])
   );
-};
 
 export const isAmountRuleV2 = (rule: RuleV1 | RuleV2): rule is AmountRuleV2 =>
   isRuleV2(rule) && rule.type === 'Amount';

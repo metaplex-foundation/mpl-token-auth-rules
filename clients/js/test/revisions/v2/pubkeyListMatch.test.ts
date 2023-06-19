@@ -21,12 +21,12 @@ test('serialize', async (t) => {
   const publicKeyC = generateSigner(umi).publicKey;
   const publicKeys: PublicKey[] = [publicKeyA, publicKeyB, publicKeyC];
   const rule = pubkeyListMatchV2('myAccount', publicKeys);
-  const serializedRule = serializeRuleV2AsHex(umi, rule);
+  const serializedRule = serializeRuleV2AsHex(rule);
   t.is(
     serializedRule,
     '0e000000' + // Rule type
       '80000000' + // Rule length
-      toString32Hex(umi, 'myAccount') + // Field
+      toString32Hex('myAccount') + // Field
       toHex(publicKeyA) + // PublicKey A
       toHex(publicKeyB) + // PublicKey B
       toHex(publicKeyC) // PublicKey C
@@ -42,11 +42,11 @@ test('deserialize', async (t) => {
   const buffer =
     '0e000000' + // Rule type
     '80000000' + // Rule length
-    toString32Hex(umi, 'myAccount') + // Field
+    toString32Hex('myAccount') + // Field
     toHex(publicKeyA) + // PublicKey A
     toHex(publicKeyB) + // PublicKey B
     toHex(publicKeyC); // PublicKey C
-  const rule = deserializeRuleV2FromHex(umi, buffer);
+  const rule = deserializeRuleV2FromHex(buffer);
   t.deepEqual(rule, pubkeyListMatchV2('myAccount', publicKeys));
 });
 

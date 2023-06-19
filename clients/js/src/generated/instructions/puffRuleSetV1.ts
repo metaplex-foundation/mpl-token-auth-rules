@@ -11,12 +11,17 @@ import {
   Context,
   Pda,
   PublicKey,
-  Serializer,
   Signer,
   TransactionBuilder,
-  mapSerializer,
   transactionBuilder,
 } from '@metaplex-foundation/umi';
+import {
+  Serializer,
+  mapSerializer,
+  string,
+  struct,
+  u8,
+} from '@metaplex-foundation/umi/serializers';
 import { addAccountMeta, addObjectProperty } from '../shared';
 
 // Accounts.
@@ -38,20 +43,27 @@ export type PuffRuleSetV1InstructionData = {
 
 export type PuffRuleSetV1InstructionDataArgs = { ruleSetName: string };
 
+/** @deprecated Use `getPuffRuleSetV1InstructionDataSerializer()` without any argument instead. */
 export function getPuffRuleSetV1InstructionDataSerializer(
-  context: Pick<Context, 'serializer'>
+  _context: object
+): Serializer<PuffRuleSetV1InstructionDataArgs, PuffRuleSetV1InstructionData>;
+export function getPuffRuleSetV1InstructionDataSerializer(): Serializer<
+  PuffRuleSetV1InstructionDataArgs,
+  PuffRuleSetV1InstructionData
+>;
+export function getPuffRuleSetV1InstructionDataSerializer(
+  _context: object = {}
 ): Serializer<PuffRuleSetV1InstructionDataArgs, PuffRuleSetV1InstructionData> {
-  const s = context.serializer;
   return mapSerializer<
     PuffRuleSetV1InstructionDataArgs,
     any,
     PuffRuleSetV1InstructionData
   >(
-    s.struct<PuffRuleSetV1InstructionData>(
+    struct<PuffRuleSetV1InstructionData>(
       [
-        ['discriminator', s.u8()],
-        ['puffRuleSetV1Discriminator', s.u8()],
-        ['ruleSetName', s.string()],
+        ['discriminator', u8()],
+        ['puffRuleSetV1Discriminator', u8()],
+        ['ruleSetName', string()],
       ],
       { description: 'PuffRuleSetV1InstructionData' }
     ),
@@ -67,7 +79,7 @@ export type PuffRuleSetV1InstructionArgs = PuffRuleSetV1InstructionDataArgs;
 
 // Instruction.
 export function puffRuleSetV1(
-  context: Pick<Context, 'serializer' | 'programs' | 'payer'>,
+  context: Pick<Context, 'programs' | 'payer'>,
   input: PuffRuleSetV1InstructionAccounts & PuffRuleSetV1InstructionArgs
 ): TransactionBuilder {
   const signers: Signer[] = [];
@@ -112,7 +124,7 @@ export function puffRuleSetV1(
 
   // Data.
   const data =
-    getPuffRuleSetV1InstructionDataSerializer(context).serialize(resolvedArgs);
+    getPuffRuleSetV1InstructionDataSerializer().serialize(resolvedArgs);
 
   // Bytes Created On Chain.
   const bytesCreatedOnChain = 0;
