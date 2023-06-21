@@ -39,7 +39,7 @@ program
   .action(async (_directory, cmd) => {
     let { keypair, env, rpc, revision } = cmd.opts();
 
-    rpc = rpc ?? default_env(env);
+    rpc = rpc ?? envDefault(env);
 
     const connection = new Connection(rpc, 'finalized');
     const payer = loadKeypair(keypair);
@@ -90,7 +90,7 @@ program
   .action(async (_directory, cmd) => {
     let { keypair, env, rpc, address } = cmd.opts();
 
-    rpc = rpc ?? default_env(env);
+    rpc = rpc ?? envDefault(env);
     const connection = new Connection(rpc, 'finalized');
 
     console.log(`🔎 Retrieving latest rule set revision for '${address}'`);
@@ -149,11 +149,12 @@ program
   .option('-r, --rpc <string>', 'The endpoint to connect to')
   .option('-l, --log-level <string>', 'Log level', setLogLevel)
   .option('-a, --address <string>', 'The address of the rule set')
+  .option('--pretty', 'Pretty print the JSON output')
   .option('-o, --output <file>', 'The file to save the output to')
   .action(async (_directory, cmd) => {
-    let { env, rpc, address, output } = cmd.opts();
+    let { env, rpc, address, pretty, output } = cmd.opts();
 
-    rpc = rpc ?? default_env(env);
+    rpc = rpc ?? envDefault(env);
     const connection = new Connection(rpc, 'finalized');
 
     console.log(`🔎 Retrieving latest rule set revision for '${address}'`);
@@ -164,10 +165,11 @@ program
     let ruleset = getLatestRuleSetRevision(data);
 
     if (output) {
+      // output ignores the pretty flag
       console.log('   + writing revision to file');
       fs.writeFileSync(output, JSON.stringify(ruleset, null, 2));
     } else {
-      console.log('\n' + colorizeJson(JSON.stringify(ruleset, null, 2)));
+      console.log('\n' + colorizeJson(JSON.stringify(ruleset, pretty ? replacePubkey : undefined, 2)));
     }
 
     console.log(`\n✅ Revision retrieved.`);
@@ -194,7 +196,7 @@ function loadKeypair(keypairPath) {
   return Keypair.fromSecretKey(decodedKey);
 }
 
-function default_env(env) {
+function envDefault(env) {
   switch (env) {
     case 'mainnet-beta':
       return MAINNET_DEFAULT_RPC;
@@ -203,4 +205,11 @@ function default_env(env) {
     case 'localnet':
       return LOCALNET_DEFAULT_RPC;
   }
+}
+
+function replacePubkey(key, value) {
+    if (Array.isArray(value) && value.length == 32) {
+        return new PublicKey(value).toString();
+    }
+    return value;
 }
