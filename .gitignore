@@ -5,6 +5,7 @@ target/
 .amman/
 .anchor/
 .crates/
+.bin/
 
 node_modules/
 **/*.rs.bk

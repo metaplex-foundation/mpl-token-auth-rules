@@ -134,7 +134,7 @@ jobs:
 
           echo ${{ secrets.TOKEN_AUTH_RULES_DEPLOY_KEY }} > ./deploy-key.json
 
-          solana -v program deploy ./programs/${{ inputs.program }}/target/deploy/mpl_token_auth_rules.so \
+          solana -v program deploy ./programs/.bin/mpl_token_auth_rules.so \
             -u ${{ env.RPC }} \
             --program-id auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg \
             -k ./deploy-key.json
