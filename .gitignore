@@ -5,6 +5,7 @@ target/
 .amman/
 .anchor/
 .crates/
+.bin/
 
 node_modules/
 **/*.rs.bk
@@ -16,7 +17,6 @@ yarn-debug.log*
 yarn-error.log*
 ./package-lock.json
 
-.vscode
 .idea
 
 .pnp.*

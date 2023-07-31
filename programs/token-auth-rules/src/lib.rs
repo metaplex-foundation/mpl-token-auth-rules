@@ -1,3 +1,4 @@
+#[cfg(not(feature = "no-entrypoint"))]
 #[deny(missing_docs)]
 pub mod entrypoint;
 #[deny(missing_docs)]

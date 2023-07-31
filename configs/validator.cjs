@@ -1,8 +1,9 @@
 const path = require("path");
 
-const programDir = path.join(__dirname, "..", "programs");
-function getProgram(dir, programName) {
-  return path.join(programDir, dir, "target", "deploy", programName);
+const accountDir = path.join(__dirname, "..", "programs");
+
+function getAccount(accountBinary) {
+  return path.join(accountDir, ".bin", accountBinary);
 }
 
 module.exports = {
@@ -13,13 +14,14 @@ module.exports = {
       {
         label: "Token Auth Rules",
         programId: "auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg",
-        deployPath: getProgram("token-auth-rules", "mpl_token_auth_rules.so"),
+        deployPath: getAccount("mpl_token_auth_rules.so"),
       },
     ],
     accounts: [
       {
         label: "Metaplex Default RuleSet",
         accountId: "eBJLFYPxJmMGKuFwpDWkzxZeUrad92kZRC5BJLpzyT9",
+        deployPath: getAccount("metaplex-default-ruleset.bin"),
         executable: false,
       },
     ],
