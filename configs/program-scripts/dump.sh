@@ -37,21 +37,24 @@ fi
 # copy external programs or accounts binaries from the chain
 copy_from_chain() {
     ACCOUNT_TYPE=`echo $1 | cut -d. -f2`
+    PREFIX=$2
 
     case "$ACCOUNT_TYPE" in
         "bin")
             solana account -u $RPC ${EXTERNAL_ID[$i]} -o ${OUTPUT}/$2$1 > /dev/null
-            if [ -z "$2" ]; then
-                echo "Wrote account data to ${OUTPUT}/$2$1"
-            fi
             ;;
         "so")
-            solana program dump -u $RPC ${EXTERNAL_ID[$i]} ${OUTPUT}/$2$1
+            solana program dump -u $RPC ${EXTERNAL_ID[$i]} ${OUTPUT}/$2$1 > /dev/null
             ;;
         *)
             echo $(RED "[  ERROR  ] unknown account type for '$1'")
+            exit 1
             ;;
     esac
+
+    if [ -z "$PREFIX" ]; then
+        echo "Wrote account data to ${OUTPUT}/$2$1"
+    fi
 }
 
 # dump external programs binaries if needed
