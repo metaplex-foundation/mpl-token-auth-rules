@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "./programs/token-auth-rules/Cargo.toml",
+    ]
+}
