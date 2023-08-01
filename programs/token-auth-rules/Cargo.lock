@@ -2090,7 +2090,7 @@ dependencies = [
 
 [[package]]
 name = "mpl-token-auth-rules"
-version = "1.4.1"
+version = "1.4.2"
 dependencies = [
  "assert_matches",
  "borsh 0.10.3",
