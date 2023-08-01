@@ -2096,10 +2096,10 @@ dependencies = [
 
 [[package]]
 name = "mpl-token-auth-rules"
-version = "1.4.2"
+version = "1.4.3"
 dependencies = [
  "assert_matches",
- "borsh 0.10.3",
+ "borsh 0.9.3",
  "bytemuck",
  "mpl-token-metadata-context-derive",
  "num-derive",
