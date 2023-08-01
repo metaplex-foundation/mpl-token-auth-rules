@@ -10,7 +10,7 @@ readme = "../../README.md"
 keywords = ["nft", "metaplex", "solana", "blockchain"]
 
 [dependencies]
-borsh = "0.10.3"
+borsh = ">= 0.9.3, < 0.11"
 bytemuck = "1.13.1"
 mpl-token-metadata-context-derive = "0.2.1"
 num-derive = "0.3.3"
