@@ -1,6 +1,6 @@
 [package]
 name = "mpl-token-auth-rules"
-version = "1.4.3"
+version = "1.4.2"
 description = "MPL Token Authorization Rules that can be used to restrict common token operations"
 authors = ["Metaplex Developers <dev@metaplex.com>"]
 repository = "https://github.com/metaplex-foundation/mpl-token-auth-rules.git"
@@ -10,7 +10,7 @@ readme = "../../README.md"
 keywords = ["nft", "metaplex", "solana", "blockchain"]
 
 [dependencies]
-borsh = ">= 0.9.3, < 0.11"
+borsh = "0.9.3"
 bytemuck = "1.13.1"
 mpl-token-metadata-context-derive = "0.2.1"
 num-derive = "0.3.3"
