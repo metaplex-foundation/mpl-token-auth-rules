@@ -16,17 +16,10 @@ export type RuleSetHeaderArgs = {
   revMapVersionLocation: number | bigint;
 };
 
-/** @deprecated Use `getRuleSetHeaderSerializer()` without any argument instead. */
-export function getRuleSetHeaderSerializer(
-  _context: object
-): Serializer<RuleSetHeaderArgs, RuleSetHeader>;
 export function getRuleSetHeaderSerializer(): Serializer<
   RuleSetHeaderArgs,
   RuleSetHeader
->;
-export function getRuleSetHeaderSerializer(
-  _context: object = {}
-): Serializer<RuleSetHeaderArgs, RuleSetHeader> {
+> {
   return struct<RuleSetHeader>(
     [
       ['key', getKeySerializer()],

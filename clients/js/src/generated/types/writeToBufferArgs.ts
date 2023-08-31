@@ -25,17 +25,10 @@ export type WriteToBufferArgs = {
 
 export type WriteToBufferArgsArgs = WriteToBufferArgs;
 
-/** @deprecated Use `getWriteToBufferArgsSerializer()` without any argument instead. */
-export function getWriteToBufferArgsSerializer(
-  _context: object
-): Serializer<WriteToBufferArgsArgs, WriteToBufferArgs>;
 export function getWriteToBufferArgsSerializer(): Serializer<
   WriteToBufferArgsArgs,
   WriteToBufferArgs
->;
-export function getWriteToBufferArgsSerializer(
-  _context: object = {}
-): Serializer<WriteToBufferArgsArgs, WriteToBufferArgs> {
+> {
   return dataEnum<WriteToBufferArgs>(
     [
       [

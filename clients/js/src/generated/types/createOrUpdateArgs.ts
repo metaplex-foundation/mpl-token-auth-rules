@@ -31,17 +31,10 @@ export type CreateOrUpdateArgsArgs = {
   ruleSetRevision?: RuleSetRevisionInputArgs;
 };
 
-/** @deprecated Use `getCreateOrUpdateArgsSerializer()` without any argument instead. */
-export function getCreateOrUpdateArgsSerializer(
-  _context: object
-): Serializer<CreateOrUpdateArgsArgs, CreateOrUpdateArgs>;
 export function getCreateOrUpdateArgsSerializer(): Serializer<
   CreateOrUpdateArgsArgs,
   CreateOrUpdateArgs
->;
-export function getCreateOrUpdateArgsSerializer(
-  _context: object = {}
-): Serializer<CreateOrUpdateArgsArgs, CreateOrUpdateArgs> {
+> {
   return dataEnum<CreateOrUpdateArgs>(
     [
       [

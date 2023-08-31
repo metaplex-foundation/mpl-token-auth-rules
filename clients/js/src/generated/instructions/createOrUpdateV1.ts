@@ -7,7 +7,6 @@
  */
 
 import {
-  AccountMeta,
   Context,
   Pda,
   PublicKey,
@@ -27,7 +26,11 @@ import {
   RuleSetRevisionInputArgs,
   getRuleSetRevisionInputSerializer,
 } from '../../hooked';
-import { addAccountMeta, addObjectProperty } from '../shared';
+import {
+  ResolvedAccount,
+  ResolvedAccountsWithIndices,
+  getAccountMetasAndSigners,
+} from '../shared';
 
 // Accounts.
 export type CreateOrUpdateV1InstructionAccounts = {
@@ -52,20 +55,7 @@ export type CreateOrUpdateV1InstructionDataArgs = {
   ruleSetRevision?: RuleSetRevisionInputArgs;
 };
 
-/** @deprecated Use `getCreateOrUpdateV1InstructionDataSerializer()` without any argument instead. */
-export function getCreateOrUpdateV1InstructionDataSerializer(
-  _context: object
-): Serializer<
-  CreateOrUpdateV1InstructionDataArgs,
-  CreateOrUpdateV1InstructionData
->;
 export function getCreateOrUpdateV1InstructionDataSerializer(): Serializer<
-  CreateOrUpdateV1InstructionDataArgs,
-  CreateOrUpdateV1InstructionData
->;
-export function getCreateOrUpdateV1InstructionDataSerializer(
-  _context: object = {}
-): Serializer<
   CreateOrUpdateV1InstructionDataArgs,
   CreateOrUpdateV1InstructionData
 > {
@@ -100,60 +90,58 @@ export type CreateOrUpdateV1InstructionArgs =
 
 // Instruction.
 export function createOrUpdateV1(
-  context: Pick<Context, 'programs' | 'payer'>,
+  context: Pick<Context, 'payer' | 'programs'>,
   input: CreateOrUpdateV1InstructionAccounts & CreateOrUpdateV1InstructionArgs
 ): TransactionBuilder {
-  const signers: Signer[] = [];
-  const keys: AccountMeta[] = [];
-
   // Program ID.
   const programId = context.programs.getPublicKey(
     'mplTokenAuthRules',
     'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
   );
 
-  // Resolved inputs.
-  const resolvedAccounts = {
-    ruleSetPda: [input.ruleSetPda, true] as const,
+  // Accounts.
+  const resolvedAccounts: ResolvedAccountsWithIndices = {
+    payer: { index: 0, isWritable: true, value: input.payer ?? null },
+    ruleSetPda: { index: 1, isWritable: true, value: input.ruleSetPda ?? null },
+    systemProgram: {
+      index: 2,
+      isWritable: false,
+      value: input.systemProgram ?? null,
+    },
+    bufferPda: { index: 3, isWritable: false, value: input.bufferPda ?? null },
   };
-  const resolvingArgs = {};
-  addObjectProperty(
-    resolvedAccounts,
-    'payer',
-    input.payer
-      ? ([input.payer, true] as const)
-      : ([context.payer, true] as const)
-  );
-  addObjectProperty(
-    resolvedAccounts,
-    'systemProgram',
-    input.systemProgram
-      ? ([input.systemProgram, false] as const)
-      : ([
-          context.programs.getPublicKey(
-            'splSystem',
-            '11111111111111111111111111111111'
-          ),
-          false,
-        ] as const)
-  );
-  addObjectProperty(
-    resolvedAccounts,
-    'bufferPda',
-    input.bufferPda
-      ? ([input.bufferPda, false] as const)
-      : ([programId, false] as const)
-  );
-  const resolvedArgs = { ...input, ...resolvingArgs };
 
-  addAccountMeta(keys, signers, resolvedAccounts.payer, false);
-  addAccountMeta(keys, signers, resolvedAccounts.ruleSetPda, false);
-  addAccountMeta(keys, signers, resolvedAccounts.systemProgram, false);
-  addAccountMeta(keys, signers, resolvedAccounts.bufferPda, false);
+  // Arguments.
+  const resolvedArgs: CreateOrUpdateV1InstructionArgs = { ...input };
+
+  // Default values.
+  if (!resolvedAccounts.payer.value) {
+    resolvedAccounts.payer.value = context.payer;
+  }
+  if (!resolvedAccounts.systemProgram.value) {
+    resolvedAccounts.systemProgram.value = context.programs.getPublicKey(
+      'splSystem',
+      '11111111111111111111111111111111'
+    );
+    resolvedAccounts.systemProgram.isWritable = false;
+  }
+
+  // Accounts in order.
+  const orderedAccounts: ResolvedAccount[] = Object.values(
+    resolvedAccounts
+  ).sort((a, b) => a.index - b.index);
+
+  // Keys and Signers.
+  const [keys, signers] = getAccountMetasAndSigners(
+    orderedAccounts,
+    'programId',
+    programId
+  );
 
   // Data.
-  const data =
-    getCreateOrUpdateV1InstructionDataSerializer().serialize(resolvedArgs);
+  const data = getCreateOrUpdateV1InstructionDataSerializer().serialize(
+    resolvedArgs as CreateOrUpdateV1InstructionDataArgs
+  );
 
   // Bytes Created On Chain.
   const bytesCreatedOnChain = 0;

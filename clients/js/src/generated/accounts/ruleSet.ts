@@ -33,20 +33,8 @@ import { KeyArgs, getKeySerializer } from '../types';
 
 export type RuleSet = Account<RuleSetAccountData>;
 
-/** @deprecated Use `deserializeRuleSet(rawAccount)` without any context instead. */
-export function deserializeRuleSet(
-  context: object,
-  rawAccount: RpcAccount
-): RuleSet;
-export function deserializeRuleSet(rawAccount: RpcAccount): RuleSet;
-export function deserializeRuleSet(
-  context: RpcAccount | object,
-  rawAccount?: RpcAccount
-): RuleSet {
-  return deserializeAccount(
-    rawAccount ?? (context as RpcAccount),
-    getRuleSetAccountDataSerializer()
-  );
+export function deserializeRuleSet(rawAccount: RpcAccount): RuleSet {
+  return deserializeAccount(rawAccount, getRuleSetAccountDataSerializer());
 }
 
 export async function fetchRuleSet(

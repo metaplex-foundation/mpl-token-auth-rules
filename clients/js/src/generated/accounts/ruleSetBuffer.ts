@@ -33,34 +33,20 @@ export type RuleSetBufferAccountData = { serializedRuleSet: Uint8Array };
 
 export type RuleSetBufferAccountDataArgs = RuleSetBufferAccountData;
 
-/** @deprecated Use `getRuleSetBufferAccountDataSerializer()` without any argument instead. */
-export function getRuleSetBufferAccountDataSerializer(
-  _context: object
-): Serializer<RuleSetBufferAccountDataArgs, RuleSetBufferAccountData>;
 export function getRuleSetBufferAccountDataSerializer(): Serializer<
   RuleSetBufferAccountDataArgs,
   RuleSetBufferAccountData
->;
-export function getRuleSetBufferAccountDataSerializer(
-  _context: object = {}
-): Serializer<RuleSetBufferAccountDataArgs, RuleSetBufferAccountData> {
+> {
   return struct<RuleSetBufferAccountData>([['serializedRuleSet', bytes()]], {
     description: 'RuleSetBufferAccountData',
   }) as Serializer<RuleSetBufferAccountDataArgs, RuleSetBufferAccountData>;
 }
 
-/** @deprecated Use `deserializeRuleSetBuffer(rawAccount)` without any context instead. */
 export function deserializeRuleSetBuffer(
-  context: object,
   rawAccount: RpcAccount
-): RuleSetBuffer;
-export function deserializeRuleSetBuffer(rawAccount: RpcAccount): RuleSetBuffer;
-export function deserializeRuleSetBuffer(
-  context: RpcAccount | object,
-  rawAccount?: RpcAccount
 ): RuleSetBuffer {
   return deserializeAccount(
-    rawAccount ?? (context as RpcAccount),
+    rawAccount,
     getRuleSetBufferAccountDataSerializer()
   );
 }
