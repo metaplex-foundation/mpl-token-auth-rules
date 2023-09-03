@@ -17,14 +17,7 @@ export type ProofInfo = { proof: Array<Uint8Array> };
 
 export type ProofInfoArgs = ProofInfo;
 
-/** @deprecated Use `getProofInfoSerializer()` without any argument instead. */
-export function getProofInfoSerializer(
-  _context: object
-): Serializer<ProofInfoArgs, ProofInfo>;
-export function getProofInfoSerializer(): Serializer<ProofInfoArgs, ProofInfo>;
-export function getProofInfoSerializer(
-  _context: object = {}
-): Serializer<ProofInfoArgs, ProofInfo> {
+export function getProofInfoSerializer(): Serializer<ProofInfoArgs, ProofInfo> {
   return struct<ProofInfo>([['proof', array(bytes({ size: 32 }))]], {
     description: 'ProofInfo',
   }) as Serializer<ProofInfoArgs, ProofInfo>;

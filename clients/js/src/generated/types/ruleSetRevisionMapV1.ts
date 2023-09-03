@@ -19,17 +19,10 @@ export type RuleSetRevisionMapV1Args = {
   ruleSetRevisions: Array<number | bigint>;
 };
 
-/** @deprecated Use `getRuleSetRevisionMapV1Serializer()` without any argument instead. */
-export function getRuleSetRevisionMapV1Serializer(
-  _context: object
-): Serializer<RuleSetRevisionMapV1Args, RuleSetRevisionMapV1>;
 export function getRuleSetRevisionMapV1Serializer(): Serializer<
   RuleSetRevisionMapV1Args,
   RuleSetRevisionMapV1
->;
-export function getRuleSetRevisionMapV1Serializer(
-  _context: object = {}
-): Serializer<RuleSetRevisionMapV1Args, RuleSetRevisionMapV1> {
+> {
   return struct<RuleSetRevisionMapV1>([['ruleSetRevisions', array(u64())]], {
     description: 'RuleSetRevisionMapV1',
   }) as Serializer<RuleSetRevisionMapV1Args, RuleSetRevisionMapV1>;

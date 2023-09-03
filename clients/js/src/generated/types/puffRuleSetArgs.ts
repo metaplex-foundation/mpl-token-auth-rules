@@ -19,17 +19,10 @@ export type PuffRuleSetArgs = { __kind: 'V1'; ruleSetName: string };
 
 export type PuffRuleSetArgsArgs = PuffRuleSetArgs;
 
-/** @deprecated Use `getPuffRuleSetArgsSerializer()` without any argument instead. */
-export function getPuffRuleSetArgsSerializer(
-  _context: object
-): Serializer<PuffRuleSetArgsArgs, PuffRuleSetArgs>;
 export function getPuffRuleSetArgsSerializer(): Serializer<
   PuffRuleSetArgsArgs,
   PuffRuleSetArgs
->;
-export function getPuffRuleSetArgsSerializer(
-  _context: object = {}
-): Serializer<PuffRuleSetArgsArgs, PuffRuleSetArgs> {
+> {
   return dataEnum<PuffRuleSetArgs>(
     [
       [

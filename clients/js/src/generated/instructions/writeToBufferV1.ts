@@ -7,7 +7,6 @@
  */
 
 import {
-  AccountMeta,
   Context,
   Pda,
   PublicKey,
@@ -24,7 +23,11 @@ import {
   u32,
   u8,
 } from '@metaplex-foundation/umi/serializers';
-import { addAccountMeta, addObjectProperty } from '../shared';
+import {
+  ResolvedAccount,
+  ResolvedAccountsWithIndices,
+  getAccountMetasAndSigners,
+} from '../shared';
 
 // Accounts.
 export type WriteToBufferV1InstructionAccounts = {
@@ -49,20 +52,7 @@ export type WriteToBufferV1InstructionDataArgs = {
   overwrite: boolean;
 };
 
-/** @deprecated Use `getWriteToBufferV1InstructionDataSerializer()` without any argument instead. */
-export function getWriteToBufferV1InstructionDataSerializer(
-  _context: object
-): Serializer<
-  WriteToBufferV1InstructionDataArgs,
-  WriteToBufferV1InstructionData
->;
 export function getWriteToBufferV1InstructionDataSerializer(): Serializer<
-  WriteToBufferV1InstructionDataArgs,
-  WriteToBufferV1InstructionData
->;
-export function getWriteToBufferV1InstructionDataSerializer(
-  _context: object = {}
-): Serializer<
   WriteToBufferV1InstructionDataArgs,
   WriteToBufferV1InstructionData
 > {
@@ -92,52 +82,57 @@ export type WriteToBufferV1InstructionArgs = WriteToBufferV1InstructionDataArgs;
 
 // Instruction.
 export function writeToBufferV1(
-  context: Pick<Context, 'programs' | 'payer'>,
+  context: Pick<Context, 'payer' | 'programs'>,
   input: WriteToBufferV1InstructionAccounts & WriteToBufferV1InstructionArgs
 ): TransactionBuilder {
-  const signers: Signer[] = [];
-  const keys: AccountMeta[] = [];
-
   // Program ID.
   const programId = context.programs.getPublicKey(
     'mplTokenAuthRules',
     'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
   );
 
-  // Resolved inputs.
-  const resolvedAccounts = {
-    bufferPda: [input.bufferPda, true] as const,
+  // Accounts.
+  const resolvedAccounts: ResolvedAccountsWithIndices = {
+    payer: { index: 0, isWritable: true, value: input.payer ?? null },
+    bufferPda: { index: 1, isWritable: true, value: input.bufferPda ?? null },
+    systemProgram: {
+      index: 2,
+      isWritable: false,
+      value: input.systemProgram ?? null,
+    },
   };
-  const resolvingArgs = {};
-  addObjectProperty(
-    resolvedAccounts,
-    'payer',
-    input.payer
-      ? ([input.payer, true] as const)
-      : ([context.payer, true] as const)
-  );
-  addObjectProperty(
-    resolvedAccounts,
-    'systemProgram',
-    input.systemProgram
-      ? ([input.systemProgram, false] as const)
-      : ([
-          context.programs.getPublicKey(
-            'splSystem',
-            '11111111111111111111111111111111'
-          ),
-          false,
-        ] as const)
-  );
-  const resolvedArgs = { ...input, ...resolvingArgs };
 
-  addAccountMeta(keys, signers, resolvedAccounts.payer, false);
-  addAccountMeta(keys, signers, resolvedAccounts.bufferPda, false);
-  addAccountMeta(keys, signers, resolvedAccounts.systemProgram, false);
+  // Arguments.
+  const resolvedArgs: WriteToBufferV1InstructionArgs = { ...input };
+
+  // Default values.
+  if (!resolvedAccounts.payer.value) {
+    resolvedAccounts.payer.value = context.payer;
+  }
+  if (!resolvedAccounts.systemProgram.value) {
+    resolvedAccounts.systemProgram.value = context.programs.getPublicKey(
+      'splSystem',
+      '11111111111111111111111111111111'
+    );
+    resolvedAccounts.systemProgram.isWritable = false;
+  }
+
+  // Accounts in order.
+  const orderedAccounts: ResolvedAccount[] = Object.values(
+    resolvedAccounts
+  ).sort((a, b) => a.index - b.index);
+
+  // Keys and Signers.
+  const [keys, signers] = getAccountMetasAndSigners(
+    orderedAccounts,
+    'programId',
+    programId
+  );
 
   // Data.
-  const data =
-    getWriteToBufferV1InstructionDataSerializer().serialize(resolvedArgs);
+  const data = getWriteToBufferV1InstructionDataSerializer().serialize(
+    resolvedArgs as WriteToBufferV1InstructionDataArgs
+  );
 
   // Bytes Created On Chain.
   const bytesCreatedOnChain = 0;

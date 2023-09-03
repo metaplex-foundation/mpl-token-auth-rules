@@ -7,7 +7,6 @@
  */
 
 import {
-  AccountMeta,
   Context,
   Option,
   OptionOrNullable,
@@ -27,7 +26,11 @@ import {
   u64,
   u8,
 } from '@metaplex-foundation/umi/serializers';
-import { addAccountMeta, addObjectProperty } from '../shared';
+import {
+  ResolvedAccount,
+  ResolvedAccountsWithIndices,
+  getAccountMetasAndSigners,
+} from '../shared';
 import { Payload, PayloadArgs, getPayloadSerializer } from '../types';
 
 // Accounts.
@@ -63,17 +66,10 @@ export type ValidateV1InstructionDataArgs = {
   ruleSetRevision: OptionOrNullable<number | bigint>;
 };
 
-/** @deprecated Use `getValidateV1InstructionDataSerializer()` without any argument instead. */
-export function getValidateV1InstructionDataSerializer(
-  _context: object
-): Serializer<ValidateV1InstructionDataArgs, ValidateV1InstructionData>;
 export function getValidateV1InstructionDataSerializer(): Serializer<
   ValidateV1InstructionDataArgs,
   ValidateV1InstructionData
->;
-export function getValidateV1InstructionDataSerializer(
-  _context: object = {}
-): Serializer<ValidateV1InstructionDataArgs, ValidateV1InstructionData> {
+> {
   return mapSerializer<
     ValidateV1InstructionDataArgs,
     any,
@@ -102,64 +98,66 @@ export function validateV1(
   context: Pick<Context, 'programs'>,
   input: ValidateV1InstructionAccounts & ValidateV1InstructionArgs
 ): TransactionBuilder {
-  const signers: Signer[] = [];
-  const keys: AccountMeta[] = [];
-
   // Program ID.
   const programId = context.programs.getPublicKey(
     'mplTokenAuthRules',
     'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'
   );
 
-  // Resolved inputs.
-  const resolvedAccounts = {
-    ruleSetPda: [input.ruleSetPda, false] as const,
-    mint: [input.mint, false] as const,
+  // Accounts.
+  const resolvedAccounts: ResolvedAccountsWithIndices = {
+    ruleSetPda: {
+      index: 0,
+      isWritable: false,
+      value: input.ruleSetPda ?? null,
+    },
+    mint: { index: 1, isWritable: false, value: input.mint ?? null },
+    systemProgram: {
+      index: 2,
+      isWritable: false,
+      value: input.systemProgram ?? null,
+    },
+    payer: { index: 3, isWritable: true, value: input.payer ?? null },
+    ruleAuthority: {
+      index: 4,
+      isWritable: false,
+      value: input.ruleAuthority ?? null,
+    },
+    ruleSetStatePda: {
+      index: 5,
+      isWritable: true,
+      value: input.ruleSetStatePda ?? null,
+    },
   };
-  const resolvingArgs = {};
-  addObjectProperty(
-    resolvedAccounts,
-    'systemProgram',
-    input.systemProgram
-      ? ([input.systemProgram, false] as const)
-      : ([
-          context.programs.getPublicKey(
-            'splSystem',
-            '11111111111111111111111111111111'
-          ),
-          false,
-        ] as const)
-  );
-  addObjectProperty(
-    resolvedAccounts,
-    'payer',
-    input.payer ? ([input.payer, true] as const) : ([programId, false] as const)
-  );
-  addObjectProperty(
-    resolvedAccounts,
-    'ruleAuthority',
-    input.ruleAuthority
-      ? ([input.ruleAuthority, false] as const)
-      : ([programId, false] as const)
-  );
-  addObjectProperty(
-    resolvedAccounts,
-    'ruleSetStatePda',
-    input.ruleSetStatePda
-      ? ([input.ruleSetStatePda, true] as const)
-      : ([programId, false] as const)
-  );
-  const resolvedArgs = { ...input, ...resolvingArgs };
 
-  addAccountMeta(keys, signers, resolvedAccounts.ruleSetPda, false);
-  addAccountMeta(keys, signers, resolvedAccounts.mint, false);
-  addAccountMeta(keys, signers, resolvedAccounts.systemProgram, false);
-  addAccountMeta(keys, signers, resolvedAccounts.payer, false);
-  addAccountMeta(keys, signers, resolvedAccounts.ruleAuthority, false);
-  addAccountMeta(keys, signers, resolvedAccounts.ruleSetStatePda, false);
+  // Arguments.
+  const resolvedArgs: ValidateV1InstructionArgs = { ...input };
+
+  // Default values.
+  if (!resolvedAccounts.systemProgram.value) {
+    resolvedAccounts.systemProgram.value = context.programs.getPublicKey(
+      'splSystem',
+      '11111111111111111111111111111111'
+    );
+    resolvedAccounts.systemProgram.isWritable = false;
+  }
+
+  // Accounts in order.
+  const orderedAccounts: ResolvedAccount[] = Object.values(
+    resolvedAccounts
+  ).sort((a, b) => a.index - b.index);
+
+  // Keys and Signers.
+  const [keys, signers] = getAccountMetasAndSigners(
+    orderedAccounts,
+    'programId',
+    programId
+  );
 
   // Data.
-  const data = getValidateV1InstructionDataSerializer().serialize(resolvedArgs);
+  const data = getValidateV1InstructionDataSerializer().serialize(
+    resolvedArgs as ValidateV1InstructionDataArgs
+  );
 
   // Bytes Created On Chain.
   const bytesCreatedOnChain = 0;

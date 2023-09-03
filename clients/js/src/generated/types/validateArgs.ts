@@ -36,17 +36,10 @@ export type ValidateArgsArgs = {
   ruleSetRevision: OptionOrNullable<number | bigint>;
 };
 
-/** @deprecated Use `getValidateArgsSerializer()` without any argument instead. */
-export function getValidateArgsSerializer(
-  _context: object
-): Serializer<ValidateArgsArgs, ValidateArgs>;
 export function getValidateArgsSerializer(): Serializer<
   ValidateArgsArgs,
   ValidateArgs
->;
-export function getValidateArgsSerializer(
-  _context: object = {}
-): Serializer<ValidateArgsArgs, ValidateArgs> {
+> {
   return dataEnum<ValidateArgs>(
     [
       [
