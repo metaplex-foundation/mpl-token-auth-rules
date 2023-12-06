@@ -1,6 +1,8 @@
 # Metaplex Token Authorization Rules
 A program that provides the ability to create and execute rules to restrict common token operations such as transferring and selling.
 
+Read the official documentation [here](https://developers.metaplex.com/token-auth-rules).
+
 ## Overview
 Authorization rules are variants of a `Rule` enum that implements a `validate()` function.
 
