@@ -19,8 +19,8 @@ rmp-serde = "1.1.1"
 serde = { version = "1.0.149", features = ["derive"]}
 serde_with = { version = "1.14.0", optional = true }
 shank = "0.0.11"
-solana-program = ">= 1.14.13, < 1.17"
-solana-zk-token-sdk = ">= 1.14.13, < 1.17"
+solana-program = ">= 1.14.13, < 1.18"
+solana-zk-token-sdk = ">= 1.14.13, < 1.18"
 thiserror = "1.0"
 
 [features]
@@ -31,9 +31,9 @@ test-sbf = []
 [dev-dependencies]
 assert_matches = "1.5.0"
 serde_json = "1.0.87"
-solana-logger = ">= 1.14.13, < 1.17"
-solana-program-test = ">= 1.14.13, < 1.17"
-solana-sdk = ">= 1.14.13, < 1.17"
+solana-logger = ">= 1.14.13, < 1.18"
+solana-program-test = ">= 1.14.13, < 1.18"
+solana-sdk = ">= 1.14.13, < 1.18"
 spl-associated-token-account = { version = "1.1.1", features = ["no-entrypoint"] }
 spl-token = { version = "3.5.0", features = [ "no-entrypoint" ] }
 
