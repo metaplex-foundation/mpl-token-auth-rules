@@ -35,6 +35,7 @@ import {
   PubkeyTreeMatchRuleV2,
   getPubkeyTreeMatchRuleV2Serializer,
 } from './pubkeyTreeMatch';
+import { IsWalletRuleV2, getIsWalletRuleV2Serializer } from './isWallet';
 import { RuleTypeV2, getRuleTypeV2AsString } from './ruleType';
 
 export type RuleV2 =
@@ -43,7 +44,7 @@ export type RuleV2 =
   | AmountRuleV2
   | AnyRuleV2
   // | FrequencyRuleV2
-  // | IsWalletRuleV2
+  | IsWalletRuleV2
   | NamespaceRuleV2
   | NotRuleV2
   | PassRuleV2
@@ -86,8 +87,8 @@ export const getRuleV2SerializerFromType = <T extends RuleV2>(
         return getAnyRuleV2Serializer();
       // case 'Frequency':
       //   return getFrequencyRuleV2Serializer();
-      // case 'IsWallet':
-      //   return getIsWalletRuleV2Serializer();
+      case 'IsWallet':
+        return getIsWalletRuleV2Serializer();
       case 'Namespace':
         return getNamespaceRuleV2Serializer();
       case 'Not':

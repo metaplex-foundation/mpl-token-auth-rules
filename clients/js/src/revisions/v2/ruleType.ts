@@ -34,8 +34,7 @@ export const getRuleTypeV2AsString = (type: RuleTypeV2): RuleV2['type'] => {
       // return 'Frequency';
       throw new Error('Frequency Rule is not supported yet');
     case RuleTypeV2.IsWallet: // 6
-      // return 'IsWallet';
-      throw new Error('IsWallet Rule is not supported yet');
+      return 'IsWallet';
     case RuleTypeV2.Namespace: // 7
       return 'Namespace';
     case RuleTypeV2.Not: // 8
