@@ -13,21 +13,16 @@ export type IsWalletRuleV2 = {
   field: string;
 };
 
-export const isWalletV2 = (
-  field: string,
-): IsWalletRuleV2 => ({
+export const isWalletV2 = (field: string): IsWalletRuleV2 => ({
   type: 'IsWallet',
   field,
 });
 
-export const getIsWalletRuleV2Serializer =
-  (): Serializer<IsWalletRuleV2> =>
-    wrapSerializerInRuleHeaderV2(
-      RuleTypeV2.IsWallet,
-      struct([
-        ['field', string({ size: 32 })],
-      ])
-    );
+export const getIsWalletRuleV2Serializer = (): Serializer<IsWalletRuleV2> =>
+  wrapSerializerInRuleHeaderV2(
+    RuleTypeV2.IsWallet,
+    struct([['field', string({ size: 32 })]])
+  );
 
 export const isIsWalletRuleV2 = (
   rule: RuleV1 | RuleV2
