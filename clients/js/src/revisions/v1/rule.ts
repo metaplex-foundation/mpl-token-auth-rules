@@ -13,6 +13,7 @@ import type { ProgramOwnedTreeRuleV1 } from './programOwnedTree';
 import type { PubkeyListMatchRuleV1 } from './pubkeyListMatch';
 import type { PubkeyMatchRuleV1 } from './pubkeyMatch';
 import type { PubkeyTreeMatchRuleV1 } from './pubkeyTreeMatch';
+import type { IsWalletRuleV1 } from './isWallet';
 
 export type RuleV1 =
   | AdditionalSignerRuleV1
@@ -28,7 +29,8 @@ export type RuleV1 =
   | ProgramOwnedTreeRuleV1
   | PubkeyListMatchRuleV1
   | PubkeyMatchRuleV1
-  | PubkeyTreeMatchRuleV1;
+  | PubkeyTreeMatchRuleV1
+  | IsWalletRuleV1;
 
 export const isRuleV1 = (rule: RuleV2 | RuleV1): rule is RuleV1 =>
   (typeof rule === 'string' && (rule === 'Namespace' || rule === 'Pass')) ||

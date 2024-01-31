@@ -1,6 +1,6 @@
 {
     "name": "@metaplex-foundation/mpl-token-auth-rules",
-    "version": "3.0.1",
+    "version": "3.0.2",
     "description": "Javascript SDK for MPL Token Authorization Rules.  MPL Token Authorization Rules can be used to restrict common token operations",
     "main": "dist/src/index.js",
     "types": "dist/src/index.d.ts",

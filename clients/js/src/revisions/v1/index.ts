@@ -14,3 +14,4 @@ export * from './pubkeyTreeMatch';
 export * from './publicKey';
 export * from './revision';
 export * from './rule';
+export * from './isWallet';
