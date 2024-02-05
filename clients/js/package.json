@@ -28,7 +28,7 @@
         "@msgpack/msgpack": "2.8.0"
     },
     "peerDependencies": {
-        "@metaplex-foundation/umi": "^0.8.2"
+        "@metaplex-foundation/umi": ">= 0.8.2 < 1"
     },
     "devDependencies": {
         "@ava/typescript": "^3.0.1",

@@ -12,44 +12,73 @@ There are **Primitive Rules** and **Composed Rules** that are created by combini
 
 **Composed Rules** return a true or false based on whether any or all of the primitive rules return true.  Composed rules can then be combined into higher-level composed rules that implement more complex boolean logic.  Because of the recursive definition of the `Rule` enum, calling `validate()` on a top-level composed rule will start at the top and validate at every level, down to the component primitive rules.
 
-## Environment Setup
-1. Install Rust from https://rustup.rs/
-2. Install Solana from https://docs.solana.com/cli/install-solana-cli-tools#use-solanas-install-tool
-3. Run `yarn install` to install dependencies
+## Getting Started
 
-### Build the program, generate the JS API, and rebuild IDL (using Shank and Solita)
-```
-$ yarn build:rust
-$ yarn solita
+The packages below can be used to interact with Token Authorization Rules (Token Auth Rules) program.
+
+### TypeScript
+```sh
+npm install @metaplex-foundation/mpl-token-auth-rules
 ```
 
-### Build the JS SDK only (must be generated first)
-```
-$ yarn build:sdk
+[See typedoc documentation](https://mpl-token-auth-rules-js-docs.vercel.app/).
+
+### Rust
+```sh
+cargo add mpl-token-auth-rules
 ```
 
-### Build the program and generate/build the IDL/SDK/docs
-```
-$ yarn build
+[See crate documentation](https://docs.rs/mpl-token-auth-rules/latest/mpl_token_auth_rules/).
+
+## Building
+
+From the root directory of the repository:
+
+- Install the required packages:
+```sh
+pnpm install
 ```
 
-### Start Amman and run the test script
-Run the following command in a separate shell
-```
-$ amman start
-```
-
-Then, run the Amman script
-```
-$ yarn amman
+- Build the program:
+```sh
+pnpm programs:build
 ```
 
-### Build and test the Rust program
+This will create the program binary at `<ROOT>/programs/.bin`
+
+## Testing
+
+Token Auth Rules includes three sets of tests: BPF, TypeScript for the JS Client, and Legacy Typescript for the Solita-based JS Client.
+
+### BPF
+
+From the root directory of the repository:
+```sh
+pnpm programs:test
 ```
-$ cd program/
-$ cargo build-bpf
-$ cargo test-bpf
+
+### TypeScript
+
+From the root directory of the repository:
+```sh
+pnpm validator
 ```
+
+This will start a local validator using [Amman](https://github.com/metaplex-foundation/amman).
+
+After starting the validator, go to the folder `<ROOT>/clients/js` and run:
+```sh
+pnpm install
+```
+
+This will install the required packages for the tests. Then, run:
+```sh
+pnpm build && pnpm test
+```
+
+###  Legacy Typescript
+
+Follow all the same steps as for the TypeScript tests above, including starting the validator in the root directory, but for building and running the tests, navigate to the folder `<ROOT>/clients/js-solita`.
 
 ## CLI
 

@@ -9,26 +9,34 @@
           "name": "payer",
           "isMut": true,
           "isSigner": true,
-          "desc": "Payer and creator of the RuleSet"
+          "docs": [
+            "Payer and creator of the RuleSet"
+          ]
         },
         {
           "name": "ruleSetPda",
           "isMut": true,
           "isSigner": false,
-          "desc": "The PDA account where the RuleSet is stored"
+          "docs": [
+            "The PDA account where the RuleSet is stored"
+          ]
         },
         {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false,
-          "desc": "System program"
+          "docs": [
+            "System program"
+          ]
         },
         {
           "name": "bufferPda",
           "isMut": false,
           "isSigner": false,
-          "desc": "The buffer to copy a complete ruleset from",
-          "optional": true
+          "isOptional": true,
+          "docs": [
+            "The buffer to copy a complete ruleset from"
+          ]
         }
       ],
       "args": [
@@ -39,7 +47,6 @@
           }
         }
       ],
-      "defaultOptionalAccounts": true,
       "discriminant": {
         "type": "u8",
         "value": 0
@@ -52,40 +59,52 @@
           "name": "ruleSetPda",
           "isMut": false,
           "isSigner": false,
-          "desc": "The PDA account where the RuleSet is stored"
+          "docs": [
+            "The PDA account where the RuleSet is stored"
+          ]
         },
         {
           "name": "mint",
           "isMut": false,
           "isSigner": false,
-          "desc": "Mint of token asset"
+          "docs": [
+            "Mint of token asset"
+          ]
         },
         {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false,
-          "desc": "System program"
+          "docs": [
+            "System program"
+          ]
         },
         {
           "name": "payer",
           "isMut": true,
           "isSigner": true,
-          "desc": "Payer for RuleSet state PDA account",
-          "optional": true
+          "isOptional": true,
+          "docs": [
+            "Payer for RuleSet state PDA account"
+          ]
         },
         {
           "name": "ruleAuthority",
           "isMut": false,
           "isSigner": true,
-          "desc": "Signing authority for any Rule state updates",
-          "optional": true
+          "isOptional": true,
+          "docs": [
+            "Signing authority for any Rule state updates"
+          ]
         },
         {
           "name": "ruleSetStatePda",
           "isMut": true,
           "isSigner": false,
-          "desc": "The PDA account where any RuleSet state is stored",
-          "optional": true
+          "isOptional": true,
+          "docs": [
+            "The PDA account where any RuleSet state is stored"
+          ]
         }
       ],
       "args": [
@@ -96,7 +115,6 @@
           }
         }
       ],
-      "defaultOptionalAccounts": true,
       "discriminant": {
         "type": "u8",
         "value": 1
@@ -109,19 +127,25 @@
           "name": "payer",
           "isMut": true,
           "isSigner": true,
-          "desc": "Payer and creator of the RuleSet"
+          "docs": [
+            "Payer and creator of the RuleSet"
+          ]
         },
         {
           "name": "bufferPda",
           "isMut": true,
           "isSigner": false,
-          "desc": "The PDA account where the RuleSet buffer is stored"
+          "docs": [
+            "The PDA account where the RuleSet buffer is stored"
+          ]
         },
         {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false,
-          "desc": "System program"
+          "docs": [
+            "System program"
+          ]
         }
       ],
       "args": [
@@ -144,19 +168,25 @@
           "name": "payer",
           "isMut": true,
           "isSigner": true,
-          "desc": "Payer and creator of the RuleSet"
+          "docs": [
+            "Payer and creator of the RuleSet"
+          ]
         },
         {
           "name": "ruleSetPda",
           "isMut": true,
           "isSigner": false,
-          "desc": "The PDA account where the RuleSet is stored"
+          "docs": [
+            "The PDA account where the RuleSet is stored"
+          ]
         },
         {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false,
-          "desc": "System program"
+          "docs": [
+            "System program"
+          ]
         }
       ],
       "args": [
@@ -634,7 +664,7 @@
   "metadata": {
     "origin": "shank",
     "address": "auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg",
-    "binaryVersion": "0.0.11",
-    "libVersion": "0.0.11"
+    "binaryVersion": "0.3.0",
+    "libVersion": "0.3.0"
   }
 }
