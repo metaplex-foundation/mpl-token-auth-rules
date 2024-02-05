@@ -69,7 +69,6 @@ pub enum RuleSetInstruction {
     #[account(1, writable, name="rule_set_pda", desc = "The PDA account where the RuleSet is stored")]
     #[account(2, name = "system_program", desc = "System program")]
     #[account(3, optional, name="buffer_pda", desc = "The buffer to copy a complete ruleset from")]
-    #[default_optional_accounts]
     CreateOrUpdate(CreateOrUpdateArgs),
 
     /// This instruction executes the RuleSet stored in the rule_set PDA account by calling the
@@ -85,7 +84,6 @@ pub enum RuleSetInstruction {
     #[account(4, optional, signer, name="rule_authority", desc="Signing authority for any Rule state updates")]
     #[account(5, optional, writable, name="rule_set_state_pda", desc = "The PDA account where any RuleSet state is stored")]
     #[args(additional_rule_accounts: Vec<AccountMeta>)]
-    #[default_optional_accounts]
     Validate(ValidateArgs),
 
     /// This instruction appends a pre-serialized `RuleSet` chunk into the rule_set PDA account.
