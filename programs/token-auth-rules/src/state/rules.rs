@@ -4,14 +4,19 @@ use crate::{
     types::Assertable,
     // TODO: Uncomment this after on-curve sycall available.
     // utils::is_on_curve,
-    utils::{assert_derivation, compute_merkle_root, is_zeroed},
+    utils::{assert_derivation, cmp_pubkeys, compute_merkle_root, is_zeroed},
 };
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "serde-with-feature")]
 use serde_with::{As, DisplayFromStr};
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
-    pubkey::Pubkey, system_program,
+    account_info::AccountInfo,
+    entrypoint::ProgramResult,
+    msg,
+    program_error::ProgramError,
+    pubkey::Pubkey,
+    system_program,
+    sysvar::{self, instructions::get_instruction_relative},
 };
 use std::collections::{HashMap, HashSet};
 
@@ -639,28 +644,46 @@ impl Rule {
             Rule::IsWallet { field } => {
                 msg!("Validating IsWallet");
 
-                // Get the `Pubkey` we are checking from the payload.
-                let key = match payload.get_pubkey(field) {
-                    Some(pubkey) => pubkey,
-                    _ => return Error(RuleSetError::MissingPayloadValue.into()),
+                let sysvar_instructions_info = match accounts.get(&sysvar::instructions::ID) {
+                    Some(sysvar_instructions_info) => *sysvar_instructions_info,
+                    _ => return RuleResult::Error(RuleSetError::MissingAccount.into()),
                 };
 
-                // Get the `AccountInfo` struct for the `Pubkey` and verify that
-                // its owner is the System Program.
-                if let Some(account) = accounts.get(key) {
-                    if *account.owner != system_program::ID {
-                        // TODO: Change error return to commented line after on-curve syscall
-                        // available.
-                        return Error(RuleSetError::NotImplemented.into());
-                        //return (false, self.to_error());
-                    }
-                } else {
-                    return Error(RuleSetError::MissingAccount.into());
-                }
+                // Fetch the Pubkey of the caller from the payload.
+                let caller = match payload.get_pubkey(&"caller".to_string()) {
+                    Some(pubkey) => pubkey,
+                    _ => return RuleResult::Error(RuleSetError::MissingPayloadValue.into()),
+                };
+
+                // If the program id of the current instruction is anything other than our program id
+                // we know this is a CPI call from another program.
+                let current_ix = get_instruction_relative(0, sysvar_instructions_info).unwrap();
+
+                let is_cpi = !cmp_pubkeys(&current_ix.program_id, caller);
+
+                // Get the `Pubkey` we are checking from the payload.
+                let key = match payload.get_pubkey(&field.to_string()) {
+                    Some(pubkey) => pubkey,
+                    _ => return RuleResult::Error(RuleSetError::MissingPayloadValue.into()),
+                };
+
+                // Get the `AccountInfo` struct for the `Pubkey`.
+                let account = match accounts.get(key) {
+                    Some(account) => *account,
+                    _ => return RuleResult::Error(RuleSetError::MissingAccount.into()),
+                };
+
+                // These checks can be replaced with a sys call to curve25519 once that feature activates.
+                let system_program_owned = cmp_pubkeys(account.owner, &system_program::ID);
 
                 // TODO: Uncomment call to `is_on_curve()` after on-curve sycall available.
-                Error(RuleSetError::NotImplemented.into())
                 //(is_on_curve(key), self.to_error())
+
+                if !is_cpi && system_program_owned {
+                    Success(self.to_error())
+                } else {
+                    Failure(self.to_error())
+                }
             }
             Rule::ProgramOwnedSet { programs, field } => {
                 msg!("Validating ProgramOwnedSet");

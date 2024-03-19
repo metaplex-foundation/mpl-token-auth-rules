@@ -1,4 +1,7 @@
-use solana_program::{msg, system_program};
+use solana_program::{
+    msg, system_program,
+    sysvar::{self, instructions::get_instruction_relative},
+};
 
 use crate::{
     error::RuleSetError,
@@ -7,6 +10,7 @@ use crate::{
         v2::{Constraint, ConstraintType, Str32, HEADER_SECTION},
         Header,
     },
+    utils::cmp_pubkeys,
 };
 
 /// Constraint that represents a test on whether a pubkey can be signed from a client and therefore
@@ -65,27 +69,45 @@ impl<'a> Constraint<'a> for IsWallet<'a> {
     ) -> RuleResult {
         msg!("Validating IsWallet");
 
+        let sysvar_instructions_info = match accounts.get(&sysvar::instructions::ID) {
+            Some(sysvar_instructions_info) => *sysvar_instructions_info,
+            _ => return RuleResult::Error(RuleSetError::MissingAccount.into()),
+        };
+
+        // Fetch the Pubkey of the caller from the payload.
+        let caller = match payload.get_pubkey(&"caller".to_string()) {
+            Some(pubkey) => pubkey,
+            _ => return RuleResult::Error(RuleSetError::MissingPayloadValue.into()),
+        };
+
+        // If the program id of the current instruction is anything other than our program id
+        // we know this is a CPI call from another program.
+        let current_ix = get_instruction_relative(0, sysvar_instructions_info).unwrap();
+
+        let is_cpi = !cmp_pubkeys(&current_ix.program_id, caller);
+
         // Get the `Pubkey` we are checking from the payload.
         let key = match payload.get_pubkey(&self.field.to_string()) {
             Some(pubkey) => pubkey,
             _ => return RuleResult::Error(RuleSetError::MissingPayloadValue.into()),
         };
 
-        // Get the `AccountInfo` struct for the `Pubkey` and verify that
-        // its owner is the System Program.
-        if let Some(account) = accounts.get(key) {
-            if *account.owner != system_program::ID {
-                // TODO: Change error return to commented line after on-curve syscall
-                // available.
-                return RuleResult::Error(RuleSetError::NotImplemented.into());
-                //return (false, self.to_error());
-            }
-        } else {
-            return RuleResult::Error(RuleSetError::MissingAccount.into());
-        }
+        // Get the `AccountInfo` struct for the `Pubkey`.
+        let account = match accounts.get(key) {
+            Some(account) => *account,
+            _ => return RuleResult::Error(RuleSetError::MissingAccount.into()),
+        };
+
+        // These checks can be replaced with a sys call to curve25519 once that feature activates.
+        let system_program_owned = cmp_pubkeys(account.owner, &system_program::ID);
 
         // TODO: Uncomment call to `is_on_curve()` after on-curve sycall available.
-        RuleResult::Error(RuleSetError::NotImplemented.into())
         //(is_on_curve(key), self.to_error())
+
+        if !is_cpi && system_program_owned {
+            RuleResult::Success(self.constraint_type().to_error())
+        } else {
+            RuleResult::Failure(self.constraint_type().to_error())
+        }
     }
 }
