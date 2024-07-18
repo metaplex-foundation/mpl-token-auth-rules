@@ -58,7 +58,7 @@ jobs:
     name: Generate clients
     if: ${{ needs.changes.outputs.any == 'true' }}
     needs: build_programs
-    runs-on: ubuntu-latest-16-cores
+    runs-on: ubuntu-latest
     outputs:
       js_changed: ${{ steps.changes.outputs.js_client }}
     permissions:
