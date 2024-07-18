@@ -604,7 +604,7 @@ macro_rules! assert_custom_error {
         match $error {
             solana_program_test::BanksClientError::TransactionError(
                 solana_sdk::transaction::TransactionError::InstructionError(
-                    0,
+                    _,
                     solana_program::instruction::InstructionError::Custom(x),
                 ),
             ) => match num_traits::FromPrimitive::from_i32(x as i32) {
