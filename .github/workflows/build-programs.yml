@@ -11,12 +11,12 @@ on:
     inputs:
       rust:
         description: Rust version
-        default: 1.70.0
+        default: 1.79.0
         required: true
         type: string
       solana:
         description: Solana version
-        default: 1.17.20
+        default: 1.18.9
         required: true
         type: string
 

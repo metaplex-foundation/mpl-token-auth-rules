@@ -110,7 +110,7 @@ async fn buffered_rule_set() {
         .instruction();
 
     // Fail to validate Transfer operation.
-    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    let err = process_failing_validate_ix!(&mut context, validate_ix, vec![], Some(300000)).await;
 
     // Check that error is what we expect.
     assert_custom_error!(err, RuleSetError::PubkeyListMatchCheckFailed);
@@ -145,5 +145,5 @@ async fn buffered_rule_set() {
         .instruction();
 
     // Validate Transfer operation.
-    process_passing_validate_ix!(&mut context, validate_ix, vec![], None).await;
+    process_passing_validate_ix!(&mut context, validate_ix, vec![], Some(300000)).await;
 }
