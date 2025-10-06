@@ -11,12 +11,12 @@ on:
     inputs:
       rust:
         description: Rust version
-        default: 1.79.0
+        default: 1.83.0
         required: true
         type: string
       solana:
         description: Solana version
-        default: 1.18.9
+        default: 2.2.1
         required: true
         type: string
 
@@ -62,4 +62,5 @@ jobs:
           name: program-builds
           # First wildcard ensures exported paths are consistently under the programs folder.
           path: ./program*/.bin/*.so
+          include-hidden-files: true
           if-no-files-found: error
