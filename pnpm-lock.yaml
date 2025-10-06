@@ -15,10 +15,10 @@ importers:
         specifier: ^0.14.0
         version: 0.14.0
       '@metaplex-foundation/shank-js':
-        specifier: ^0.1.7
+        specifier: ^0.1.0
         version: 0.1.7
       typescript:
-        specifier: ^4.9.5
+        specifier: ^4.9.4
         version: 4.9.5
 
 packages:
